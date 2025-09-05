@@ -1,13 +1,13 @@
-package com.example;
+package com.compactorbs;
 
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 
-public class ExamplePluginTest
+public class CompactOrbsPluginTest
 {
 	public static void main(String[] args) throws Exception
 	{
-		ExternalPluginManager.loadBuiltin(ExamplePlugin.class);
+		ExternalPluginManager.loadBuiltin(CompactOrbsPlugin.class);
 		RuneLite.main(args);
 	}
 }
