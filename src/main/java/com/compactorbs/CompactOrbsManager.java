@@ -63,7 +63,14 @@ public class CompactOrbsManager
 
 	public static final int FORCE_REMAP = -1;
 
+	private boolean resetFixedOrbs = false;
+
 	private boolean remapping = false;
+
+	public static final int ORBS_UPDATE_WORLD_MAP = 1699;
+	public static final int ORBS_UPDATE_STORE = 2396;
+	public static final int ORBS_UPDATE_ACTIVITY_ADVISOR = 2480;
+	public static final int WIKI_ICON_UPDATE = 3305;
 
 	private static final int COMPASS_FRAME_SPRITE_ID = 5813;
 
@@ -83,6 +90,23 @@ public class CompactOrbsManager
 
 	private static final Color MENU_COLOR = new Color(0xFF9040);
 
+	public void init(int scriptId)
+	{
+		if (!client.isResized())
+		{
+			if (!resetFixedOrbs)
+			{
+				//reset only the required orbs when toggling to fixed mode display
+				remap(Orbs.FIXED, false, FORCE_REMAP);
+				resetFixedOrbs = true;
+			}
+			return;
+		}
+
+		build(scriptId);
+		resetFixedOrbs = false;
+	}
+
 	public void build(int scriptId)
 	{
 		//prevent changes if on fixed mode display
@@ -91,29 +115,40 @@ public class CompactOrbsManager
 			return;
 		}
 
-		createToggleButtons();
+		if (scriptId == FORCE_REMAP)
+		{
 
-		setHidden(Minimap.values(), isMinimapHidden());
-		setHidden(Compass.values(), (isMinimapHidden() && isCompassHidden()));
+			log.debug("force triggered build: {} ", scriptId);
 
-		boolean remapCompassCondition = !isCompassHidden() && isMinimapHidden();
-		remap(Compass.ALL, remapCompassCondition, scriptId);
-		remap(Orbs.ALL, isMinimapHidden(), scriptId);
+			createToggleButtons();
 
-		updateToggleButtons();
+			setHidden(Minimap.values(), isMinimapHidden());
+			setHidden(Compass.values(), (isMinimapHidden() && isCompassHidden()));
+
+			boolean remapCompassCondition = !isCompassHidden() && isMinimapHidden();
+			remap(Compass.ALL, remapCompassCondition, scriptId);
+
+			remap(Orbs.ALL, isMinimapHidden(), scriptId);
+			updateToggleButtons();
+		}
+		else
+		{
+			log.debug("script triggered build: {} ", scriptId);
+
+			remap(Orbs.ALL, isMinimapHidden(), scriptId);
+		}
 	}
 
 	public void reset()
 	{
+		resetFixedOrbs = false;
+
 		clearToggleButtons();
 
 		if (isMinimapHidden())
 		{
 			setHidden(Minimap.values(), false);
-		}
 
-		if (isMinimapHidden())
-		{
 			if (isCompassHidden())
 			{
 				setHidden(Compass.values(), false);
@@ -213,7 +248,7 @@ public class CompactOrbsManager
 
 	private boolean shouldUpdateWidget(TargetWidget target, int scriptId)
 	{
-		return (scriptId == FORCE_REMAP) || target.getScriptIds().contains(scriptId);
+		return (scriptId == FORCE_REMAP) || target.getScriptId() == scriptId;
 	}
 
 	public void setValue(Widget widget, ValueKey type, SetValue value, boolean modify)
@@ -285,8 +320,8 @@ public class CompactOrbsManager
 
 	private void createButtons(Widget parent)
 	{
-		//only create buttons if they're missing or the parent has changed
-		if (mismatch(compassFrame, parent))
+		//only create buttons if they're missing from the parent
+		if (missing(compassFrame, parent))
 		{
 			//compass frame when minimap is hidden
 			compassFrame = createGraphic(
@@ -441,7 +476,7 @@ public class CompactOrbsManager
 		return config.hideCompass();
 	}
 
-	private boolean mismatch(Widget child, Widget parent)
+	private boolean missing(Widget child, Widget parent)
 	{
 		return child == null || child.getParentId() != parent.getId();
 	}

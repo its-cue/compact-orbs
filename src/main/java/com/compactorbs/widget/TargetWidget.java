@@ -37,10 +37,7 @@ public interface TargetWidget
 
 	int getChildId();
 
-	default Set<Integer> getScriptIds()
-	{
-		return ImmutableSet.of();
-	}
+	int getScriptId();
 
 	default Map<ValueKey, SetValue> getPositions()
 	{

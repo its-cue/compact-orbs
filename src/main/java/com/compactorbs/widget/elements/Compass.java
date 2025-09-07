@@ -77,9 +77,7 @@ public enum Compass implements TargetWidget
 		)
 	);
 
-	private final int interfaceId, childId;
-
-	private final Set<Integer> scriptIds = ImmutableSet.of(ScriptID.TOPLEVEL_REDRAW);
+	private final int interfaceId, childId, scriptId = -1;
 
 	private final Map<ValueKey, SetValue> positions;
 

@@ -25,15 +25,19 @@
 
 package com.compactorbs;
 
-import com.compactorbs.widget.elements.Orbs;
-import com.google.common.collect.ImmutableSet;
+import static com.compactorbs.CompactOrbsManager.FORCE_REMAP;
+import static com.compactorbs.CompactOrbsManager.ORBS_UPDATE_ACTIVITY_ADVISOR;
+import static com.compactorbs.CompactOrbsManager.ORBS_UPDATE_STORE;
+import static com.compactorbs.CompactOrbsManager.ORBS_UPDATE_WORLD_MAP;
+import static com.compactorbs.CompactOrbsManager.WIKI_ICON_UPDATE;
 import com.google.inject.Provides;
 import java.util.Set;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
-import net.runelite.api.ScriptID;
 import net.runelite.api.events.ScriptPostFired;
+import net.runelite.api.events.WidgetLoaded;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -56,23 +60,18 @@ public class CompactOrbsPlugin extends Plugin
 	@Inject
 	private CompactOrbsManager manager;
 
-	private boolean resetFixedOrbs = false;
-
-	//known scripts that trigger minimap updates
-	public static final Set<Integer> MINIMAP_UPDATE_SCRIPTS =
-		ImmutableSet.of(
-			ScriptID.TOPLEVEL_REDRAW,
-			2396, //Store orb
-			2480, //Activity orb
-			3304, //World map orb / Wiki orb
-			1699, //World map orb
-			3305  //Wiki orb
+	private static final Set<Integer> MINIMAP_UPDATE_SCRIPTS =
+		Set.of(
+			ORBS_UPDATE_WORLD_MAP,
+			ORBS_UPDATE_STORE,
+			ORBS_UPDATE_ACTIVITY_ADVISOR,
+			WIKI_ICON_UPDATE
 		);
 
 	@Override
 	protected void startUp() throws Exception
 	{
-		clientThread.invokeLater(() -> manager.build(CompactOrbsManager.FORCE_REMAP));
+		clientThread.invokeLater(() -> manager.build(FORCE_REMAP));
 	}
 
 	@Override
@@ -82,28 +81,28 @@ public class CompactOrbsPlugin extends Plugin
 	}
 
 	@Subscribe
+	public void onWidgetLoaded(WidgetLoaded event)
+	{
+		if (event.getGroupId() == InterfaceID.ORBS ||
+			event.getGroupId() == InterfaceID.TOPLEVEL_OSRS_STRETCH ||
+			event.getGroupId() == InterfaceID.TOPLEVEL_PRE_EOC)
+		{
+			manager.init(FORCE_REMAP);
+		}
+	}
+
+	@Subscribe
 	public void onScriptPostFired(ScriptPostFired event)
 	{
 		int scriptId = event.getScriptId();
+
 		if (!MINIMAP_UPDATE_SCRIPTS.contains(scriptId))
 		{
 			return;
 		}
 
-		//protect against fixed mode display
-		if (!client.isResized())
-		{
-			if (!resetFixedOrbs)
-			{
-				//reset only the required orbs when toggling to fixed mode display
-				manager.remap(Orbs.FIXED, false, scriptId);
-				resetFixedOrbs = true;
-			}
-			return;
-		}
+		manager.init(scriptId);
 
-		manager.build(scriptId);
-		resetFixedOrbs = false;
 	}
 
 	@Subscribe

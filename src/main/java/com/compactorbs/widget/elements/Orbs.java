@@ -25,19 +25,22 @@
 
 package com.compactorbs.widget.elements;
 
+import static com.compactorbs.CompactOrbsManager.FORCE_REMAP;
+import static com.compactorbs.CompactOrbsManager.ORBS_UPDATE_ACTIVITY_ADVISOR;
+import static com.compactorbs.CompactOrbsManager.ORBS_UPDATE_STORE;
+import static com.compactorbs.CompactOrbsManager.ORBS_UPDATE_WORLD_MAP;
+import static com.compactorbs.CompactOrbsManager.WIKI_ICON_UPDATE;
 import com.compactorbs.util.SetValue;
 import com.compactorbs.util.ValueKey;
 import static com.compactorbs.util.ValueKey.X;
 import static com.compactorbs.util.ValueKey.X_POSITION_MODE;
 import static com.compactorbs.util.ValueKey.Y;
 import com.compactorbs.widget.TargetWidget;
-import com.google.common.collect.ImmutableSet;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import net.runelite.api.ScriptID;
 import net.runelite.api.gameval.InterfaceID;
 
 @Getter
@@ -47,7 +50,7 @@ public enum Orbs implements TargetWidget
 
 	XP_DROPS_CONTAINER(
 		InterfaceID.ORBS, 5,
-		ImmutableSet.of(ScriptID.TOPLEVEL_REDRAW),
+		FORCE_REMAP,
 		Map.of(
 			X, new SetValue(0, 112),
 			Y, new SetValue(17, 44)
@@ -55,7 +58,7 @@ public enum Orbs implements TargetWidget
 	),
 	HP_ORB_CONTAINER(
 		InterfaceID.ORBS, 6,
-		ImmutableSet.of(ScriptID.TOPLEVEL_REDRAW),
+		FORCE_REMAP,
 		Map.of(
 			X, new SetValue(0, 150),
 			Y, new SetValue(37, 42)
@@ -63,7 +66,7 @@ public enum Orbs implements TargetWidget
 	),
 	PRAYER_ORB_CONTAINER(
 		InterfaceID.ORBS, 17,
-		ImmutableSet.of(ScriptID.TOPLEVEL_REDRAW),
+		FORCE_REMAP,
 		Map.of(
 			X, new SetValue(0, 150),
 			Y, new SetValue(71, 76)
@@ -71,7 +74,7 @@ public enum Orbs implements TargetWidget
 	),
 	RUN_ORB_CONTAINER(
 		InterfaceID.ORBS, 25,
-		ImmutableSet.of(ScriptID.TOPLEVEL_REDRAW),
+		FORCE_REMAP,
 		Map.of(
 			X, new SetValue(10, 150),
 			Y, new SetValue(103, 110)
@@ -79,7 +82,7 @@ public enum Orbs implements TargetWidget
 	),
 	SPEC_ORB_CONTAINER(
 		InterfaceID.ORBS, 33,
-		ImmutableSet.of(ScriptID.TOPLEVEL_REDRAW),
+		FORCE_REMAP,
 		Map.of(
 			X, new SetValue(32, 150),
 			Y, new SetValue(128, 144)
@@ -87,7 +90,7 @@ public enum Orbs implements TargetWidget
 	),
 	STORE_ORB_CONTAINER(
 		InterfaceID.ORBS, 42,
-		ImmutableSet.of(2396),
+		ORBS_UPDATE_STORE,
 		Map.of(
 			X, new SetValue(85, 109),
 			Y, new SetValue(143, 105)
@@ -95,7 +98,7 @@ public enum Orbs implements TargetWidget
 	),
 	ACTIVITY_ORB_CONTAINER(
 		InterfaceID.ORBS, 47,
-		ImmutableSet.of(2480),
+		ORBS_UPDATE_ACTIVITY_ADVISOR,
 		Map.of(
 			X, new SetValue(55, 109),
 			Y, new SetValue(162, 139)
@@ -103,7 +106,7 @@ public enum Orbs implements TargetWidget
 	),
 	WORLD_MAP_CONTAINER(
 		InterfaceID.ORBS, 48,
-		ImmutableSet.of(3304, 1699),
+		ORBS_UPDATE_WORLD_MAP,
 		Map.of(
 			X, new SetValue(0, 111),
 			Y, new SetValue(115, 72),
@@ -112,7 +115,7 @@ public enum Orbs implements TargetWidget
 	),
 	WIKI_CONTAINER(
 		InterfaceID.ORBS, 49,
-		ImmutableSet.of(3304, 3305),
+		WIKI_ICON_UPDATE,
 		Map.of(
 			X, new SetValue(0, 148),
 			Y, new SetValue(135, 172),
@@ -121,7 +124,7 @@ public enum Orbs implements TargetWidget
 	),
 	LOGOUT_X_ICON_CONTAINER(
 		InterfaceID.TOPLEVEL_PRE_EOC, 35,
-		ImmutableSet.of(ScriptID.TOPLEVEL_REDRAW),
+		FORCE_REMAP,
 		Map.of(
 			X, new SetValue(2, 177),
 			Y, new SetValue(2, 20),
@@ -130,7 +133,7 @@ public enum Orbs implements TargetWidget
 	),
 	LOGOUT_X_STONE_CONTAINER(
 		InterfaceID.TOPLEVEL_PRE_EOC, 34,
-		ImmutableSet.of(ScriptID.TOPLEVEL_REDRAW),
+		FORCE_REMAP,
 		Map.of(
 			X, new SetValue(2, 177),
 			Y, new SetValue(2, 20),
@@ -138,9 +141,7 @@ public enum Orbs implements TargetWidget
 		)
 	);
 
-	private final int interfaceId, childId;
-
-	private final Set<Integer> scriptIds;
+	private final int interfaceId, childId, scriptId;
 
 	private final Map<ValueKey, SetValue> positions;
 
