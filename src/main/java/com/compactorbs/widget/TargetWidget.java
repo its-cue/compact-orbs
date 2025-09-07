@@ -27,9 +27,7 @@ package com.compactorbs.widget;
 
 import com.compactorbs.util.SetValue;
 import com.compactorbs.util.ValueKey;
-import com.google.common.collect.ImmutableSet;
 import java.util.Map;
-import java.util.Set;
 
 public interface TargetWidget
 {

@@ -33,7 +33,6 @@ import static com.compactorbs.CompactOrbsManager.WIKI_ICON_UPDATE;
 import com.google.inject.Provides;
 import java.util.Set;
 import javax.inject.Inject;
-import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.WidgetLoaded;
@@ -45,7 +44,6 @@ import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 
-@Slf4j
 @PluginDescriptor(
 	name = "Compact Orbs"
 )
@@ -112,7 +110,7 @@ public class CompactOrbsPlugin extends Plugin
 		{
 			if (event.getKey().equals("hideToggle"))
 			{
-				clientThread.invokeLater(manager::updateToggleButtons);
+				clientThread.invokeLater(manager::updateCustomChildren);
 			}
 		}
 	}

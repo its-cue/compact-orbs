@@ -76,8 +76,8 @@ public class CompactOrbsManager
 
 	private static final int TOP_LEVEL_MINIMAP_CHILD = 33;
 
-	public static final int compassX = 126;
-	public static final int compassY = 18;
+	public static final int COMPASS_X = 126;
+	public static final int COMPASS_Y = 18;
 
 	private Widget mapButton = null;
 	private Widget mapMenu = null;
@@ -109,7 +109,6 @@ public class CompactOrbsManager
 
 	public void build(int scriptId)
 	{
-		//prevent changes if on fixed mode display
 		if (!client.isResized())
 		{
 			return;
@@ -117,16 +116,16 @@ public class CompactOrbsManager
 
 		if (scriptId == FORCE_REMAP)
 		{
-			createToggleButtons();
+			createCustomChildren();
 
 			setHidden(Minimap.values(), isMinimapHidden());
 			setHidden(Compass.values(), (isMinimapHidden() && isCompassHidden()));
 
 			boolean remapCompassCondition = !isCompassHidden() && isMinimapHidden();
-			remap(Compass.ALL, remapCompassCondition, scriptId);
+			remap(Compass.ALL, remapCompassCondition);
 
-			remap(Orbs.ALL, isMinimapHidden(), scriptId);
-			updateToggleButtons();
+			remap(Orbs.ALL, isMinimapHidden());
+			updateCustomChildren();
 		}
 		else
 		{
@@ -138,7 +137,7 @@ public class CompactOrbsManager
 	{
 		resetFixedOrbs = false;
 
-		clearToggleButtons();
+		clearCustomChildren();
 
 		if (isMinimapHidden())
 		{
@@ -190,7 +189,7 @@ public class CompactOrbsManager
 			action.run();
 		}
 
-		updateToggleButtons();
+		updateCustomChildren();
 	}
 
 	void remap(Iterable<? extends TargetWidget> widgets, boolean modify)
@@ -289,68 +288,91 @@ public class CompactOrbsManager
 			if (widget != null)
 			{
 				widget.setHidden(hidden);
+
+				//compass menu options
+				if (widget.getChildren() != null)
+				{
+					for (Widget child : widget.getChildren())
+					{
+						if (child != null)
+						{
+							child.setHidden(hidden);
+						}
+					}
+				}
 			}
 		}
 	}
 
-	private void createToggleButtons()
+	private void createCustomChildren()
 	{
 		Widget parent = getCurrentParent();
 
 		if (parent == null)
 		{
-			clearToggleButtons();
+			clearCustomChildren();
 			lastParentId = -1;
 			return;
 		}
 
 		if (parent.getId() != lastParentId)
 		{
-			clearToggleButtons();
+			clearCustomChildren();
 			lastParentId = parent.getId();
 		}
 
-		createButtons(parent);
-	}
-
-	private void createButtons(Widget parent)
-	{
-		//only create buttons if they're missing from the parent
+		//only create widgets if they're missing from the parent
 		if (missing(compassFrame, parent))
 		{
-			//compass frame when minimap is hidden
+			final int MINIMAP_BUTTON_X = 190;
+			final int MINIMAP_BUTTON_Y = 180;
+			final int COMPASS_BUTTON_X = 156;
+			final int COMPASS_BUTTON_Y = 32;
+			final int BUTTON_SIZE = 17;
+			final int COMPASS_FRAME_SIZE = 43;
+			final int OPACITY_DEFAULT = 0;
+			final int OPACITY_HOVERED = 160;
+			final int OFFSET_X = 4;
+			final int OFFSET_Y = 14;
+
 			compassFrame = createGraphic(
-				parent, compassX - 4, compassY - 14, 43, 43, 0,
-				config.hideToggle(), COMPASS_FRAME_SPRITE_ID
+				parent,
+				COMPASS_X - OFFSET_X, COMPASS_Y - OFFSET_Y,
+				COMPASS_FRAME_SIZE,
+				OPACITY_DEFAULT,
+				config.hideToggle(),
+				COMPASS_FRAME_SPRITE_ID
 			);
 
-			//minimap toggle button sprite
 			mapButton = createGraphic(
-				parent, 190, 180, 17, 17, 160,
-				config.hideToggle(), getSpriteId(isMinimapHidden())
+				parent,
+				MINIMAP_BUTTON_X, MINIMAP_BUTTON_Y,
+				BUTTON_SIZE,
+				OPACITY_HOVERED,
+				config.hideToggle(),
+				getSpriteId(isMinimapHidden())
 			);
-
-			//compass toggle button sprite
-			compassButton = createGraphic(
-				parent, 155, 32, 17, 17, 0,
-				config.hideToggle(), getSpriteId(isCompassHidden())
-			);
-
-			//minimap toggle button menu
 			mapMenu = createMenu(
 				parent,
-				191, 179,
+				MINIMAP_BUTTON_X, MINIMAP_BUTTON_Y,
 				config.hideToggle(),
 				getMenuOption(MINIMAP_CONFIG_KEY),
 				e -> onMinimapToggle(),
-				e -> mapButton.setOpacity(0),
-				e -> mapButton.setOpacity(160)
+				e -> mapButton.setOpacity(OPACITY_DEFAULT),
+				e -> mapButton.setOpacity(OPACITY_HOVERED)
 			);
 
-			//compass toggle button menu
+			compassButton = createGraphic(
+				parent,
+				COMPASS_BUTTON_X, COMPASS_BUTTON_Y,
+				BUTTON_SIZE,
+				OPACITY_DEFAULT,
+				config.hideToggle(),
+				getSpriteId(isCompassHidden())
+			);
 			compassMenu = createMenu(
 				parent,
-				155, 33,
+				COMPASS_BUTTON_X, COMPASS_BUTTON_Y,
 				config.hideToggle(),
 				getMenuOption(COMPASS_CONFIG_KEY),
 				e -> onCompassToggle(),
@@ -360,12 +382,16 @@ public class CompactOrbsManager
 		}
 	}
 
-	public void updateToggleButtons()
+	public void updateCustomChildren()
 	{
+		if (compassFrame != null)
+		{
+			compassFrame.setHidden(!isMinimapHidden() || isCompassHidden());
+		}
+
 		if (mapButton != null)
 		{
 			mapButton.setSpriteId(getSpriteId(!isMinimapHidden()));
-
 			mapButton.setHidden(config.hideToggle());
 
 			if (mapMenu != null)
@@ -377,24 +403,18 @@ public class CompactOrbsManager
 
 		if (compassButton != null)
 		{
-			compassButton.setHidden(config.hideToggle() || !isMinimapHidden());
-
 			compassButton.setSpriteId(getSpriteId(!isCompassHidden()));
+			compassButton.setHidden(config.hideToggle() || !isMinimapHidden());
 
 			if (compassMenu != null)
 			{
-				compassMenu.setHidden(config.hideToggle() || !isMinimapHidden());
 				compassMenu.setAction(0, getMenuOption(COMPASS_CONFIG_KEY));
+				compassMenu.setHidden(config.hideToggle() || !isMinimapHidden());
 			}
-		}
-
-		if (compassFrame != null)
-		{
-			compassFrame.setHidden(!isMinimapHidden() || isCompassHidden());
 		}
 	}
 
-	public void clearToggleButtons()
+	public void clearCustomChildren()
 	{
 		Widget modern = client.getWidget(InterfaceID.TOPLEVEL_PRE_EOC, TOP_LEVEL_MINIMAP_CHILD);
 		if (modern != null)
@@ -479,19 +499,20 @@ public class CompactOrbsManager
 	private Widget createGraphic(
 		Widget parent,
 		int x, int y,
-		int width, int height,
-		int opacity, boolean hidden,
+		int size,
+		int opacity,
+		boolean hidden,
 		int spriteId)
 	{
 		Widget child = parent.createChild(-1, WidgetType.GRAPHIC);
 		child
 			.setOriginalX(x)
 			.setOriginalY(y)
-			.setOriginalWidth(width)
-			.setOriginalHeight(height)
-			.setSpriteId(spriteId)
+			.setOriginalWidth(size)
+			.setOriginalHeight(size)
 			.setOpacity(opacity)
-			.setHidden(hidden);
+			.setHidden(hidden)
+			.setSpriteId(spriteId);
 
 		child.revalidate();
 		return child;

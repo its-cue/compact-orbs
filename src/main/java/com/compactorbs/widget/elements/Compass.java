@@ -25,20 +25,18 @@
 
 package com.compactorbs.widget.elements;
 
-import static com.compactorbs.CompactOrbsManager.compassX;
-import static com.compactorbs.CompactOrbsManager.compassY;
+import static com.compactorbs.CompactOrbsManager.COMPASS_X;
+import static com.compactorbs.CompactOrbsManager.COMPASS_Y;
 import com.compactorbs.util.SetValue;
 import com.compactorbs.util.ValueKey;
 import static com.compactorbs.util.ValueKey.X;
 import static com.compactorbs.util.ValueKey.Y;
 import com.compactorbs.widget.TargetWidget;
-import com.google.common.collect.ImmutableSet;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import net.runelite.api.ScriptID;
 import net.runelite.api.gameval.InterfaceID;
 
 @Getter
@@ -49,15 +47,15 @@ public enum Compass implements TargetWidget
 	CLASSIC_COMPASS(
 		InterfaceID.TOPLEVEL_OSRS_STRETCH, 29,
 		Map.of(
-			X, new SetValue(34, compassX),
-			Y, new SetValue(5, compassY)
+			X, new SetValue(34, COMPASS_X),
+			Y, new SetValue(5, COMPASS_Y)
 		)
 	),
 	CLASSIC_COMPASS_CONTAINER(
 		InterfaceID.TOPLEVEL_OSRS_STRETCH, 31,
 		Map.of(
-			X, new SetValue(32, compassX - 2),
-			Y, new SetValue(3, compassY - 2)
+			X, new SetValue(32, COMPASS_X - 2),
+			Y, new SetValue(3, COMPASS_Y - 2)
 		)
 	),
 
@@ -65,15 +63,15 @@ public enum Compass implements TargetWidget
 	MODERN_COMPASS(
 		InterfaceID.TOPLEVEL_PRE_EOC, 29,
 		Map.of(
-			X, new SetValue(34, compassX),
-			Y, new SetValue(5, compassY)
+			X, new SetValue(34, COMPASS_X),
+			Y, new SetValue(5, COMPASS_Y)
 		)
 	),
 	MODERN_COMPASS_CONTAINER(
 		InterfaceID.TOPLEVEL_PRE_EOC, 31,
 		Map.of(
-			X, new SetValue(32, compassX - 2),
-			Y, new SetValue(3, compassY - 2)
+			X, new SetValue(32, COMPASS_X - 2),
+			Y, new SetValue(3, COMPASS_Y - 2)
 		)
 	);
 
