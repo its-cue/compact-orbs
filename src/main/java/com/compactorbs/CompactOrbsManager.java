@@ -117,9 +117,6 @@ public class CompactOrbsManager
 
 		if (scriptId == FORCE_REMAP)
 		{
-
-			log.debug("force triggered build: {} ", scriptId);
-
 			createToggleButtons();
 
 			setHidden(Minimap.values(), isMinimapHidden());
@@ -133,8 +130,6 @@ public class CompactOrbsManager
 		}
 		else
 		{
-			log.debug("script triggered build: {} ", scriptId);
-
 			remap(Orbs.ALL, isMinimapHidden(), scriptId);
 		}
 	}
