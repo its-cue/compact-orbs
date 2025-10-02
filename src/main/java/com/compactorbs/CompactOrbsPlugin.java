@@ -34,9 +34,13 @@ import com.google.inject.Provides;
 import java.util.Set;
 import javax.inject.Inject;
 import net.runelite.api.Client;
+import net.runelite.api.GameState;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.ScriptPostFired;
+import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -72,6 +76,7 @@ public class CompactOrbsPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
+		clientThread.invoke(() -> manager.isNativelyHidden = client.getVarbitValue(VarbitID.MINIMAP_TOGGLE) == 1);
 		clientThread.invokeLater(() -> manager.init(FORCE_REMAP));
 	}
 
@@ -82,16 +87,36 @@ public class CompactOrbsPlugin extends Plugin
 	}
 
 	@Subscribe
+	public void onGameStateChanged(GameStateChanged event)
+	{
+		if (client.getGameState() == GameState.LOGGED_IN)
+		{
+			manager.createCustomChildren();
+		}
+	}
+
+	@Subscribe
 	public void onScriptPostFired(ScriptPostFired event)
 	{
 		int scriptId = event.getScriptId();
 
-		if (!MINIMAP_UPDATE_SCRIPTS.contains(scriptId))
+		if (!MINIMAP_UPDATE_SCRIPTS.contains(scriptId) || manager.isNativelyHidden)
 		{
 			return;
 		}
 
 		manager.init(scriptId);
+	}
+
+	@Subscribe
+	public void onVarbitChanged(VarbitChanged event)
+	{
+		if(event.getVarbitId() == VarbitID.MINIMAP_TOGGLE)
+		{
+			//hide custom buttons when native minimap hiding is active
+			manager.isNativelyHidden = event.getValue() == 1;
+			manager.updateCustomChildren();
+		}
 	}
 
 	@Subscribe

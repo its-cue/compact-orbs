@@ -60,6 +60,8 @@ public class CompactOrbsManager
 
 	public static final int FORCE_REMAP = -1;
 
+	public boolean isNativelyHidden;
+
 	private boolean resetFixedOrbs = false;
 
 	public static final int ORBS_UPDATE_WORLD_MAP = 1699;
@@ -186,7 +188,7 @@ public class CompactOrbsManager
 		updateCustomChildren();
 	}
 
-	private void createCustomChildren()
+	void createCustomChildren()
 	{
 		Widget parent = widgetManager.getCurrentParent();
 
@@ -268,8 +270,15 @@ public class CompactOrbsManager
 
 	public void updateCustomChildren()
 	{
-		boolean hideFrame = !isMinimapHidden() || isCompassHidden();
-		boolean hideToggle = config.hideToggle();
+		boolean hideFrame = !isMinimapHidden() || isCompassHidden() || isNativelyHidden;
+		boolean hideToggle = config.hideToggle() || isNativelyHidden;
+
+		if(isNativelyHidden)
+		{
+			//ensure the minimap and compass widgets are hidden during native toggle
+			widgetManager.setHidden(Minimap.values(), true);
+			widgetManager.setHidden(Compass.values(), true);
+		}
 
 		if (compassFrame != null)
 		{
