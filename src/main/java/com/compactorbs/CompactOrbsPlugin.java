@@ -45,7 +45,10 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 
 @PluginDescriptor(
-	name = "Compact Orbs"
+	name = "Compact Orbs",
+	description = "Collapse the minimap orbs into a compact view.",
+	tags = {"compact", "orbs", "hide", "minimap", "resizable", "classic", "modern"},
+	conflicts = {"Fixed Resizable Hybrid"}
 )
 public class CompactOrbsPlugin extends Plugin
 {
@@ -69,24 +72,13 @@ public class CompactOrbsPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-		clientThread.invokeLater(() -> manager.build(FORCE_REMAP));
+		clientThread.invokeLater(() -> manager.init(FORCE_REMAP));
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
 		clientThread.invoke(manager::reset);
-	}
-
-	@Subscribe
-	public void onWidgetLoaded(WidgetLoaded event)
-	{
-		if (event.getGroupId() == InterfaceID.ORBS ||
-			event.getGroupId() == InterfaceID.TOPLEVEL_OSRS_STRETCH ||
-			event.getGroupId() == InterfaceID.TOPLEVEL_PRE_EOC)
-		{
-			manager.init(FORCE_REMAP);
-		}
 	}
 
 	@Subscribe
@@ -100,7 +92,17 @@ public class CompactOrbsPlugin extends Plugin
 		}
 
 		manager.init(scriptId);
+	}
 
+	@Subscribe
+	public void onWidgetLoaded(WidgetLoaded event)
+	{
+		if (event.getGroupId() == InterfaceID.ORBS ||
+			event.getGroupId() == InterfaceID.TOPLEVEL_OSRS_STRETCH ||
+			event.getGroupId() == InterfaceID.TOPLEVEL_PRE_EOC)
+		{
+			manager.init(FORCE_REMAP);
+		}
 	}
 
 	@Subscribe

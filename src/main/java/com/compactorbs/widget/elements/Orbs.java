@@ -127,7 +127,7 @@ public enum Orbs implements TargetWidget
 		FORCE_REMAP,
 		Map.of(
 			X, new SetValue(2, 177),
-			Y, new SetValue(2, 20),
+			Y, new SetValue(2, 16),
 			X_POSITION_MODE, new SetValue(2, 0)
 		)
 	),
@@ -136,7 +136,7 @@ public enum Orbs implements TargetWidget
 		FORCE_REMAP,
 		Map.of(
 			X, new SetValue(2, 177),
-			Y, new SetValue(2, 20),
+			Y, new SetValue(2, 16),
 			X_POSITION_MODE, new SetValue(2, 0)
 		)
 	);

@@ -26,11 +26,8 @@
 package com.compactorbs.widget.elements;
 
 import com.compactorbs.widget.TargetWidget;
-import com.google.common.collect.ImmutableSet;
-import java.util.Set;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import net.runelite.api.ScriptID;
 import net.runelite.api.gameval.InterfaceID;
 
 @Getter
