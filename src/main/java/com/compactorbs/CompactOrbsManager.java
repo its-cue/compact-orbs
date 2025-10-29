@@ -31,6 +31,7 @@ import com.compactorbs.widget.elements.Compass;
 import com.compactorbs.widget.elements.Minimap;
 import com.compactorbs.widget.elements.Orbs;
 import java.awt.Color;
+import java.util.List;
 import java.util.function.Supplier;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -69,6 +70,9 @@ public class CompactOrbsManager
 	public static final int ORBS_UPDATE_ACTIVITY_ADVISOR = 2480;
 	public static final int WIKI_ICON_UPDATE = 3305;
 
+	//temp game mode
+	public static final int ORBS_UPDATE_GRID_MASTER = 8222;
+
 	private static final int COMPASS_FRAME_SPRITE_ID = 5813;
 
 	public static final int TOP_LEVEL_MINIMAP_CHILD = 33;
@@ -89,19 +93,20 @@ public class CompactOrbsManager
 
 	public void init(int scriptId)
 	{
+		//revert changes made when in, or switching to, fixed mode
 		if (!client.isResized())
 		{
 			if (!resetFixedOrbs)
 			{
 				//reset only the required orbs when toggling to fixed mode display
-				widgetManager.remapTarget(Orbs.FIXED, false, FORCE_REMAP);
+				widgetManager.remapTargets(Orbs.FIXED, false, FORCE_REMAP);
 				resetFixedOrbs = true;
 			}
 			return;
 		}
+		resetFixedOrbs = false;
 
 		build(scriptId);
-		resetFixedOrbs = false;
 	}
 
 	public void build(int scriptId)
@@ -115,19 +120,16 @@ public class CompactOrbsManager
 		{
 			createCustomChildren();
 
-			widgetManager.setHidden(Minimap.values(), isMinimapHidden());
-			widgetManager.setHidden(Compass.values(), (isMinimapHidden() && isCompassHidden()));
-
-			boolean remapCompassCondition = !isCompassHidden() && isMinimapHidden();
-			widgetManager.remapAll(Compass.ALL, remapCompassCondition);
-
-			widgetManager.remapAll(Orbs.ALL, isMinimapHidden());
+			widgetManager.setTargetsHidden(isMinimapHidden(), Minimap.values());
+			widgetManager.setTargetsHidden((isMinimapHidden() && isCompassHidden()), Compass.values());
+			widgetManager.remapTargets(Compass.ALL, isMinimapHidden(), FORCE_REMAP);
+			widgetManager.remapTargets(Orbs.ALL, isMinimapHidden(), FORCE_REMAP);
 
 			updateCustomChildren();
 		}
 		else
 		{
-			widgetManager.remapTarget(Orbs.ALL, isMinimapHidden(), scriptId);
+			widgetManager.remapTargets(Orbs.ALL, isMinimapHidden(), scriptId);
 		}
 	}
 
@@ -139,29 +141,31 @@ public class CompactOrbsManager
 
 		if (isMinimapHidden())
 		{
-			widgetManager.setHidden(Minimap.values(), false);
+			widgetManager.setTargetsHidden(false, Minimap.values());
 
 			if (isCompassHidden())
 			{
-				widgetManager.setHidden(Compass.values(), false);
+				widgetManager.setTargetsHidden(false, Compass.values());
 			}
 
-			widgetManager.remapAll(Compass.ALL, false);
+			widgetManager.remapTargets(Compass.ALL, false, FORCE_REMAP);
 		}
 
-		widgetManager.remapAll((client.isResized() ? Orbs.ALL : Orbs.FIXED), false);
+		widgetManager.remapTargets((client.isResized() ? Orbs.ALL : Orbs.FIXED), false, FORCE_REMAP);
 	}
 
 	private void onMinimapToggle()
 	{
 		boolean toggle = !isMinimapHidden();
 		boolean remapCondition = toggle && !isCompassHidden();
+		boolean hiddenCondition = toggle && isCompassHidden();
 		executeToggle(
 			config::hideMinimap, MINIMAP_CONFIG_KEY,
-			() -> widgetManager.setHidden(Minimap.values(), toggle),
-			() -> widgetManager.remapAll(Compass.ALL, remapCondition),
-			() -> widgetManager.setHidden(Compass.values(), toggle && isCompassHidden()),
-			() -> widgetManager.remapAll(Orbs.ALL, toggle)
+			() -> widgetManager.setTargetsHidden(toggle, Minimap.values()),
+			() -> widgetManager.remapTargets(Compass.ALL, remapCondition, FORCE_REMAP),
+			() -> widgetManager.setTargetsHidden(hiddenCondition, Compass.values()),
+			() -> widgetManager.remapTargets(Orbs.ALL, toggle, FORCE_REMAP),
+			this::updateCustomChildren
 		);
 	}
 
@@ -171,8 +175,9 @@ public class CompactOrbsManager
 		boolean remapCondition = toggle || isMinimapHidden();
 		executeToggle(
 			config::hideCompass, COMPASS_CONFIG_KEY,
-			() -> widgetManager.remapAll(Compass.ALL, remapCondition),
-			() -> widgetManager.setHidden(Compass.values(), toggle)
+			() -> widgetManager.remapTargets(Compass.ALL, remapCondition, FORCE_REMAP),
+			() -> widgetManager.setTargetsHidden(toggle, Compass.values()),
+			this::updateCustomChildren
 		);
 	}
 
@@ -184,8 +189,6 @@ public class CompactOrbsManager
 		{
 			action.run();
 		}
-
-		updateCustomChildren();
 	}
 
 	void createCustomChildren()
@@ -205,67 +208,70 @@ public class CompactOrbsManager
 			lastParentId = parent.getId();
 		}
 
-		//only create widgets if they're missing from the parent
-		if (widgetManager.missing(compassFrame, parent))
+		//if 1 exists, all --should-- exist
+		if (!widgetManager.isMissing(compassFrame, parent))
 		{
-			final int MINIMAP_BUTTON_X = 190;
-			final int MINIMAP_BUTTON_Y = 180;
-			final int COMPASS_BUTTON_X = 156;
-			final int COMPASS_BUTTON_Y = 32;
-			final int BUTTON_SIZE = 17;
-			final int COMPASS_FRAME_SIZE = 43;
-			final int OPACITY_DEFAULT = 0;
-			final int OPACITY_HOVERED = 160;
-			final int OFFSET_X = 4;
-			final int OFFSET_Y = 14;
-
-			compassFrame = widgetManager.createGraphic(
-				parent,
-				COMPASS_X - OFFSET_X, COMPASS_Y - OFFSET_Y,
-				COMPASS_FRAME_SIZE, COMPASS_FRAME_SIZE,
-				OPACITY_DEFAULT,
-				config.hideToggle(),
-				COMPASS_FRAME_SPRITE_ID
-			);
-
-			mapButton = widgetManager.createGraphic(
-				parent,
-				MINIMAP_BUTTON_X, MINIMAP_BUTTON_Y,
-				BUTTON_SIZE, BUTTON_SIZE,
-				OPACITY_HOVERED,
-				config.hideToggle(),
-				getSpriteId(isMinimapHidden())
-			);
-
-			mapMenu = widgetManager.createMenu(
-				parent,
-				MINIMAP_BUTTON_X, MINIMAP_BUTTON_Y,
-				config.hideToggle(),
-				getMenuOption(MINIMAP_CONFIG_KEY),
-				e -> onMinimapToggle(),
-				e -> mapButton.setOpacity(OPACITY_DEFAULT),
-				e -> mapButton.setOpacity(OPACITY_HOVERED)
-			);
-
-			compassButton = widgetManager.createGraphic(
-				parent,
-				COMPASS_BUTTON_X, COMPASS_BUTTON_Y,
-				BUTTON_SIZE, BUTTON_SIZE,
-				OPACITY_DEFAULT,
-				config.hideToggle(),
-				getSpriteId(isCompassHidden())
-			);
-
-			compassMenu = widgetManager.createMenu(
-				parent,
-				COMPASS_BUTTON_X, COMPASS_BUTTON_Y,
-				config.hideToggle(),
-				getMenuOption(COMPASS_CONFIG_KEY),
-				e -> onCompassToggle(),
-				null,
-				null
-			);
+			return;
 		}
+
+		final int MINIMAP_BUTTON_X = 190;
+		final int MINIMAP_BUTTON_Y = 180;
+		final int COMPASS_BUTTON_X = 156;
+		final int COMPASS_BUTTON_Y = 32;
+		final int BUTTON_SIZE = 17;
+		final int COMPASS_FRAME_SIZE = 43;
+		final int OPACITY_DEFAULT = 0;
+		final int OPACITY_HOVERED = 160;
+		final int OFFSET_X = 4;
+		final int OFFSET_Y = 14;
+
+		compassFrame = widgetManager.createGraphic(
+			parent,
+			COMPASS_X - OFFSET_X, COMPASS_Y - OFFSET_Y,
+			COMPASS_FRAME_SIZE, COMPASS_FRAME_SIZE,
+			OPACITY_DEFAULT,
+			config.hideToggle(),
+			COMPASS_FRAME_SPRITE_ID
+		);
+
+		mapButton = widgetManager.createGraphic(
+			parent,
+			MINIMAP_BUTTON_X, MINIMAP_BUTTON_Y,
+			BUTTON_SIZE, BUTTON_SIZE,
+			OPACITY_DEFAULT,
+			config.hideToggle(),
+			getSpriteId(isMinimapHidden())
+		);
+
+		mapMenu = widgetManager.createMenu(
+			parent,
+			MINIMAP_BUTTON_X, MINIMAP_BUTTON_Y,
+			config.hideToggle(),
+			getMenuOption(MINIMAP_CONFIG_KEY),
+			e -> onMinimapToggle(),
+			e -> mapButton.setOpacity(OPACITY_HOVERED),
+			e -> mapButton.setOpacity(OPACITY_DEFAULT)
+		);
+
+		compassButton = widgetManager.createGraphic(
+			parent,
+			COMPASS_BUTTON_X, COMPASS_BUTTON_Y,
+			BUTTON_SIZE, BUTTON_SIZE,
+			OPACITY_DEFAULT,
+			config.hideToggle(),
+			getSpriteId(isCompassHidden())
+		);
+
+		compassMenu = widgetManager.createMenu(
+			parent,
+			COMPASS_BUTTON_X, COMPASS_BUTTON_Y,
+			config.hideToggle(),
+			getMenuOption(COMPASS_CONFIG_KEY),
+			e -> onCompassToggle(),
+			e -> compassButton.setOpacity(OPACITY_HOVERED),
+			e -> compassButton.setOpacity(OPACITY_DEFAULT)
+		);
+
 	}
 
 	public void updateCustomChildren()
@@ -273,11 +279,10 @@ public class CompactOrbsManager
 		boolean hideFrame = !isMinimapHidden() || isCompassHidden() || isNativelyHidden;
 		boolean hideToggle = config.hideToggle() || isNativelyHidden;
 
-		if(isNativelyHidden)
+		if (isNativelyHidden)
 		{
-			//ensure the minimap and compass widgets are hidden during native toggle
-			widgetManager.setHidden(Minimap.values(), true);
-			widgetManager.setHidden(Compass.values(), true);
+			//put logout button back when switching to native hiding
+			widgetManager.remapTargets(List.of(Orbs.LOGOUT_X_ICON_CONTAINER, Orbs.LOGOUT_X_STONE_CONTAINER), false, FORCE_REMAP);
 		}
 
 		if (compassFrame != null)

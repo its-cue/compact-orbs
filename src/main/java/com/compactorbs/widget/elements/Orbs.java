@@ -27,6 +27,7 @@ package com.compactorbs.widget.elements;
 
 import static com.compactorbs.CompactOrbsManager.FORCE_REMAP;
 import static com.compactorbs.CompactOrbsManager.ORBS_UPDATE_ACTIVITY_ADVISOR;
+import static com.compactorbs.CompactOrbsManager.ORBS_UPDATE_GRID_MASTER;
 import static com.compactorbs.CompactOrbsManager.ORBS_UPDATE_STORE;
 import static com.compactorbs.CompactOrbsManager.ORBS_UPDATE_WORLD_MAP;
 import static com.compactorbs.CompactOrbsManager.WIKI_ICON_UPDATE;
@@ -49,7 +50,7 @@ public enum Orbs implements TargetWidget
 {
 
 	XP_DROPS_CONTAINER(
-		InterfaceID.ORBS, 5,
+		InterfaceID.ORBS, 6, -1,
 		FORCE_REMAP,
 		Map.of(
 			X, new SetValue(0, 112),
@@ -57,7 +58,7 @@ public enum Orbs implements TargetWidget
 		)
 	),
 	HP_ORB_CONTAINER(
-		InterfaceID.ORBS, 6,
+		InterfaceID.ORBS, 7, -1,
 		FORCE_REMAP,
 		Map.of(
 			X, new SetValue(0, 150),
@@ -65,7 +66,7 @@ public enum Orbs implements TargetWidget
 		)
 	),
 	PRAYER_ORB_CONTAINER(
-		InterfaceID.ORBS, 17,
+		InterfaceID.ORBS, 18, -1,
 		FORCE_REMAP,
 		Map.of(
 			X, new SetValue(0, 150),
@@ -73,7 +74,7 @@ public enum Orbs implements TargetWidget
 		)
 	),
 	RUN_ORB_CONTAINER(
-		InterfaceID.ORBS, 25,
+		InterfaceID.ORBS, 26, -1,
 		FORCE_REMAP,
 		Map.of(
 			X, new SetValue(10, 150),
@@ -81,7 +82,7 @@ public enum Orbs implements TargetWidget
 		)
 	),
 	SPEC_ORB_CONTAINER(
-		InterfaceID.ORBS, 33,
+		InterfaceID.ORBS, 34, -1,
 		FORCE_REMAP,
 		Map.of(
 			X, new SetValue(32, 150),
@@ -89,7 +90,7 @@ public enum Orbs implements TargetWidget
 		)
 	),
 	STORE_ORB_CONTAINER(
-		InterfaceID.ORBS, 42,
+		InterfaceID.ORBS, 43, -1,
 		ORBS_UPDATE_STORE,
 		Map.of(
 			X, new SetValue(85, 109),
@@ -97,7 +98,7 @@ public enum Orbs implements TargetWidget
 		)
 	),
 	ACTIVITY_ORB_CONTAINER(
-		InterfaceID.ORBS, 47,
+		InterfaceID.ORBS, 48, -1,
 		ORBS_UPDATE_ACTIVITY_ADVISOR,
 		Map.of(
 			X, new SetValue(55, 109),
@@ -105,7 +106,7 @@ public enum Orbs implements TargetWidget
 		)
 	),
 	WORLD_MAP_CONTAINER(
-		InterfaceID.ORBS, 48,
+		InterfaceID.ORBS, 49, -1,
 		ORBS_UPDATE_WORLD_MAP,
 		Map.of(
 			X, new SetValue(0, 111),
@@ -114,7 +115,7 @@ public enum Orbs implements TargetWidget
 		)
 	),
 	WIKI_CONTAINER(
-		InterfaceID.ORBS, 49,
+		InterfaceID.ORBS, 50, -1,
 		WIKI_ICON_UPDATE,
 		Map.of(
 			X, new SetValue(0, 148),
@@ -123,7 +124,7 @@ public enum Orbs implements TargetWidget
 		)
 	),
 	LOGOUT_X_ICON_CONTAINER(
-		InterfaceID.TOPLEVEL_PRE_EOC, 35,
+		InterfaceID.TOPLEVEL_PRE_EOC, 35, -1,
 		FORCE_REMAP,
 		Map.of(
 			X, new SetValue(2, 177),
@@ -132,16 +133,27 @@ public enum Orbs implements TargetWidget
 		)
 	),
 	LOGOUT_X_STONE_CONTAINER(
-		InterfaceID.TOPLEVEL_PRE_EOC, 34,
+		InterfaceID.TOPLEVEL_PRE_EOC, 34, -1,
 		FORCE_REMAP,
 		Map.of(
 			X, new SetValue(2, 177),
 			Y, new SetValue(2, 16),
 			X_POSITION_MODE, new SetValue(2, 0)
 		)
-	);
+	),
+	//temp game mode
+	GRID_MASTER_CONTAINER(
+		InterfaceID.ORBS, 0, 0,
+		ORBS_UPDATE_GRID_MASTER,
+		Map.of(
+			X, new SetValue(55, 109),
+			Y, new SetValue(162, 139)
+		)
+	)
 
-	private final int interfaceId, childId, scriptId;
+	;
+
+	private final int interfaceId, childId, arrayId, scriptId;
 
 	private final Map<ValueKey, SetValue> positions;
 

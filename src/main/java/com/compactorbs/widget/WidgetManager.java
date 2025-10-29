@@ -29,7 +29,6 @@ import static com.compactorbs.CompactOrbsManager.FORCE_REMAP;
 import static com.compactorbs.CompactOrbsManager.TOP_LEVEL_MINIMAP_CHILD;
 import com.compactorbs.util.SetValue;
 import com.compactorbs.util.ValueKey;
-import java.util.List;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 import javax.inject.Inject;
@@ -47,33 +46,24 @@ public class WidgetManager
 	private Client client;
 
 	private boolean remapping = false;
+	private final Object sync = new Object();
 
-	public void remapAll(Iterable<? extends TargetWidget> widgets, boolean modify)
+	public void remapTargets(Iterable<? extends TargetWidget> widgets, boolean modify, int scriptId)
 	{
-		remapTarget(widgets, modify, FORCE_REMAP);
-	}
-
-	public void remapTarget(Iterable<? extends TargetWidget> widgets, boolean modify, int scriptId)
-	{
-
-		if (remapping)
+		synchronized (sync)
 		{
-			return;
+			if (remapping)
+			{
+				return;
+			}
+			remapping = true;
 		}
-
-		remapping = true;
 
 		try
 		{
 			for (TargetWidget target : widgets)
 			{
 				if (!shouldUpdateWidget(target, scriptId))
-				{
-					continue;
-				}
-
-				Widget widget = getWidget(target);
-				if (widget == null)
 				{
 					continue;
 				}
@@ -90,17 +80,28 @@ public class WidgetManager
 					);
 				}*/
 
-				target.getPositions().forEach((type, value)
-					-> setValue(widget, type, value, modify)
-				);
-
-				widget.revalidate();
+				remapTarget(target, modify);
 			}
 		}
 		finally
 		{
-			remapping = false;
+			synchronized (sync)
+			{
+				remapping = false;
+			}
 		}
+	}
+
+	public void remapTarget(TargetWidget target, boolean modify)
+	{
+		Widget widget = getTargetWidget(target);
+		if (widget == null)
+		{
+			return;
+		}
+
+		target.getPositions().forEach((type, value) -> setValue(widget, type, value, modify));
+		widget.revalidate();
 	}
 
 	private boolean shouldUpdateWidget(TargetWidget target, int scriptId)
@@ -115,7 +116,7 @@ public class WidgetManager
 			return;
 		}
 
-		Integer v = value.get(modify);
+		Integer v = value.get(modify, 0);//TODO
 		if (v == null)
 		{
 			return;
@@ -143,40 +144,52 @@ public class WidgetManager
 		}
 	}
 
-	public void setHidden(TargetWidget[] widgets, boolean hidden)
-	{
-		setHidden(List.of(widgets), hidden);
-	}
-
-	public void setHidden(Iterable<? extends TargetWidget> widgets, boolean hidden)
+	public void setTargetsHidden(boolean hidden, TargetWidget... widgets)
 	{
 		for (TargetWidget target : widgets)
 		{
-			Widget widget = getWidget(target);
-			if (widget != null)
-			{
-				widget.setHidden(hidden);
-				//log.debug("widget : {}.{}, hidden: {}", target.getInterfaceId(), target.getChildId(), hidden);
+			setHidden(target, hidden);
+		}
+	}
 
-				//compass menu options
-				if (widget.getChildren() != null)
+	public void setHidden(TargetWidget target, boolean hidden)
+	{
+		Widget widget = getTargetWidget(target);
+		if (widget == null)
+		{
+			return;
+		}
+
+		if (hidden != widget.isHidden())
+		{
+			widget.setHidden(hidden);
+			//log.debug("widget : {}.{}, hidden: {}.{}",
+			// target.getInterfaceId(), target.getChildId(), widget.isHidden(), hidden);
+
+			//compass menu options
+			if (widget.getChildren() != null)
+			{
+				for (Widget child : widget.getChildren())
 				{
-					for (Widget child : widget.getChildren())
+					if (child != null)
 					{
-						if (child != null)
-						{
-							child.setHidden(hidden);
-							//log.debug("child : {}.{}[{}], hidden: {}", target.getInterfaceId(), target.getChildId(), child.getIndex(), hidden);
-						}
+						child.setHidden(hidden);
+						//log.debug("child : {}.{}[{}], hidden: {}",
+						// target.getInterfaceId(), target.getChildId(), child.getIndex(), hidden);
 					}
 				}
 			}
 		}
 	}
 
-	public Widget getWidget(TargetWidget target)
+	public Widget getTargetWidget(TargetWidget target)
 	{
-		return client.getWidget(target.getInterfaceId(), target.getChildId());
+		Widget widget = client.getWidget(target.getInterfaceId(), target.getChildId());
+		if (widget == null)
+		{
+			return null;
+		}
+		return (target.getArrayId() != -1 ? widget.getChild(target.getArrayId()) : widget);
 	}
 
 	public Widget getCurrentParent()
@@ -201,14 +214,16 @@ public class WidgetManager
 		Widget widget = client.getWidget(interfaceId, childId);
 		if (widget != null)
 		{
-			if (widget.getChild(1) != null)
+			//start at index 1, in case the widget inspector is open?
+			Widget child = widget.getChild(1);
+			if (child != null)
 			{
 				widget.deleteAllChildren();
 			}
 		}
 	}
 
-	public boolean missing(Widget child, Widget parent)
+	public boolean isMissing(Widget child, Widget parent)
 	{
 		return child == null || child.getParentId() != parent.getId();
 	}

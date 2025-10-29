@@ -75,7 +75,7 @@ public enum Compass implements TargetWidget
 		)
 	);
 
-	private final int interfaceId, childId, scriptId = -1;
+	private final int interfaceId, childId, arrayId = -1, scriptId = -1;
 
 	private final Map<ValueKey, SetValue> positions;
 

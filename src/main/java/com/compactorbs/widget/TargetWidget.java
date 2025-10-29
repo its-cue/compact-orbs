@@ -35,6 +35,8 @@ public interface TargetWidget
 
 	int getChildId();
 
+	int getArrayId();
+
 	int getScriptId();
 
 	default Map<ValueKey, SetValue> getPositions()

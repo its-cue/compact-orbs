@@ -30,4 +30,5 @@ public enum ValueKey
 	X,
 	Y,
 	X_POSITION_MODE,
+	Y_POSITION_MODE
 }

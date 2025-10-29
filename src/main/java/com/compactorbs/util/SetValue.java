@@ -31,17 +31,32 @@ import lombok.Getter;
 public class SetValue
 {
 	private final Integer original;
-	private final Integer modified;
+	private final Integer[] modified;
 
-	public SetValue(Integer original, Integer modified)
+	public SetValue(Integer original, Integer... modified)
 	{
 		this.original = original;
 		this.modified = modified;
 	}
 
-	public Integer get(boolean transform)
+	//same function as before, but should allow for multiple 'modified sets' (original, mod_vertical, mod_horizontal, etc) instead of just 1
+	public Integer get(boolean modify, int index)
 	{
-		return original != null ? (transform ? modified : original) : null;
+		if (!modify || original == null)
+		{
+			return original;
+		}
+
+		if (modified != null && modified.length > 0)
+		{
+			if (index >= 0 && index < modified.length && modified[index] != null)
+			{
+				return modified[index];
+			}
+			return modified[0];
+		}
+
+		return original;
 	}
 
 }

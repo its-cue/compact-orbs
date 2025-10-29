@@ -56,7 +56,7 @@ public enum Minimap implements TargetWidget
 	MODERN_MINIMAP_MASK(InterfaceID.TOPLEVEL_PRE_EOC, 30),
 	MODERN_MINIMAP(InterfaceID.TOPLEVEL_PRE_EOC, 32);
 
-	private final int interfaceId, childId, scriptId = -1;
+	private final int interfaceId, childId, arrayId = -1, scriptId = -1;
 
 
 }

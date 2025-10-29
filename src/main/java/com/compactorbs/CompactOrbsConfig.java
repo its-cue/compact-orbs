@@ -25,9 +25,11 @@
 
 package com.compactorbs;
 
+import java.awt.event.KeyEvent;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.Keybind;
 
 @ConfigGroup(CompactOrbsConfig.GROUP_NAME)
 public interface CompactOrbsConfig extends Config
@@ -59,10 +61,22 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = "hideToggle",
 		name = "Hide toggle buttons",
-		description = "Enable or disable the in-game toggle buttons"
+		description = "Enable or disable the in-game toggle buttons via config",
+		position = 0
 	)
 	default boolean hideToggle()
 	{
 		return false;
+	}
+
+	@ConfigItem(
+		keyName = "hotkeyToggle",
+		name = "Hotkey",
+		description = "Enable or disable the in-game toggle buttons via hotkey",
+		position = 1
+	)
+	default Keybind toggleButtonHotkey()
+	{
+		return new Keybind(KeyEvent.VK_INSERT, KeyEvent.SHIFT_DOWN_MASK);
 	}
 }
