@@ -25,14 +25,16 @@
 
 package com.compactorbs;
 
-import static com.compactorbs.CompactOrbsManager.FORCE_REMAP;
-import static com.compactorbs.CompactOrbsManager.ORBS_UPDATE_ACTIVITY_ADVISOR;
-import static com.compactorbs.CompactOrbsManager.ORBS_UPDATE_GRID_MASTER;
-import static com.compactorbs.CompactOrbsManager.ORBS_UPDATE_STORE;
-import static com.compactorbs.CompactOrbsManager.ORBS_UPDATE_WORLD_MAP;
-import static com.compactorbs.CompactOrbsManager.WIKI_ICON_UPDATE;
+import static com.compactorbs.CompactOrbsConstants.GROUP_NAME;
+import com.compactorbs.CompactOrbsConstants.ConfigKeys;
+import com.compactorbs.CompactOrbsConstants.Script;
+import com.compactorbs.CompactOrbsConstants.Varbit;
+import com.compactorbs.CompactOrbsConstants.VarbitValue;
+import com.compactorbs.CompactOrbsConstants.Widget.Classic;
+import com.compactorbs.CompactOrbsConstants.Widget.Modern;
+import com.compactorbs.CompactOrbsConstants.Widget.Orb;
+import com.compactorbs.widget.WidgetManager;
 import com.google.inject.Provides;
-import java.util.Set;
 import javax.inject.Inject;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -40,8 +42,6 @@ import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.WidgetLoaded;
-import net.runelite.api.gameval.InterfaceID;
-import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -77,24 +77,15 @@ public class CompactOrbsPlugin extends Plugin
 	@Inject
 	private KeyManager keyManager;
 
-	private static final Set<Integer> MINIMAP_UPDATE_SCRIPTS =
-		Set.of(
-			ORBS_UPDATE_WORLD_MAP,
-			ORBS_UPDATE_STORE,
-			ORBS_UPDATE_ACTIVITY_ADVISOR,
-			WIKI_ICON_UPDATE,
-			ORBS_UPDATE_GRID_MASTER //temp game mode
-		);
-
 	@Override
 	protected void startUp() throws Exception
 	{
 		keyManager.registerKeyListener(hotkeyListener);
 
-		if(client.getGameState() == GameState.LOGGED_IN)
+		if (client.getGameState() == GameState.LOGGED_IN)
 		{
-			clientThread.invoke(() -> manager.isNativelyHidden = client.getVarbitValue(VarbitID.MINIMAP_TOGGLE) == 1);
-			clientThread.invokeLater(() -> manager.init(FORCE_REMAP));
+			clientThread.invoke(() -> manager.minimapMinimized = (client.getVarbitValue(Varbit.MINIMAP_TOGGLE) == VarbitValue.MINIMAP_MINIMIZED));
+			clientThread.invokeLater(() -> manager.init(Script.FORCE_UPDATE));
 		}
 	}
 
@@ -118,7 +109,7 @@ public class CompactOrbsPlugin extends Plugin
 	{
 		int scriptId = event.getScriptId();
 
-		if (!MINIMAP_UPDATE_SCRIPTS.contains(scriptId) || manager.isNativelyHidden)
+		if (!Script.MINIMAP_UPDATE_SCRIPTS.contains(scriptId) || manager.isMinimized())
 		{
 			return;
 		}
@@ -129,10 +120,12 @@ public class CompactOrbsPlugin extends Plugin
 	@Subscribe
 	public void onVarbitChanged(VarbitChanged event)
 	{
-		if(event.getVarbitId() == VarbitID.MINIMAP_TOGGLE)
+		int id = event.getVarbitId();
+
+		if (id == Varbit.MINIMAP_TOGGLE)
 		{
 			//hide custom buttons when native minimap hiding is active
-			manager.isNativelyHidden = event.getValue() == 1;
+			manager.minimapMinimized = (event.getValue() == VarbitValue.MINIMAP_MINIMIZED);
 			manager.updateCustomChildren();
 		}
 	}
@@ -140,23 +133,28 @@ public class CompactOrbsPlugin extends Plugin
 	@Subscribe
 	public void onWidgetLoaded(WidgetLoaded event)
 	{
-		if (event.getGroupId() == InterfaceID.ORBS ||
-			event.getGroupId() == InterfaceID.TOPLEVEL_OSRS_STRETCH ||
-			event.getGroupId() == InterfaceID.TOPLEVEL_PRE_EOC)
+		int id = event.getGroupId();
+
+		if (id == WidgetManager.getInterfaceId(Orb.UNIVERSE) ||
+			id == WidgetManager.getInterfaceId(Classic.ORBS) ||
+			id == WidgetManager.getInterfaceId(Modern.ORBS))
 		{
-			manager.init(FORCE_REMAP);
+			manager.init(Script.FORCE_UPDATE);
 		}
 	}
 
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
-		if (event.getGroup().equals(CompactOrbsConfig.GROUP_NAME))
+		String group = event.getGroup();
+		String key = event.getKey();
+
+		if (group.equals(GROUP_NAME))
 		{
-			switch (event.getKey())
+			switch (key)
 			{
-				case "hideToggle":
-				case "hotkeyToggle":
+				case ConfigKeys.TOGGLE_BUTTON:
+				case ConfigKeys.HOTKEY_TOGGLE:
 					clientThread.invokeLater(manager::updateCustomChildren);
 					break;
 
@@ -171,7 +169,7 @@ public class CompactOrbsPlugin extends Plugin
 		@Override
 		public void hotkeyPressed()
 		{
-			configManager.setConfiguration(CompactOrbsConfig.GROUP_NAME, "hideToggle", !Boolean.TRUE.equals(config.hideToggle()));
+			configManager.setConfiguration(GROUP_NAME, ConfigKeys.TOGGLE_BUTTON, !Boolean.TRUE.equals(config.hideToggle()));
 		}
 	};
 

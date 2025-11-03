@@ -25,12 +25,11 @@
 
 package com.compactorbs.widget.elements;
 
-import static com.compactorbs.CompactOrbsManager.FORCE_REMAP;
-import static com.compactorbs.CompactOrbsManager.ORBS_UPDATE_ACTIVITY_ADVISOR;
-import static com.compactorbs.CompactOrbsManager.ORBS_UPDATE_GRID_MASTER;
-import static com.compactorbs.CompactOrbsManager.ORBS_UPDATE_STORE;
-import static com.compactorbs.CompactOrbsManager.ORBS_UPDATE_WORLD_MAP;
-import static com.compactorbs.CompactOrbsManager.WIKI_ICON_UPDATE;
+import com.compactorbs.CompactOrbsConstants.Layout.Original;
+import com.compactorbs.CompactOrbsConstants.Layout.Modified;
+import com.compactorbs.CompactOrbsConstants.Script;
+import com.compactorbs.CompactOrbsConstants.Widget.Modern;
+import com.compactorbs.CompactOrbsConstants.Widget.Orb;
 import com.compactorbs.util.SetValue;
 import com.compactorbs.util.ValueKey;
 import static com.compactorbs.util.ValueKey.X;
@@ -42,7 +41,7 @@ import java.util.Map;
 import java.util.Set;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.widgets.WidgetPositionMode;
 
 @Getter
 @RequiredArgsConstructor
@@ -50,114 +49,124 @@ public enum Orbs implements TargetWidget
 {
 
 	XP_DROPS_CONTAINER(
-		InterfaceID.ORBS, 6, -1,
-		FORCE_REMAP,
+		Orb.XP_DROPS,
+		Script.FORCE_UPDATE,
 		Map.of(
-			X, new SetValue(0, 112),
-			Y, new SetValue(17, 44)
+			X, new SetValue(Original.XP_DROPS_X, Modified.XP_DROPS_X),
+			Y, new SetValue(Original.XP_DROPS_Y, Modified.XP_DROPS_Y),
+			X_POSITION_MODE, new SetValue(WidgetPositionMode.ABSOLUTE_LEFT, WidgetPositionMode.ABSOLUTE_RIGHT)
 		)
 	),
 	HP_ORB_CONTAINER(
-		InterfaceID.ORBS, 7, -1,
-		FORCE_REMAP,
+		Orb.HP_ORB,
+		Script.FORCE_UPDATE,
 		Map.of(
-			X, new SetValue(0, 150),
-			Y, new SetValue(37, 42)
+			X, new SetValue(Original.HP_ORB_X, Modified.HP_ORB_X),
+			Y, new SetValue(Original.HP_ORB_Y, Modified.HP_ORB_Y),
+			X_POSITION_MODE, new SetValue(WidgetPositionMode.ABSOLUTE_LEFT, WidgetPositionMode.ABSOLUTE_RIGHT)
 		)
 	),
 	PRAYER_ORB_CONTAINER(
-		InterfaceID.ORBS, 18, -1,
-		FORCE_REMAP,
+		Orb.PRAY_ORB,
+		Script.FORCE_UPDATE,
 		Map.of(
-			X, new SetValue(0, 150),
-			Y, new SetValue(71, 76)
+			X, new SetValue(Original.PRAYER_ORB_X, Modified.PRAYER_ORB_X),
+			Y, new SetValue(Original.PRAYER_ORB_Y, Modified.PRAYER_ORB_Y),
+			X_POSITION_MODE, new SetValue(WidgetPositionMode.ABSOLUTE_LEFT, WidgetPositionMode.ABSOLUTE_RIGHT)
 		)
 	),
 	RUN_ORB_CONTAINER(
-		InterfaceID.ORBS, 26, -1,
-		FORCE_REMAP,
+		Orb.RUN_ORB,
+		Script.FORCE_UPDATE,
 		Map.of(
-			X, new SetValue(10, 150),
-			Y, new SetValue(103, 110)
+			X, new SetValue(Original.RUN_ORB_X, Modified.RUN_ORB_X),
+			Y, new SetValue(Original.RUN_ORB_Y, Modified.RUN_ORB_Y),
+			X_POSITION_MODE, new SetValue(WidgetPositionMode.ABSOLUTE_LEFT, WidgetPositionMode.ABSOLUTE_RIGHT)
 		)
 	),
 	SPEC_ORB_CONTAINER(
-		InterfaceID.ORBS, 34, -1,
-		FORCE_REMAP,
+		Orb.SPEC_ORB,
+		Script.FORCE_UPDATE,
 		Map.of(
-			X, new SetValue(32, 150),
-			Y, new SetValue(128, 144)
+			X, new SetValue(Original.SPEC_ORB_X, Modified.SPEC_ORB_X),
+			Y, new SetValue(Original.SPEC_ORB_Y, Modified.SPEC_ORB_Y),
+			X_POSITION_MODE, new SetValue(WidgetPositionMode.ABSOLUTE_LEFT, WidgetPositionMode.ABSOLUTE_RIGHT)
 		)
 	),
 	STORE_ORB_CONTAINER(
-		InterfaceID.ORBS, 43, -1,
-		ORBS_UPDATE_STORE,
+		Orb.STORE_ORB,
+		Script.STORE_ORB_UPDATE,
 		Map.of(
-			X, new SetValue(85, 109),
-			Y, new SetValue(143, 105)
+			X, new SetValue(Original.STORE_ORB_X, Modified.STORE_ORB_X),
+			Y, new SetValue(Original.STORE_ORB_Y, Modified.STORE_ORB_Y),
+			X_POSITION_MODE, new SetValue(WidgetPositionMode.ABSOLUTE_LEFT, WidgetPositionMode.ABSOLUTE_RIGHT)
 		)
 	),
 	ACTIVITY_ORB_CONTAINER(
-		InterfaceID.ORBS, 48, -1,
-		ORBS_UPDATE_ACTIVITY_ADVISOR,
+		Orb.ACTIVITY_ORB,
+		Script.ACTIVITY_ORB_UPDATE,
 		Map.of(
-			X, new SetValue(55, 109),
-			Y, new SetValue(162, 139)
+			X, new SetValue(Original.ACTIVITY_ORB_X, Modified.ACTIVITY_ORB_X),
+			Y, new SetValue(Original.ACTIVITY_ORB_Y, Modified.ACTIVITY_ORB_Y),
+			X_POSITION_MODE, new SetValue(WidgetPositionMode.ABSOLUTE_LEFT, WidgetPositionMode.ABSOLUTE_RIGHT)
 		)
 	),
 	WORLD_MAP_CONTAINER(
-		InterfaceID.ORBS, 49, -1,
-		ORBS_UPDATE_WORLD_MAP,
+		Orb.WORLD_MAP,
+		Script.WORLD_MAP_UPDATE,
 		Map.of(
-			X, new SetValue(0, 111),
-			Y, new SetValue(115, 72),
-			X_POSITION_MODE, new SetValue(2, 0)
+			X, new SetValue(Original.WORLD_MAP_X, Modified.WORLD_MAP_X),
+			Y, new SetValue(Original.WORLD_MAP_Y, Modified.WORLD_MAP_Y)
 		)
 	),
-	WIKI_CONTAINER(
-		InterfaceID.ORBS, 50, -1,
-		WIKI_ICON_UPDATE,
+	WIKI_ICON_CONTAINER(
+		Orb.WIKI_ICON,
+		Script.WIKI_ICON_UPDATE,
 		Map.of(
-			X, new SetValue(0, 148),
-			Y, new SetValue(135, 172),
-			X_POSITION_MODE, new SetValue(2, 0)
+			X, new SetValue(Original.WIKI_ICON_X, Modified.WIKI_ICON_X),
+			Y, new SetValue(Original.WIKI_ICON_Y, Modified.WIKI_ICON_Y),
+			X_POSITION_MODE, new SetValue(WidgetPositionMode.ABSOLUTE_RIGHT, WidgetPositionMode.ABSOLUTE_RIGHT)
 		)
 	),
-	LOGOUT_X_ICON_CONTAINER(
-		InterfaceID.TOPLEVEL_PRE_EOC, 35, -1,
-		FORCE_REMAP,
+	LOGOUT_X_ICON(
+		Modern.LOGOUT_X_ICON,
+		Script.FORCE_UPDATE,
 		Map.of(
-			X, new SetValue(2, 177),
-			Y, new SetValue(2, 16),
-			X_POSITION_MODE, new SetValue(2, 0)
+			X, new SetValue(Original.LOGOUT_X, Modified.LOGOUT_X),
+			Y, new SetValue(Original.LOGOUT_Y, Modified.LOGOUT_Y)
 		)
 	),
-	LOGOUT_X_STONE_CONTAINER(
-		InterfaceID.TOPLEVEL_PRE_EOC, 34, -1,
-		FORCE_REMAP,
+	LOGOUT_X_STONE(
+		Modern.LOGOUT_X_STONE,
+		Script.FORCE_UPDATE,
 		Map.of(
-			X, new SetValue(2, 177),
-			Y, new SetValue(2, 16),
-			X_POSITION_MODE, new SetValue(2, 0)
+			X, new SetValue(Original.LOGOUT_X, Modified.LOGOUT_X),
+			Y, new SetValue(Original.LOGOUT_Y, Modified.LOGOUT_Y)
 		)
 	),
 	//temp game mode
-	GRID_MASTER_CONTAINER(
-		InterfaceID.ORBS, 0, 0,
-		ORBS_UPDATE_GRID_MASTER,
+	GRID_MASTER_ORB_CONTAINER(
+		Orb.UNIVERSE, 0,
+		Script.GRID_MASTER_ORB_UPDATE,
 		Map.of(
-			X, new SetValue(55, 109),
-			Y, new SetValue(162, 139)
+			X, new SetValue(Original.GRID_MASTER_ORB_X, Modified.GRID_MASTER_ORB_X),
+			Y, new SetValue(Original.GRID_MASTER_ORB_Y, Modified.GRID_MASTER_ORB_Y)
 		)
-	)
+	);
 
-	;
-
-	private final int interfaceId, childId, arrayId, scriptId;
+	private final int componentId, arrayId, scriptId;
 
 	private final Map<ValueKey, SetValue> positions;
 
-	// exclude: store, world_map, activity advisor, logout_x_icon, logout_x_stone, wiki
+	Orbs(int componentId, int scriptId, Map<ValueKey, SetValue> positions)
+	{
+		this.componentId = componentId;
+		this.arrayId = -1;
+		this.scriptId = scriptId;
+		this.positions = positions;
+	}
+
+	//only includes widgets that require updating
 	public static final Set<Orbs> FIXED = EnumSet.of(
 		HP_ORB_CONTAINER,
 		PRAYER_ORB_CONTAINER,

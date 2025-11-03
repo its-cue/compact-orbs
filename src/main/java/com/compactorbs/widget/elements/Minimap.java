@@ -25,38 +25,36 @@
 
 package com.compactorbs.widget.elements;
 
+import com.compactorbs.CompactOrbsConstants.Widget.Classic;
+import com.compactorbs.CompactOrbsConstants.Widget.Modern;
 import com.compactorbs.widget.TargetWidget;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import net.runelite.api.gameval.InterfaceID;
 
 @Getter
 @RequiredArgsConstructor
 public enum Minimap implements TargetWidget
 {
-	//classic_resizable
-	CLASSIC_NO_CLICK_0(InterfaceID.TOPLEVEL_OSRS_STRETCH, 23),
-	CLASSIC_NO_CLICK_1(InterfaceID.TOPLEVEL_OSRS_STRETCH, 24),
-	CLASSIC_NO_CLICK_2(InterfaceID.TOPLEVEL_OSRS_STRETCH, 25),
-	CLASSIC_NO_CLICK_3(InterfaceID.TOPLEVEL_OSRS_STRETCH, 26),
-	CLASSIC_NO_CLICK_4(InterfaceID.TOPLEVEL_OSRS_STRETCH, 27),
-	CLASSIC_NO_CLICK_5(InterfaceID.TOPLEVEL_OSRS_STRETCH, 28),
+	//classic-resizable
+	CLASSIC_NO_CLICK_0(Classic.MAP_NOCLICK_0),
+	CLASSIC_NO_CLICK_1(Classic.MAP_NOCLICK_1),
+	CLASSIC_NO_CLICK_2(Classic.MAP_NOCLICK_2),
+	CLASSIC_NO_CLICK_3(Classic.MAP_NOCLICK_3),
+	CLASSIC_NO_CLICK_4(Classic.MAP_NOCLICK_4),
+	CLASSIC_NO_CLICK_5(Classic.MAP_NOCLICK_5),
+	CLASSIC_MINIMAP_MASK(Classic.MINIMAP_MASK),
+	CLASSIC_MINIMAP(Classic.MINIMAP),
 
-	CLASSIC_MINIMAP_MASK(InterfaceID.TOPLEVEL_OSRS_STRETCH, 30),
-	CLASSIC_MINIMAP(InterfaceID.TOPLEVEL_OSRS_STRETCH, 32),
+	//modern-resizable
+	MODERN_NO_CLICK_0(Modern.MAP_NOCLICK_0),
+	MODERN_NO_CLICK_1(Modern.MAP_NOCLICK_1),
+	MODERN_NO_CLICK_2(Modern.MAP_NOCLICK_2),
+	MODERN_NO_CLICK_3(Modern.MAP_NOCLICK_3),
+	MODERN_NO_CLICK_4(Modern.MAP_NOCLICK_4),
+	MODERN_NO_CLICK_5(Modern.MAP_NOCLICK_5),
+	MODERN_MINIMAP_MASK(Modern.MINIMAP_MASK),
+	MODERN_MINIMAP(Modern.MINIMAP);
 
-	//modern resizable
-	MODERN_NO_CLICK_0(InterfaceID.TOPLEVEL_PRE_EOC, 23),
-	MODERN_NO_CLICK_1(InterfaceID.TOPLEVEL_PRE_EOC, 24),
-	MODERN_NO_CLICK_2(InterfaceID.TOPLEVEL_PRE_EOC, 25),
-	MODERN_NO_CLICK_3(InterfaceID.TOPLEVEL_PRE_EOC, 26),
-	MODERN_NO_CLICK_4(InterfaceID.TOPLEVEL_PRE_EOC, 27),
-	MODERN_NO_CLICK_5(InterfaceID.TOPLEVEL_PRE_EOC, 28),
-
-	MODERN_MINIMAP_MASK(InterfaceID.TOPLEVEL_PRE_EOC, 30),
-	MODERN_MINIMAP(InterfaceID.TOPLEVEL_PRE_EOC, 32);
-
-	private final int interfaceId, childId, arrayId = -1, scriptId = -1;
-
+	private final int componentId;
 
 }

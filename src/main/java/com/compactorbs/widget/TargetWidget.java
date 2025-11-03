@@ -31,13 +31,17 @@ import java.util.Map;
 
 public interface TargetWidget
 {
-	int getInterfaceId();
+	int getComponentId();
 
-	int getChildId();
+	default int getArrayId()
+	{
+		return -1;
+	}
 
-	int getArrayId();
-
-	int getScriptId();
+	default int getScriptId()
+	{
+		return -1;
+	}
 
 	default Map<ValueKey, SetValue> getPositions()
 	{

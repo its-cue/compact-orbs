@@ -25,19 +25,19 @@
 
 package com.compactorbs;
 
+import static com.compactorbs.CompactOrbsConstants.GROUP_NAME;
+import com.compactorbs.CompactOrbsConstants.ConfigKeys;
 import java.awt.event.KeyEvent;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.Keybind;
 
-@ConfigGroup(CompactOrbsConfig.GROUP_NAME)
+@ConfigGroup(GROUP_NAME)
 public interface CompactOrbsConfig extends Config
 {
-	String GROUP_NAME = "compactorbs";
-
 	@ConfigItem(
-		keyName = "hideMinimap",
+		keyName = ConfigKeys.MINIMAP,
 		name = "Hide minimap",
 		description = "Enable the ability to collapse the minimap, and reposition the orbs",
 		hidden = true
@@ -48,7 +48,7 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "hideCompass",
+		keyName = ConfigKeys.COMPASS,
 		name = "Hide compass",
 		description = "Enable the ability to hide the compass, only when the minimap is hidden",
 		hidden = true
@@ -59,7 +59,7 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "hideToggle",
+		keyName = ConfigKeys.TOGGLE_BUTTON,
 		name = "Hide toggle buttons",
 		description = "Enable or disable the in-game toggle buttons via config",
 		position = 0
@@ -70,7 +70,7 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "hotkeyToggle",
+		keyName = ConfigKeys.HOTKEY_TOGGLE,
 		name = "Hotkey",
 		description = "Enable or disable the in-game toggle buttons via hotkey",
 		position = 1

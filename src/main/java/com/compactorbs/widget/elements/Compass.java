@@ -25,8 +25,11 @@
 
 package com.compactorbs.widget.elements;
 
-import static com.compactorbs.CompactOrbsManager.COMPASS_X;
-import static com.compactorbs.CompactOrbsManager.COMPASS_Y;
+import com.compactorbs.CompactOrbsConstants.Layout;
+import com.compactorbs.CompactOrbsConstants.Layout.Original;
+import com.compactorbs.CompactOrbsConstants.Layout.Modified;
+import com.compactorbs.CompactOrbsConstants.Widget.Classic;
+import com.compactorbs.CompactOrbsConstants.Widget.Modern;
 import com.compactorbs.util.SetValue;
 import com.compactorbs.util.ValueKey;
 import static com.compactorbs.util.ValueKey.X;
@@ -37,45 +40,42 @@ import java.util.Map;
 import java.util.Set;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import net.runelite.api.gameval.InterfaceID;
 
 @Getter
 @RequiredArgsConstructor
 public enum Compass implements TargetWidget
 {
-	//classic resizable
 	CLASSIC_COMPASS(
-		InterfaceID.TOPLEVEL_OSRS_STRETCH, 29,
+		Classic.COMPASS,
 		Map.of(
-			X, new SetValue(34, COMPASS_X),
-			Y, new SetValue(5, COMPASS_Y)
+			X, new SetValue(Original.COMPASS_X, Modified.COMPASS_X),
+			Y, new SetValue(Original.COMPASS_Y, Modified.COMPASS_Y)
 		)
 	),
-	CLASSIC_COMPASS_CONTAINER(
-		InterfaceID.TOPLEVEL_OSRS_STRETCH, 31,
+	CLASSIC_COMPASS_OPTIONS(
+		Classic.COMPASS_OPTIONS,
 		Map.of(
-			X, new SetValue(32, COMPASS_X - 2),
-			Y, new SetValue(3, COMPASS_Y - 2)
+			X, new SetValue(Original.COMPASS_X - Layout.COMPASS_MENU_OFFSET, Modified.COMPASS_X - Layout.COMPASS_MENU_OFFSET),
+			Y, new SetValue(Original.COMPASS_Y - Layout.COMPASS_MENU_OFFSET, Modified.COMPASS_Y - Layout.COMPASS_MENU_OFFSET)
 		)
 	),
 
-	//modern resizable
 	MODERN_COMPASS(
-		InterfaceID.TOPLEVEL_PRE_EOC, 29,
+		Modern.COMPASS,
 		Map.of(
-			X, new SetValue(34, COMPASS_X),
-			Y, new SetValue(5, COMPASS_Y)
+			X, new SetValue(Original.COMPASS_X, Modified.COMPASS_X),
+			Y, new SetValue(Original.COMPASS_Y, Modified.COMPASS_Y)
 		)
 	),
-	MODERN_COMPASS_CONTAINER(
-		InterfaceID.TOPLEVEL_PRE_EOC, 31,
+	MODERN_COMPASS_OPTIONS(
+		Modern.COMPASS_OPTIONS,
 		Map.of(
-			X, new SetValue(32, COMPASS_X - 2),
-			Y, new SetValue(3, COMPASS_Y - 2)
+			X, new SetValue(Original.COMPASS_X - Layout.COMPASS_MENU_OFFSET, Modified.COMPASS_X - Layout.COMPASS_MENU_OFFSET),
+			Y, new SetValue(Original.COMPASS_Y - Layout.COMPASS_MENU_OFFSET, Modified.COMPASS_Y - Layout.COMPASS_MENU_OFFSET)
 		)
 	);
 
-	private final int interfaceId, childId, arrayId = -1, scriptId = -1;
+	private final int componentId;
 
 	private final Map<ValueKey, SetValue> positions;
 

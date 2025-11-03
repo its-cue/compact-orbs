@@ -25,8 +25,9 @@
 
 package com.compactorbs.widget;
 
-import static com.compactorbs.CompactOrbsManager.FORCE_REMAP;
-import static com.compactorbs.CompactOrbsManager.TOP_LEVEL_MINIMAP_CHILD;
+import com.compactorbs.CompactOrbsConstants.Script;
+import com.compactorbs.CompactOrbsConstants.Widget.Classic;
+import com.compactorbs.CompactOrbsConstants.Widget.Modern;
 import com.compactorbs.util.SetValue;
 import com.compactorbs.util.ValueKey;
 import java.util.function.IntConsumer;
@@ -34,7 +35,6 @@ import java.util.function.IntSupplier;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
-import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetType;
@@ -63,19 +63,19 @@ public class WidgetManager
 		{
 			for (TargetWidget target : widgets)
 			{
-				if (!shouldUpdateWidget(target, scriptId))
+				if (!shouldUpdateTarget(target, scriptId))
 				{
 					continue;
 				}
 
-				/*if (scriptId != FORCE_REMAP)
+				/*if (scriptId != Script.FORCE_UPDATE)
 				{
 					log.debug("remap : {} - [{}.{}]: {}.{}, script: {}",
 						modify,
 						((Enum<?>) target).getDeclaringClass().getSimpleName(),
 						target,
-						target.getInterfaceId(),
-						target.getChildId(),
+						getInterfaceId(target.getComponentId()),
+						getChildId(target.getComponentId()),
 						scriptId
 					);
 				}*/
@@ -104,11 +104,6 @@ public class WidgetManager
 		widget.revalidate();
 	}
 
-	private boolean shouldUpdateWidget(TargetWidget target, int scriptId)
-	{
-		return (scriptId == FORCE_REMAP) || target.getScriptId() == scriptId;
-	}
-
 	private void setValue(Widget widget, ValueKey type, SetValue value, boolean modify)
 	{
 		if (value == null)
@@ -116,7 +111,8 @@ public class WidgetManager
 			return;
 		}
 
-		Integer v = value.get(modify, 0);//TODO
+		//TODO : @index config based layout selection where: v = 0, h = 1?
+		Integer v = value.get(modify, 0);
 		if (v == null)
 		{
 			return;
@@ -132,6 +128,9 @@ public class WidgetManager
 				break;
 			case X_POSITION_MODE:
 				updateValue(widget::getXPositionMode, widget::setXPositionMode, v);
+				break;
+			case Y_POSITION_MODE:
+				//updateValue(widget::getYPositionMode, widget::setYPositionMode, v);
 				break;
 		}
 	}
@@ -164,7 +163,7 @@ public class WidgetManager
 		{
 			widget.setHidden(hidden);
 			//log.debug("widget : {}.{}, hidden: {}.{}",
-			// target.getInterfaceId(), target.getChildId(), widget.isHidden(), hidden);
+			//	getInterfaceId(target.getComponentId()), getChildId(target.getComponentId()), widget.isHidden(), hidden);
 
 			//compass menu options
 			if (widget.getChildren() != null)
@@ -175,7 +174,7 @@ public class WidgetManager
 					{
 						child.setHidden(hidden);
 						//log.debug("child : {}.{}[{}], hidden: {}",
-						// target.getInterfaceId(), target.getChildId(), child.getIndex(), hidden);
+						//	getInterfaceId(target.getComponentId()), getChildId(target.getComponentId()), child.getIndex(), hidden);
 					}
 				}
 			}
@@ -184,38 +183,41 @@ public class WidgetManager
 
 	public Widget getTargetWidget(TargetWidget target)
 	{
-		Widget widget = client.getWidget(target.getInterfaceId(), target.getChildId());
+		Widget widget = client.getWidget(getInterfaceId(target.getComponentId()), getChildId(target.getComponentId()));
 		if (widget == null)
 		{
 			return null;
 		}
-		return (target.getArrayId() != -1 ? widget.getChild(target.getArrayId()) : widget);
+		if(target.getArrayId() == -1)
+		{
+			return widget;
+		}
+		return widget.getChild(target.getArrayId());
 	}
 
 	public Widget getCurrentParent()
 	{
-		Widget modern = client.getWidget(InterfaceID.TOPLEVEL_PRE_EOC, TOP_LEVEL_MINIMAP_CHILD);
-		if (modern != null && !modern.isHidden())
+		Widget parent = getParent(Modern.ORBS);
+		if (parent != null && !parent.isHidden())
 		{
-			return modern;
+			return parent;
 		}
 
-		Widget classic = client.getWidget(InterfaceID.TOPLEVEL_OSRS_STRETCH, TOP_LEVEL_MINIMAP_CHILD);
-		if (classic != null && !classic.isHidden())
-		{
-			return classic;
-		}
-
-		return null;
+		return getParent(Classic.ORBS);
 	}
 
-	public void clearChildren(int interfaceId, int childId)
+	private Widget getParent(int componentId)
 	{
-		Widget widget = client.getWidget(interfaceId, childId);
+		Widget parent = client.getWidget(getInterfaceId(componentId), getChildId(componentId));
+		return (parent != null && !parent.isHidden()) ? parent : null;
+	}
+
+	public void clearChildren(int componentId)
+	{
+		Widget widget = client.getWidget(getInterfaceId(componentId), getChildId(componentId));
 		if (widget != null)
 		{
-			//start at index 1, in case the widget inspector is open?
-			Widget child = widget.getChild(1);
+			Widget child = widget.getChild(0);
 			if (child != null)
 			{
 				widget.deleteAllChildren();
@@ -223,9 +225,24 @@ public class WidgetManager
 		}
 	}
 
+	private boolean shouldUpdateTarget(TargetWidget target, int scriptId)
+	{
+		return (scriptId == Script.FORCE_UPDATE) || target.getScriptId() == scriptId;
+	}
+
 	public boolean isMissing(Widget child, Widget parent)
 	{
 		return child == null || child.getParentId() != parent.getId();
+	}
+
+	public static int getInterfaceId(int componentId)
+	{
+		return componentId >> 16;
+	}
+
+	public static int getChildId(int componentId)
+	{
+		return componentId & 0xff;
 	}
 
 	public Widget createGraphic(
@@ -233,57 +250,53 @@ public class WidgetManager
 		int x, int y,
 		int width, int height,
 		int opacity,
-		boolean hidden,
 		int spriteId)
 	{
-		Widget child = parent.createChild(-1, WidgetType.GRAPHIC);
-		child
+		Widget graphic = parent.createChild(-1, WidgetType.GRAPHIC);
+		graphic
 			.setOriginalX(x)
 			.setOriginalY(y)
 			.setOriginalWidth(width)
 			.setOriginalHeight(height)
 			.setOpacity(opacity)
-			.setHidden(hidden)
-			.setSpriteId(spriteId)
-			.revalidate();
+			.setHidden(false)
+			.setSpriteId(spriteId);
 
-		return child;
+		return graphic;
 	}
 
-	public Widget createMenu(
+	public Widget createToggleButton(
 		Widget parent,
 		int x, int y,
-		boolean hidden,
+		int width, int height,
+		int opacity,
+		int spriteId,
 		String menuOp,
 		JavaScriptCallback opListener,
 		JavaScriptCallback mouseOver,
 		JavaScriptCallback mouseLeave)
 	{
-		Widget child = parent.createChild(-1, WidgetType.GRAPHIC);
-		child
-			.setOriginalX(x)
-			.setOriginalY(y)
-			.setOriginalWidth(16)
-			.setOriginalHeight(16)
-			.setHasListener(true)
-			.setHidden(hidden)
-			.setAction(0, menuOp);
+		Widget button = createGraphic(parent, x, y, width, height, opacity, spriteId);
+		button.setHasListener(true);
+		button.setNoClickThrough(true);
 
-		child.setNoClickThrough(true);
+		if (menuOp != null)
+		{
+			button.setAction(0, menuOp);
+		}
 		if (opListener != null)
 		{
-			child.setOnOpListener(opListener);
+			button.setOnOpListener(opListener);
 		}
 		if (mouseOver != null)
 		{
-			child.setOnMouseOverListener(mouseOver);
+			button.setOnMouseOverListener(mouseOver);
 		}
 		if (mouseLeave != null)
 		{
-			child.setOnMouseLeaveListener(mouseLeave);
+			button.setOnMouseLeaveListener(mouseLeave);
 		}
-		child.revalidate();
 
-		return child;
+		return button;
 	}
 }
