@@ -92,6 +92,8 @@ public class CompactOrbsPlugin extends Plugin
 	@Override
 	protected void shutDown() throws Exception
 	{
+		keyManager.unregisterKeyListener(hotkeyListener);
+
 		clientThread.invoke(manager::reset);
 	}
 
