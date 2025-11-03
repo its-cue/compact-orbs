@@ -244,6 +244,7 @@ public class CompactOrbsManager
 		if (compassFrame != null)
 		{
 			compassFrame.setHidden(hideFrame);
+			compassFrame.revalidate();
 		}
 
 		if (minimapButton != null)
@@ -251,6 +252,7 @@ public class CompactOrbsManager
 			minimapButton.setSpriteId(getSpriteId(!isMinimapHidden()));
 			minimapButton.setHidden(hideToggle);
 			minimapButton.setAction(0, getMenuOption(ConfigKeys.MINIMAP));
+			minimapButton.revalidate();
 		}
 
 		if (compassButton != null)
@@ -258,6 +260,7 @@ public class CompactOrbsManager
 			compassButton.setSpriteId(getSpriteId(!isCompassHidden()));
 			compassButton.setHidden(hideToggle || !isMinimapHidden());
 			compassButton.setAction(0, getMenuOption(ConfigKeys.COMPASS));
+			compassButton.revalidate();
 		}
 	}
 

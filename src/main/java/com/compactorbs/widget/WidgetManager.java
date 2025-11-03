@@ -188,7 +188,7 @@ public class WidgetManager
 		{
 			return null;
 		}
-		if(target.getArrayId() == -1)
+		if (target.getArrayId() == -1)
 		{
 			return widget;
 		}
