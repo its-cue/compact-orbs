@@ -27,9 +27,10 @@ package com.compactorbs.widget.elements;
 
 import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsConstants.Layout.Original;
-import com.compactorbs.CompactOrbsConstants.Layout.Modified;
-import com.compactorbs.CompactOrbsConstants.Widget.Classic;
-import com.compactorbs.CompactOrbsConstants.Widget.Modern;
+import com.compactorbs.CompactOrbsConstants.Layout.Vertical;
+import com.compactorbs.CompactOrbsConstants.Layout.Horizontal;
+import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
+import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
 import com.compactorbs.util.SetValue;
 import com.compactorbs.util.ValueKey;
 import static com.compactorbs.util.ValueKey.X;
@@ -48,30 +49,62 @@ public enum Compass implements TargetWidget
 	CLASSIC_COMPASS(
 		Classic.COMPASS,
 		Map.of(
-			X, new SetValue(Original.COMPASS_X, Modified.COMPASS_X),
-			Y, new SetValue(Original.COMPASS_Y, Modified.COMPASS_Y)
+			X, new SetValue(
+				Original.COMPASS_X,
+				Vertical.COMPASS_X,
+				Horizontal.COMPASS_X
+			),
+			Y, new SetValue(
+				Original.COMPASS_Y,
+				Vertical.COMPASS_Y,
+				Horizontal.COMPASS_Y
+			)
 		)
 	),
 	CLASSIC_COMPASS_OPTIONS(
 		Classic.COMPASS_OPTIONS,
 		Map.of(
-			X, new SetValue(Original.COMPASS_X - Layout.COMPASS_MENU_OFFSET, Modified.COMPASS_X - Layout.COMPASS_MENU_OFFSET),
-			Y, new SetValue(Original.COMPASS_Y - Layout.COMPASS_MENU_OFFSET, Modified.COMPASS_Y - Layout.COMPASS_MENU_OFFSET)
+			X, new SetValue(
+				Original.COMPASS_X - Layout.COMPASS_OPTIONS_OFFSET,
+				Vertical.COMPASS_X - Layout.COMPASS_OPTIONS_OFFSET,
+				Horizontal.COMPASS_X - Layout.COMPASS_OPTIONS_OFFSET
+			),
+			Y, new SetValue(
+				Original.COMPASS_Y - Layout.COMPASS_OPTIONS_OFFSET,
+				Vertical.COMPASS_Y - Layout.COMPASS_OPTIONS_OFFSET,
+				Horizontal.COMPASS_Y - Layout.COMPASS_OPTIONS_OFFSET
+			)
 		)
 	),
 
 	MODERN_COMPASS(
 		Modern.COMPASS,
 		Map.of(
-			X, new SetValue(Original.COMPASS_X, Modified.COMPASS_X),
-			Y, new SetValue(Original.COMPASS_Y, Modified.COMPASS_Y)
+			X, new SetValue(
+				Original.COMPASS_X,
+				Vertical.COMPASS_X,
+				Horizontal.COMPASS_X
+			),
+			Y, new SetValue(
+				Original.COMPASS_Y,
+				Vertical.COMPASS_Y,
+				Horizontal.COMPASS_Y
+			)
 		)
 	),
 	MODERN_COMPASS_OPTIONS(
 		Modern.COMPASS_OPTIONS,
 		Map.of(
-			X, new SetValue(Original.COMPASS_X - Layout.COMPASS_MENU_OFFSET, Modified.COMPASS_X - Layout.COMPASS_MENU_OFFSET),
-			Y, new SetValue(Original.COMPASS_Y - Layout.COMPASS_MENU_OFFSET, Modified.COMPASS_Y - Layout.COMPASS_MENU_OFFSET)
+			X, new SetValue(
+				Original.COMPASS_X - Layout.COMPASS_OPTIONS_OFFSET,
+				Vertical.COMPASS_X - Layout.COMPASS_OPTIONS_OFFSET,
+				Horizontal.COMPASS_X - Layout.COMPASS_OPTIONS_OFFSET
+			),
+			Y, new SetValue(
+				Original.COMPASS_Y - Layout.COMPASS_OPTIONS_OFFSET,
+				Vertical.COMPASS_Y - Layout.COMPASS_OPTIONS_OFFSET,
+				Horizontal.COMPASS_Y - Layout.COMPASS_OPTIONS_OFFSET
+			)
 		)
 	);
 

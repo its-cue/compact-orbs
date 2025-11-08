@@ -1,14 +1,18 @@
 # Compact Orbs
 
-![preview](https://imgur.com/rOliKl2.png)
+![preview](https://imgur.com/rOliKl2.png)  
+
+![preview](https://i.imgur.com/bmufBWG.png)
+
 
 
 ---
 
-### Emulate the mobile client's minimap collapsing feature, positioning the orbs to the right-most side of the window in a compact layout. 
+### Emulate the mobile clients minimap collapsing feature, positioning the orbs into a compact layout based on config settings. 
+- Choose from a `vertical` or `horizontal` layout preset, with the added ability for positioning `left`, `right`, `top` or `bottom` of the minimap container
+- Control the visibility of any minimap orb (wiki banner, world map & xp included)
 
-
-- *(Note: Only supports `resizable-classic` and `resizable-modern` display modes!)*
+*(Note: Layouts are only supported in `resizable-classic` and `resizable-modern` display modes! Orb hiding works in all display modes)*
 
 ---
 
@@ -17,9 +21,15 @@
   
 ---
 
-**Reposition the ``orbs`` to the right-most side of the window into a compact layout.**
+**Reposition the ``orbs`` into a compact layout based on config settings. (with improved customization options)**
 
-- *(Tip: With RuneLite's native feature, holding ``alt`` will allow you to move the ``orbs`` container!)*
+-`vertical` or `horizontal` switches between the different layout presets, by default: [`vertical`, `right`]
+
+--`horizontal position`: Top, Bottom
+
+--`Vertical position`: Left, Right
+
+- *(Tip: With RuneLites native feature, holding ``alt`` will allow you to move the ``orbs`` container!)*
 
 **Interactive toggle buttons:**
 
@@ -27,7 +37,13 @@
 
 - ``Compass`` can be toggled, but *only* during compact layout. *(Will revert when minimap becomes visible)*
 
-- Toggle buttons can be hidden via the config if they're too distracting. *(Save layout how you want, then disable the buttons!)*
+- More control over the toggle button visibility from the config settings, or via hotkey: `shift + insert` by default
+
+**Hide or Show any Orb:**
+
+- Can now control the visibility of any minimap orb (if enabled via in-game settings)
+- Logout tab is still accessible in `modern-resizable` via hotkey if `logout x` is hidden
+- World map hotkey will retain the `Ctrl + M` hotkey (if enabled via in-game settings) if `world map` is hidden
 
 </details>
 
@@ -39,20 +55,15 @@
 
 ---
 
-![search param](https://i.imgur.com/JtS22a3.png)
+Config side panel should handle all the customization options you'd need! However, there are some exceptions for certain things:
 
----
+In order to hide or show certain orbs, you have to make sure they are enabled via the in-game settings.
 
-### **The in-game setting can hide orbs!**
+The affected orbs are; `wiki` `store` `activity`
 
+In-game setting examples:
 
-- ``hp`` ``prayer`` ``run`` ``spec`` ``map`` ``wiki`` ``xp-drops``
-
-![show orbs](https://i.imgur.com/c0wI3t8.png)
-
----
-
-* ``store``
+-``store``
 
 ![show store](https://imgur.com/8kLOyFC.png)
 
@@ -60,21 +71,12 @@
 
 - ``activity``
 
- ![show activity](https://imgur.com/FeMTGEL.png)
+![show activity](https://imgur.com/FeMTGEL.png)
+
+- and `wiki` is the same - however, the Wiki-plugin may cause issues initially, it is handled!
+
 
 --- 
-
-Rest is up to your liking!
-
-Want to completely hide your minimap, aside from the compass?
-Go ahead!
-
-1. Disable ``orbs`` from the in-game settings menu, including ``store`` and ``activity``.
-2. Hide ``minimap`` via the toggle button.
-3. In the plugin config, check ``Hide toggle buttons``.
-4. And only the ``compass`` should show! *(Note: Logout ``X`` as well if you're on ``resizable-modern``)*
-
-You could also, while the toggle buttons are still visible - hide the ``compass`` which will result in a fully hidden minimap!
 
 </details>
 
@@ -92,13 +94,9 @@ You could also, while the toggle buttons are still visible - hide the ``compass`
 
 ![gallery](https://imgur.com/78NSzbN.png)
 
-## **Possible Layouts**
+## **Default**
 
-![gallery](https://imgur.com/7vL0VOf.png)  ![gallery](https://imgur.com/KcOiwzE.png)
-
-![gallery](https://imgur.com/vaVdd3A.png) ![gallery](https://imgur.com/jVKhDyQ.png)
-
-![gallery](https://imgur.com/6ODQl8w.png) ![gallery](https://imgur.com/ACi3KwW.png)
+Can now fine tune the layout presets to your liking!
 
 </details>
 

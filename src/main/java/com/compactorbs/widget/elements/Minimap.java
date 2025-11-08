@@ -25,8 +25,8 @@
 
 package com.compactorbs.widget.elements;
 
-import com.compactorbs.CompactOrbsConstants.Widget.Classic;
-import com.compactorbs.CompactOrbsConstants.Widget.Modern;
+import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
+import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
 import com.compactorbs.widget.TargetWidget;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

@@ -25,17 +25,19 @@
 
 package com.compactorbs;
 
-import static com.compactorbs.CompactOrbsConstants.GROUP_NAME;
+import static com.compactorbs.CompactOrbsConstants.ConfigGroup.GROUP_NAME;
 import com.compactorbs.CompactOrbsConstants.ConfigKeys;
 import com.compactorbs.CompactOrbsConstants.Script;
 import com.compactorbs.CompactOrbsConstants.Varbit;
 import com.compactorbs.CompactOrbsConstants.VarbitValue;
-import com.compactorbs.CompactOrbsConstants.Widget.Classic;
-import com.compactorbs.CompactOrbsConstants.Widget.Modern;
-import com.compactorbs.CompactOrbsConstants.Widget.Orb;
+import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
+import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
+import com.compactorbs.CompactOrbsConstants.Widgets.Orb;
 import com.compactorbs.widget.WidgetManager;
+import com.compactorbs.widget.elements.Orbs;
 import com.google.inject.Provides;
 import javax.inject.Inject;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.events.GameStateChanged;
@@ -51,11 +53,12 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.util.HotkeyListener;
 
+@Slf4j
 @PluginDescriptor(
 	name = "Compact Orbs",
 	description = "Collapse the minimap orbs into a compact view.",
-	tags = {"compact", "orbs", "hide", "minimap", "resizable", "classic", "modern"},
-	conflicts = {"Fixed Resizable Hybrid"}
+	tags = {"compact", "orbs", "hide", "minimap", "resizable", "classic", "modern", "world", "map", "wiki"},
+	conflicts = {"Fixed Resizable Hybrid", "Orb Hider", "Minimap Hider"}
 )
 public class CompactOrbsPlugin extends Plugin
 {
@@ -77,14 +80,20 @@ public class CompactOrbsPlugin extends Plugin
 	@Inject
 	private KeyManager keyManager;
 
+	@Inject
+	private WidgetManager widgetManager;
+
 	@Override
 	protected void startUp() throws Exception
 	{
 		keyManager.registerKeyListener(hotkeyListener);
 
+		registerOrbToggleEntries();
+
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
 			clientThread.invoke(() -> manager.minimapMinimized = (client.getVarbitValue(Varbit.MINIMAP_TOGGLE) == VarbitValue.MINIMAP_MINIMIZED));
+
 			clientThread.invokeLater(() -> manager.init(Script.FORCE_UPDATE));
 		}
 	}
@@ -111,9 +120,41 @@ public class CompactOrbsPlugin extends Plugin
 	{
 		int scriptId = event.getScriptId();
 
+		//make sure the logout X stays hidden
+		if (scriptId == Script.TOP_LEVEL_REDRAW || scriptId == Script.TOP_LEVEL_SIDE_CUSTOMIZE)
+		{
+			if (config.hideLogout() && !manager.isMinimized())
+			{
+				widgetManager.setTargetsHidden(config.hideLogout(), Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
+			}
+		}
+
 		if (!Script.MINIMAP_UPDATE_SCRIPTS.contains(scriptId) || manager.isMinimized())
 		{
 			return;
+		}
+
+		//override the in-game settings
+		if (scriptId == Script.ACTIVITY_ORB_UPDATE &&
+			client.getVarbitValue(Varbit.ACTIVITY_ORB_TOGGLE) == VarbitValue.ACTIVITY_ORB_VISIBLE &&
+			config.hideActivity())
+		{
+			widgetManager.setHidden(Orbs.ACTIVITY_ORB_CONTAINER, config.hideActivity());
+			return;
+		}
+
+		//override the in-game settings
+		if (scriptId == Script.STORE_ORB_UPDATE &&
+			client.getVarbitValue(Varbit.STORE_ORB_TOGGLE) == VarbitValue.STORE_ORB_VISIBLE &&
+			config.hideStore())
+		{
+			widgetManager.setHidden(Orbs.STORE_ORB_CONTAINER, config.hideStore());
+			return;
+		}
+
+		if (scriptId == Script.WIKI_ICON_UPDATE || scriptId == Script.WIKI_CONTAINER_UPDATE)
+		{
+			manager.updateWikiBanner(config.hideWiki());
 		}
 
 		manager.init(scriptId);
@@ -155,15 +196,51 @@ public class CompactOrbsPlugin extends Plugin
 		{
 			switch (key)
 			{
-				case ConfigKeys.TOGGLE_BUTTON:
-				case ConfigKeys.HOTKEY_TOGGLE:
+				case ConfigKeys.MINIMAP_TOGGLE_BUTTON:
+				case ConfigKeys.COMPASS_TOGGLE_BUTTON:
 					clientThread.invokeLater(manager::updateCustomChildren);
 					break;
 
+				case ConfigKeys.ORB_LAYOUT:
+				case ConfigKeys.HORIZONTAL:
+				case ConfigKeys.VERTICAL:
+					clientThread.invokeLater(() -> manager.init(Script.FORCE_UPDATE));
+					break;
+
+				case ConfigKeys.HIDE_WIKI:
+					clientThread.invokeLater(() -> manager.updateWikiBanner(config.hideWiki()));
+					break;
+
+				case ConfigKeys.HIDE_WORLD:
+					//returns early if !client.isResized, but still gets worldMapOffset for both
+					clientThread.invokeLater(() -> manager.updateWorldMap(true));
+
+					if (client.isResized())
+					{
+						clientThread.invokeLater(() -> widgetManager.remapTarget(Orbs.WORLD_MAP_CONTAINER, manager.isMinimapHidden()));
+					}
+					break;
+
 				default:
+					clientThread.invokeLater(() -> manager.updateOrbByConfig(event.getKey()));
 					break;
 			}
 		}
+	}
+
+	//register all orb toggles on startup
+	public void registerOrbToggleEntries()
+	{
+		manager.registerOrbToggle(ConfigKeys.HIDE_HP, config::hideHp, Orbs.HP_ORB_CONTAINER);
+		manager.registerOrbToggle(ConfigKeys.HIDE_PRAYER, config::hidePray, Orbs.PRAYER_ORB_CONTAINER);
+		manager.registerOrbToggle(ConfigKeys.HIDE_RUN, config::hideRun, Orbs.RUN_ORB_CONTAINER);
+		manager.registerOrbToggle(ConfigKeys.HIDE_SPEC, config::hideSpec, Orbs.SPEC_ORB_CONTAINER);
+		manager.registerOrbToggle(ConfigKeys.HIDE_XP, config::hideXp, Orbs.XP_DROPS_CONTAINER);
+		manager.registerOrbToggle(ConfigKeys.HIDE_ACTIVITY, config::hideActivity, Orbs.ACTIVITY_ORB_CONTAINER);
+		manager.registerOrbToggle(ConfigKeys.HIDE_STORE, config::hideStore, Orbs.STORE_ORB_CONTAINER);
+		manager.registerOrbToggle(ConfigKeys.HIDE_LOGOUT_X, config::hideLogout, Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
+		manager.registerOrbToggle(ConfigKeys.HIDE_GRID, config::hideGrid, Orbs.GRID_MASTER_ORB_CONTAINER);
+		//wiki banner and world map are excluded for special handling; updateWikiBanner, updateWorldMap
 	}
 
 	private final HotkeyListener hotkeyListener = new HotkeyListener(() -> config.toggleButtonHotkey())
@@ -171,7 +248,12 @@ public class CompactOrbsPlugin extends Plugin
 		@Override
 		public void hotkeyPressed()
 		{
-			configManager.setConfiguration(GROUP_NAME, ConfigKeys.TOGGLE_BUTTON, !Boolean.TRUE.equals(config.hideToggle()));
+			boolean hidden = !(config.hideMinimapToggle() || config.hideCompassToggle());
+
+			configManager.setConfiguration(GROUP_NAME, ConfigKeys.MINIMAP_TOGGLE_BUTTON, hidden);
+			configManager.setConfiguration(GROUP_NAME, ConfigKeys.COMPASS_TOGGLE_BUTTON, hidden);
+
+			clientThread.invokeLater(manager::updateCustomChildren);
 		}
 	};
 
