@@ -35,6 +35,8 @@ import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsConstants.Menu;
 import com.compactorbs.CompactOrbsConstants.Script;
 import com.compactorbs.CompactOrbsConstants.Sprite;
+import com.compactorbs.CompactOrbsConstants.Varbit;
+import com.compactorbs.CompactOrbsConstants.VarbitValue;
 import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
 import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
 import com.compactorbs.CompactOrbsConstants.Widgets.Orb;
@@ -80,8 +82,8 @@ public class CompactOrbsManager
 	//offset used to hide the world map outside the container
 	public static int worldMapOffset = 0;
 
-	//in-game native minimap hiding
-	public boolean minimapMinimized;
+	//update flag for the custom widgets
+	public boolean pendingChildrenUpdate = false;
 
 	//custom widgets created when in compact layout
 	private Widget compassFrame = null;
@@ -121,21 +123,21 @@ public class CompactOrbsManager
 
 		getLayoutOffsets();
 
+		createCustomChildren();
+
 		if (scriptId == Script.FORCE_UPDATE)
 		{
-			createCustomChildren();
-
 			widgetManager.setTargetsHidden(isMinimapHidden(), Minimap.values());
 			widgetManager.setTargetsHidden((isMinimapHidden() && isCompassHidden()), Compass.values());
 			widgetManager.remapTargets(Compass.ALL, isMinimapHidden(), Script.FORCE_UPDATE);
 			widgetManager.remapTargets(Orbs.ALL, isMinimapHidden(), Script.FORCE_UPDATE);
-
-			updateCustomChildren();
 		}
 		else
 		{
 			widgetManager.remapTargets(Orbs.ALL, isMinimapHidden(), scriptId);
 		}
+
+		updateCustomChildren(pendingChildrenUpdate || scriptId == Script.FORCE_UPDATE);
 	}
 
 	public void reset()
@@ -187,7 +189,7 @@ public class CompactOrbsManager
 			() -> widgetManager.remapTargets(Compass.ALL, remapCondition, Script.FORCE_UPDATE),
 			() -> widgetManager.setTargetsHidden(hiddenCondition, Compass.values()),
 			() -> widgetManager.remapTargets(Orbs.ALL, toggle, Script.FORCE_UPDATE),
-			this::updateCustomChildren
+			() -> updateCustomChildren(true)
 		);
 	}
 
@@ -201,7 +203,7 @@ public class CompactOrbsManager
 			this::getLayoutOffsets,
 			() -> widgetManager.remapTargets(Compass.ALL, remapCondition, Script.FORCE_UPDATE),
 			() -> widgetManager.setTargetsHidden(toggle, Compass.values()),
-			this::updateCustomChildren
+			() -> updateCustomChildren(true)
 		);
 	}
 
@@ -247,7 +249,7 @@ public class CompactOrbsManager
 		{
 			minimapButton = widgetManager.createToggleButton(
 				parent,
-				Layout.MINIMAP_BUTTON_X, Layout.MINIMAP_BUTTON_Y,
+				0, 0, //handled in updateCustomChildren()
 				Layout.TOGGLE_BUTTON_WIDTH, Layout.TOGGLE_BUTTON_HEIGHT,
 				Layout.OPACITY,
 				getSpriteId(isMinimapHidden()),
@@ -271,13 +273,25 @@ public class CompactOrbsManager
 				e -> compassButton.setOpacity(Layout.OPACITY_HOVER),
 				e -> compassButton.setOpacity(Layout.OPACITY)
 			);
+
+			//prevent de-sync
+			pendingChildrenUpdate = true;
 		}
 	}
 
 	//handle dynamic widget changes for visibility, positions, sprites, and menu actions for the
 	//compass frame and toggle buttons (logout X being an exception in native minimap hiding)
-	public void updateCustomChildren()
+	public void updateCustomChildren(boolean shouldUpdate)
 	{
+		//missing children -> create them; prevent updates until all exist
+		if (compassFrame == null || compassButton == null || minimapButton == null)
+		{
+			//will trigger pendingChildrenUpdate when custom widgets are created
+			//for the next updateCustomChildren call
+			createCustomChildren();
+			return;
+		}
+
 		boolean hideFrame = !isMinimapHidden() || isCompassHidden() || isMinimized();
 		boolean hideToggles = (config.hideMinimapToggle() && config.hideCompassToggle()) || isMinimized();
 
@@ -289,57 +303,33 @@ public class CompactOrbsManager
 				false, Script.FORCE_UPDATE);
 		}
 
-		if (compassFrame != null)
+		//make changes when pendingChildrenUpdate (or shouldUpdate = true is passed)
+		if (shouldUpdate)
 		{
+			//compass frame
 			compassFrame.setHidden(hideFrame);
-
-			widgetManager.updateValue(compassFrame::getOriginalX, compassFrame::setOriginalX,
-				(getCompassX() - Layout.FRAME_X_OFFSET) - verticalOffset);
-
-			widgetManager.updateValue(compassFrame::getOriginalY, compassFrame::setOriginalY,
-				(getCompassY() - (Layout.FRAME_Y_OFFSET)) + horizontalOffset);
-
+			widgetManager.updateValue(compassFrame::getOriginalX, compassFrame::setOriginalX, getCompassFrameX());
+			widgetManager.updateValue(compassFrame::getOriginalY, compassFrame::setOriginalY, getCompassFrameY());
 			compassFrame.revalidate();
-		}
 
-		if (minimapButton != null)
-		{
+			//minimap button
 			minimapButton.setSpriteId(getSpriteId(!isMinimapHidden()));
 			minimapButton.setHidden(hideToggles || config.hideMinimapToggle());
 			minimapButton.setAction(0, getMenuOption(ConfigKeys.MINIMAP));
-
-			int minimapButtonX =
-				(isVerticalLayout() && isMinimapHidden()) ?
-					Layout.MINIMAP_BUTTON_X - verticalOffset : Layout.MINIMAP_BUTTON_X;
-
-			int minimapButtonY =
-				(isHorizontalLayout() && isMinimapHidden()) ?
-					(Layout.MINIMAP_BUTTON_Y / 2) + horizontalOffset : Layout.MINIMAP_BUTTON_Y;
-
-			widgetManager.updateValue(minimapButton::getOriginalX, minimapButton::setOriginalX, minimapButtonX);
-			widgetManager.updateValue(minimapButton::getOriginalY, minimapButton::setOriginalY, minimapButtonY);
+			widgetManager.updateValue(minimapButton::getOriginalX, minimapButton::setOriginalX, getMinimapButtonX());
+			widgetManager.updateValue(minimapButton::getOriginalY, minimapButton::setOriginalY, getMinimapButtonY());
 			minimapButton.revalidate();
-		}
 
-		if (compassButton != null)
-		{
+			//compass button
 			compassButton.setSpriteId(getSpriteId(!isCompassHidden()));
 			compassButton.setHidden((hideToggles || config.hideCompassToggle()) || !isMinimapHidden());
 			compassButton.setAction(0, getMenuOption(ConfigKeys.COMPASS));
-
-			final int compassButtonX = getCompassX() + (isHorizontalLayout() ?
-				Layout.COMPASS_BUTTON_HORIZONTAL_X_OFFSET : 0) + Layout.COMPASS_BUTTON_X_OFFSET;
-
-			final int compassButtonY = getCompassY() - (isHorizontalLayout() ?
-				Layout.COMPASS_BUTTON_HORIZONTAL_Y_OFFSET : 0) + Layout.COMPASS_BUTTON_Y_OFFSET;
-
-			widgetManager.updateValue(compassButton::getOriginalX, compassButton::setOriginalX,
-				compassButtonX - verticalOffset);
-
-			widgetManager.updateValue(compassButton::getOriginalY, compassButton::setOriginalY,
-				compassButtonY + horizontalOffset);
-
+			widgetManager.updateValue(compassButton::getOriginalX, compassButton::setOriginalX, getCompassButtonX());
+			widgetManager.updateValue(compassButton::getOriginalY, compassButton::setOriginalY, getCompassButtonY());
 			compassButton.revalidate();
+
+			//clear update flag
+			pendingChildrenUpdate = false;
 		}
 	}
 
@@ -391,7 +381,7 @@ public class CompactOrbsManager
 		//wiki plugin banner doesn't exist, check vanilla
 		if (banner == null)
 		{
-			banner = widgetManager.getTargetWidget(Orbs.WIKI_VANILLA);
+			banner = widgetManager.getTargetWidget(Orbs.WIKI_VANILLA_CONTAINER);
 		}
 
 		//guard if either are null
@@ -489,6 +479,22 @@ public class CompactOrbsManager
 		return config.layout() == OrbLayout.HORIZONTAL;
 	}
 
+	public boolean isMinimapHidden()
+	{
+		return config.hideMinimap();
+	}
+
+	private boolean isCompassHidden()
+	{
+		return config.hideCompass();
+	}
+
+	//in-game native minimap hiding
+	public boolean isMinimized()
+	{
+		return client.getVarbitValue(Varbit.MINIMAP_TOGGLE) == VarbitValue.MINIMAP_MINIMIZED;
+	}
+
 	private int getCompassX()
 	{
 		switch (config.layout())
@@ -509,20 +515,60 @@ public class CompactOrbsManager
 		}
 	}
 
-	public boolean isMinimapHidden()
+	private int getCompassFrameX()
 	{
-		return config.hideMinimap();
+		return (getCompassX() - Layout.FRAME_X_OFFSET) - verticalOffset;
 	}
 
-	private boolean isCompassHidden()
+	private int getCompassFrameY()
 	{
-		return config.hideCompass();
+		return (getCompassY() - Layout.FRAME_Y_OFFSET) + horizontalOffset;
 	}
 
-	//in-game native minimap hiding
-	public boolean isMinimized()
+	private int getMinimapButtonX()
 	{
-		return minimapMinimized;
+		return (isVerticalLayout() && isMinimapHidden())
+			? Layout.MINIMAP_BUTTON_X - verticalOffset
+			: Layout.MINIMAP_BUTTON_X;
+	}
+
+	private int getMinimapButtonY()
+	{
+		return (isHorizontalLayout() && isMinimapHidden())
+			? (Layout.MINIMAP_BUTTON_Y / 2) + horizontalOffset
+			: Layout.MINIMAP_BUTTON_Y;
+	}
+
+	private int getCompassButtonX()
+	{
+		int x = getCompassX()
+			+ Layout.COMPASS_BUTTON_X_OFFSET;
+
+		if (isHorizontalLayout())
+		{
+			x += Layout.COMPASS_BUTTON_HORIZONTAL_X_OFFSET;
+		}
+
+		return x - verticalOffset;
+	}
+
+	private int getCompassButtonY()
+	{
+		int y = getCompassY()
+			+ Layout.COMPASS_BUTTON_Y_OFFSET;
+
+		if (isHorizontalLayout())
+		{
+			y -= Layout.COMPASS_BUTTON_HORIZONTAL_Y_OFFSET;
+		}
+
+		return y + horizontalOffset;
+	}
+
+	//check if a cutscene is active
+	public boolean isCutSceneActive()
+	{
+		return client.getVarbitValue(Varbit.CUTSCENE_STATUS) == VarbitValue.CUTSCENE_ACTIVE;
 	}
 
 	//register an orb toggle entry in the config and script maps

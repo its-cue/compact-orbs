@@ -87,6 +87,7 @@ public class CompactOrbsConstants
 		public static final int MINIMAP_TOGGLE = VarbitID.MINIMAP_TOGGLE;
 		public static final int ACTIVITY_ORB_TOGGLE = VarbitID.OPTION_CONTENT_RECOMMENDER_HIDE;
 		public static final int STORE_ORB_TOGGLE = VarbitID.TLI_STOREBUTTON_TOGGLE_DESKTOP;
+		public static final int CUTSCENE_STATUS = VarbitID.CUTSCENE_STATUS;
 	}
 
 	public static final class VarbitValue
@@ -99,6 +100,9 @@ public class CompactOrbsConstants
 
 		// 1 (is visible), 0 (not visible)
 		public static final int STORE_ORB_VISIBLE = 1;
+
+		// 1 (active), 0 (inactive)
+		public static final int CUTSCENE_ACTIVE = 1;
 	}
 
 	public static final class Script
@@ -114,16 +118,15 @@ public class CompactOrbsConstants
 		public static final int WORLD_MAP_UPDATE = 1700;
 		public static final int STORE_ORB_UPDATE = 2396;
 		public static final int ACTIVITY_ORB_UPDATE = 2480;
-		public static final int WIKI_CONTAINER_UPDATE = 3305;
 		public static final int WIKI_ICON_UPDATE = ScriptID.WIKI_ICON_UPDATE;
 		public static final int GRID_MASTER_ORB_UPDATE = 8222;
 
 		public static final Set<Integer> MINIMAP_UPDATE_SCRIPTS =
 			Set.of(
+				//orbs
 				WORLD_MAP_UPDATE,
 				STORE_ORB_UPDATE,
 				ACTIVITY_ORB_UPDATE,
-				WIKI_CONTAINER_UPDATE,
 				WIKI_ICON_UPDATE,
 				GRID_MASTER_ORB_UPDATE
 			);
@@ -200,10 +203,10 @@ public class CompactOrbsConstants
 			public static final int WORLD_MAP_Y = 72;
 
 			public static final int WIKI_ICON_X = 20;
-			public static final int WIKI_ICON_Y = 172;
+			public static final int WIKI_ICON_Y = 171;
 
 			public static final int WIKI_VANILLA_X = 0;
-			public static final int WIKI_VANILLA_Y = 5;
+			public static final int WIKI_VANILLA_Y = 9;
 
 			public static final int LOGOUT_X = 8;
 			public static final int LOGOUT_Y = 22;
@@ -244,10 +247,10 @@ public class CompactOrbsConstants
 			public static final int WORLD_MAP_Y = 16;
 
 			public static final int WIKI_ICON_X = 149;
-			public static final int WIKI_ICON_Y = 82;
+			public static final int WIKI_ICON_Y = 81;
 
 			public static final int WIKI_VANILLA_X = 0;
-			public static final int WIKI_VANILLA_Y = 5;
+			public static final int WIKI_VANILLA_Y = 9;
 
 			public static final int LOGOUT_X = 1;
 			public static final int LOGOUT_Y = 2;
@@ -342,7 +345,8 @@ public class CompactOrbsConstants
 			public static final int ACTIVITY_ORB = InterfaceID.Orbs.ORB_CONTENTRECOM;
 			public static final int STORE_ORB = InterfaceID.Orbs.ORB_STORE;
 			public static final int WIKI_ICON = InterfaceID.Orbs.WIKI;
-			public static final int WIKI_ICON_VANILLA = InterfaceID.Orbs.WIKI_ICON;
+			public static final int WIKI_CONTAINER_VANILLA = InterfaceID.Orbs.WIKI_ICON;
+			public static final int WIKI_ICON_VANILLA = InterfaceID.Orbs.WIKI_ICON_GRAPHIC;
 			public static final int WORLD_MAP = InterfaceID.Orbs.ORB_WORLDMAP;
 		}
 

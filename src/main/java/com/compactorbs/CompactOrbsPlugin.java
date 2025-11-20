@@ -92,8 +92,6 @@ public class CompactOrbsPlugin extends Plugin
 
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
-			clientThread.invoke(() -> manager.minimapMinimized = (client.getVarbitValue(Varbit.MINIMAP_TOGGLE) == VarbitValue.MINIMAP_MINIMIZED));
-
 			clientThread.invokeLater(() -> manager.init(Script.FORCE_UPDATE));
 		}
 	}
@@ -127,6 +125,11 @@ public class CompactOrbsPlugin extends Plugin
 			{
 				widgetManager.setTargetsHidden(config.hideLogout(), Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
 			}
+
+			if(scriptId == Script.TOP_LEVEL_REDRAW)
+			{
+				manager.pendingChildrenUpdate = manager.isCutSceneActive();
+			}
 		}
 
 		if (!Script.MINIMAP_UPDATE_SCRIPTS.contains(scriptId) || manager.isMinimized())
@@ -152,7 +155,7 @@ public class CompactOrbsPlugin extends Plugin
 			return;
 		}
 
-		if (scriptId == Script.WIKI_ICON_UPDATE || scriptId == Script.WIKI_CONTAINER_UPDATE)
+		if (scriptId == Script.WIKI_ICON_UPDATE)
 		{
 			manager.updateWikiBanner(config.hideWiki());
 		}
@@ -167,9 +170,7 @@ public class CompactOrbsPlugin extends Plugin
 
 		if (id == Varbit.MINIMAP_TOGGLE)
 		{
-			//hide custom buttons when native minimap hiding is active
-			manager.minimapMinimized = (event.getValue() == VarbitValue.MINIMAP_MINIMIZED);
-			manager.updateCustomChildren();
+			manager.updateCustomChildren(true);
 		}
 	}
 
@@ -198,7 +199,7 @@ public class CompactOrbsPlugin extends Plugin
 			{
 				case ConfigKeys.MINIMAP_TOGGLE_BUTTON:
 				case ConfigKeys.COMPASS_TOGGLE_BUTTON:
-					clientThread.invokeLater(manager::updateCustomChildren);
+					clientThread.invokeLater(() -> manager.updateCustomChildren(true));
 					break;
 
 				case ConfigKeys.ORB_LAYOUT:
@@ -253,7 +254,7 @@ public class CompactOrbsPlugin extends Plugin
 			configManager.setConfiguration(GROUP_NAME, ConfigKeys.MINIMAP_TOGGLE_BUTTON, hidden);
 			configManager.setConfiguration(GROUP_NAME, ConfigKeys.COMPASS_TOGGLE_BUTTON, hidden);
 
-			clientThread.invokeLater(manager::updateCustomChildren);
+			clientThread.invokeLater(() -> manager.updateCustomChildren(true));
 		}
 	};
 

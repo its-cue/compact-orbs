@@ -228,13 +228,14 @@ public enum Orbs implements TargetWidget
 			),
 			Y_POSITION_MODE, new SetValue(
 				WidgetPositionMode.ABSOLUTE_TOP,
+				WidgetPositionMode.ABSOLUTE_TOP,
 				WidgetPositionMode.ABSOLUTE_TOP
 			)
 		)
 	),
-	//vanilla wiki banner
-	WIKI_VANILLA(
-		Orb.WIKI_ICON_VANILLA,
+	//vanilla wiki container
+	WIKI_VANILLA_CONTAINER(
+		Orb.WIKI_CONTAINER_VANILLA,
 		Script.WIKI_ICON_UPDATE,
 		Map.of(
 			X, new SetValue(
@@ -254,7 +255,25 @@ public enum Orbs implements TargetWidget
 			),
 			Y_POSITION_MODE, new SetValue(
 				WidgetPositionMode.ABSOLUTE_CENTER,
-				WidgetPositionMode.ABSOLUTE_RIGHT
+				WidgetPositionMode.ABSOLUTE_TOP,
+				WidgetPositionMode.ABSOLUTE_TOP
+			)
+		)
+	),
+	//vanilla wiki graphic
+	WIKI_VANILLA_GRAPHIC(
+		Orb.WIKI_ICON_VANILLA,
+		Script.WIKI_ICON_UPDATE,
+		Map.of(
+			X_POSITION_MODE, new SetValue(
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_RIGHT,
+				WidgetPositionMode.ABSOLUTE_LEFT
+			),
+			Y_POSITION_MODE, new SetValue(
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_TOP,
+				WidgetPositionMode.ABSOLUTE_TOP
 			)
 		)
 	),

@@ -148,12 +148,22 @@ public class WidgetManager
 	private int getOffset(Widget widget, ValueKey key, int value, boolean modify)
 	{
 		boolean isCompass = widget.getParentId() == Modern.COMPASS_PARENT || widget.getParentId() == Classic.COMPASS_PARENT;
-		boolean isWikiBanner = widget.getParentId() == Orb.WIKI_ICON;
+		boolean isWikiContainer = widget.getParentId() == Orb.WIKI_ICON;
+		boolean isWikiVanilla = widget.getParentId() == Orb.WIKI_CONTAINER_VANILLA;
 		boolean isWorldMap = widget.getId() == Orb.WORLD_MAP;
 
-		if (isWikiBanner)
+		//wiki plugin banner, and vanilla wiki banner container
+		if (isWikiContainer)
 		{
 			return value;
+		}
+
+		//vanilla wiki banner graphic
+		if (isWikiVanilla)
+		{
+			//set x/y to 0 (graphic should be at the top of the container, will help with giant clickbox for menu options)
+			//to prevent overlapping into orbs/compass when in compact layouts
+			return 0;
 		}
 
 		int offset = (key == ValueKey.X ? verticalOffset : horizontalOffset);
@@ -177,7 +187,7 @@ public class WidgetManager
 	{
 		for (TargetWidget target : widgets)
 		{
-			if (target == Orbs.WIKI_VANILLA || target == Orbs.WIKI_ICON_CONTAINER)
+			if (target == Orbs.WIKI_VANILLA_CONTAINER || target == Orbs.WIKI_ICON_CONTAINER)
 			{
 				continue;
 			}
