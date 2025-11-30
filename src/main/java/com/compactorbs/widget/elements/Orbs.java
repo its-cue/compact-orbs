@@ -206,7 +206,7 @@ public enum Orbs implements TargetWidget
 			)
 		)
 	),
-	//wiki plugin banner
+	//wiki plugin banner is child 0, otherwise it's the main container
 	WIKI_ICON_CONTAINER(
 		Orb.WIKI_ICON,
 		Script.WIKI_ICON_UPDATE,
@@ -233,7 +233,6 @@ public enum Orbs implements TargetWidget
 			)
 		)
 	),
-	//vanilla wiki container
 	WIKI_VANILLA_CONTAINER(
 		Orb.WIKI_CONTAINER_VANILLA,
 		Script.WIKI_ICON_UPDATE,
@@ -260,11 +259,20 @@ public enum Orbs implements TargetWidget
 			)
 		)
 	),
-	//vanilla wiki graphic
 	WIKI_VANILLA_GRAPHIC(
 		Orb.WIKI_ICON_VANILLA,
 		Script.WIKI_ICON_UPDATE,
 		Map.of(
+			X, new SetValue(
+				Original.WIKI_VANILLA_X,
+				Vertical.WIKI_VANILLA_X,
+				Horizontal.WIKI_VANILLA_X
+			),
+			Y, new SetValue(
+				Original.WIKI_VANILLA_Y,
+				Vertical.WIKI_VANILLA_Y,
+				Horizontal.WIKI_VANILLA_Y
+			),
 			X_POSITION_MODE, new SetValue(
 				WidgetPositionMode.ABSOLUTE_CENTER,
 				WidgetPositionMode.ABSOLUTE_RIGHT,
@@ -331,22 +339,16 @@ public enum Orbs implements TargetWidget
 
 	private final int componentId, arrayId, scriptId;
 
-	private final Map<ValueKey, SetValue> positions;
+	private final Map<ValueKey, SetValue> positionMap;
 
-	Orbs(int componentId, int scriptId, Map<ValueKey, SetValue> positions)
+	Orbs(int componentId, int scriptId, Map<ValueKey, SetValue> positionMap)
 	{
-		this.componentId = componentId;
-		this.arrayId = -1;
-		this.scriptId = scriptId;
-		this.positions = positions;
+		this(componentId, -1, scriptId, positionMap);
 	}
 
-	Orbs(int componentId, Map<ValueKey, SetValue> positions)
+	Orbs(int componentId, Map<ValueKey, SetValue> positionMap)
 	{
-		this.componentId = componentId;
-		this.arrayId = -1;
-		this.scriptId = -1;
-		this.positions = positions;
+		this(componentId, -1, -1, positionMap);
 	}
 
 	//only includes widgets that require updating
@@ -355,9 +357,16 @@ public enum Orbs implements TargetWidget
 		PRAYER_ORB_CONTAINER,
 		RUN_ORB_CONTAINER,
 		SPEC_ORB_CONTAINER,
-		XP_DROPS_CONTAINER
+		XP_DROPS_CONTAINER,
+		WIKI_VANILLA_CONTAINER,
+		WIKI_VANILLA_GRAPHIC
 	);
 
-	public static final Set<Orbs> ALL = EnumSet.allOf(Orbs.class);
+	public static final Set<Orbs> SWAPPABLE_ORBS = EnumSet.of(
+		HP_ORB_CONTAINER,
+		PRAYER_ORB_CONTAINER,
+		RUN_ORB_CONTAINER,
+		SPEC_ORB_CONTAINER
+	);
 
 }

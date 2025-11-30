@@ -23,40 +23,68 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.util;
+package com.compactorbs.widget.offset.impl;
 
+import com.compactorbs.CompactOrbsConstants;
+import com.compactorbs.CompactOrbsManager;
+import com.compactorbs.widget.elements.Orbs;
+import com.compactorbs.widget.offset.OffsetTarget;
+import com.compactorbs.widget.slot.SlotManager;
 import lombok.Getter;
 
 @Getter
-public class SetValue
+public class WorldMapOffset implements OffsetTarget
 {
-	private final Integer original;
-	private final Integer[] modified;
-
-	public SetValue(Integer original, Integer... modified)
+	@Override
+	public int xOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		this.original = original;
-		this.modified = modified;
-	}
+		int x = CompactOrbsConstants.Layout.FIXED_WORLD_MAP_X;
+		int v = value;
 
-	//same function as before, but should allow for multiple 'modified sets' (original, mod_vertical, mod_horizontal, etc) instead of just 1
-	public Integer get(boolean compactLayout, int index)
-	{
-		if (!compactLayout || original == null)
+		if (!compactLayout)
 		{
-			return original;
+			v = (manager.updateWorldMap()
+				? manager.getWorldMapOffset() : !manager.isResized()
+				? x : v
+			);
+
+			return v;
 		}
 
-		if (modified != null && modified.length > 0)
-		{
-			if (index >= 0 && index < modified.length && modified[index] != null)
-			{
-				return modified[index];
-			}
-			return modified[0];
-		}
+		v = (manager.hideWorldMap ? 0 : v + manager.verticalOffset);
 
-		return original;
+		return v + manager.getWorldMapOffset();
 	}
 
+	@Override
+	public int yOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	{
+		int y = CompactOrbsConstants.Layout.FIXED_WORLD_MAP_Y;
+
+		int v = value;
+
+		if (!compactLayout)
+		{
+			v = (manager.updateWorldMap()
+				? manager.getWorldMapOffset() : !manager.isResized()
+				? y : v
+			);
+
+			return v;
+		}
+
+		y = v + manager.horizontalOffset;
+
+		if (manager.isVerticalLayout())
+		{
+			y = slotManager.applyHiddenOffset(Orbs.WORLD_MAP_CONTAINER, y);
+		}
+
+		if(manager.hideWorldMap)
+		{
+			y = 0;
+		}
+
+		return y + manager.getWorldMapOffset();
+	}
 }

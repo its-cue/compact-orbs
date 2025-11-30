@@ -23,40 +23,40 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.util;
+package com.compactorbs.widget.offset;
 
-import lombok.Getter;
+import com.compactorbs.CompactOrbsManager;
+import com.compactorbs.util.ValueKey;
+import com.compactorbs.widget.slot.SlotManager;
+import net.runelite.api.widgets.Widget;
 
-@Getter
-public class SetValue
+public class OffsetManager
 {
-	private final Integer original;
-	private final Integer[] modified;
-
-	public SetValue(Integer original, Integer... modified)
+	public static int getOffset(Widget widget, ValueKey valueKey, int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		this.original = original;
-		this.modified = modified;
-	}
-
-	//same function as before, but should allow for multiple 'modified sets' (original, mod_vertical, mod_horizontal, etc) instead of just 1
-	public Integer get(boolean compactLayout, int index)
-	{
-		if (!compactLayout || original == null)
+		Offsets offsetKey = Offsets.fromWidget(widget);
+		if(offsetKey == null)
 		{
-			return original;
+			return getDefaults(valueKey, value, compactLayout, manager.verticalOffset, manager.horizontalOffset);
 		}
 
-		if (modified != null && modified.length > 0)
+		OffsetTarget offsetTarget = offsetKey.offsetTarget();
+		if(offsetTarget == null)
 		{
-			if (index >= 0 && index < modified.length && modified[index] != null)
-			{
-				return modified[index];
-			}
-			return modified[0];
+			return getDefaults(valueKey, value, compactLayout, manager.verticalOffset, manager.horizontalOffset);
 		}
 
-		return original;
+		return valueKey == ValueKey.X
+				? offsetTarget.xOffset(value, compactLayout, manager, slotManager)
+				: offsetTarget.yOffset(value, compactLayout, manager, slotManager);
 	}
 
+	private static int getDefaults(ValueKey valueKey, int value, boolean compactLayout, int xOffset, int yOffset)
+	{
+		if(!compactLayout)
+		{
+			return value;
+		}
+		return value + (valueKey == ValueKey.X ? xOffset : yOffset);
+	}
 }

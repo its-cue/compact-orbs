@@ -23,40 +23,25 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.util;
+package com.compactorbs.widget.offset.impl;
 
+import com.compactorbs.CompactOrbsManager;
+import com.compactorbs.widget.offset.OffsetTarget;
+import com.compactorbs.widget.slot.SlotManager;
 import lombok.Getter;
 
 @Getter
-public class SetValue
+public class WikiOffset implements OffsetTarget
 {
-	private final Integer original;
-	private final Integer[] modified;
-
-	public SetValue(Integer original, Integer... modified)
+	@Override
+	public int xOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		this.original = original;
-		this.modified = modified;
+		return value;
 	}
 
-	//same function as before, but should allow for multiple 'modified sets' (original, mod_vertical, mod_horizontal, etc) instead of just 1
-	public Integer get(boolean compactLayout, int index)
+	@Override
+	public int yOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		if (!compactLayout || original == null)
-		{
-			return original;
-		}
-
-		if (modified != null && modified.length > 0)
-		{
-			if (index >= 0 && index < modified.length && modified[index] != null)
-			{
-				return modified[index];
-			}
-			return modified[0];
-		}
-
-		return original;
+		return value;
 	}
-
 }

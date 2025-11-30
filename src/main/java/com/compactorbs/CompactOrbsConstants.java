@@ -31,6 +31,7 @@ import net.runelite.api.ScriptID;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.SpriteID;
 import net.runelite.api.gameval.VarbitID;
+import net.runelite.client.ui.JagexColors;
 
 public class CompactOrbsConstants
 {
@@ -56,9 +57,15 @@ public class CompactOrbsConstants
 		public static final String HOTKEY_TOGGLE = "hotkeyToggle";
 		public static final String MINIMAP_TOGGLE_BUTTON = "hideMinimapButton";
 		public static final String COMPASS_TOGGLE_BUTTON = "hideCompassButton";
+		public static final String MINIMAP_BUTTON_PLACEMENT = "minimapButtonPlacement";
 		public static final String ORB_LAYOUT = "orbLayout";
 		public static final String HORIZONTAL = "horizontalPosition";
 		public static final String VERTICAL = "verticalPosition";
+		public static final String ENABLE_ORB_SWAPPING = "enableOrbSwapping";
+		public static final String HP_ORB_SLOT = "hpOrbSlot";
+		public static final String PRAYER_ORB_SLOT = "prayerOrbSlot";
+		public static final String RUN_ORB_SLOT = "runOrbSlot";
+		public static final String SPECIAL_ORB_SLOT = "specialOrbSlot";
 		public static final String HIDE_HP = "hideHp";
 		public static final String HIDE_PRAYER = "hidePrayer";
 		public static final String HIDE_RUN = "hideRun";
@@ -166,7 +173,7 @@ public class CompactOrbsConstants
 			public static final int WIKI_ICON_Y = 135;
 
 			public static final int WIKI_VANILLA_X = 0;
-			public static final int WIKI_VANILLA_Y = 10;
+			public static final int WIKI_VANILLA_Y = 0;
 
 			public static final int LOGOUT_X = 2;
 			public static final int LOGOUT_Y = 2;
@@ -206,7 +213,7 @@ public class CompactOrbsConstants
 			public static final int WIKI_ICON_Y = 171;
 
 			public static final int WIKI_VANILLA_X = 0;
-			public static final int WIKI_VANILLA_Y = 9;
+			public static final int WIKI_VANILLA_Y = 10;
 
 			public static final int LOGOUT_X = 8;
 			public static final int LOGOUT_Y = 22;
@@ -250,7 +257,7 @@ public class CompactOrbsConstants
 			public static final int WIKI_ICON_Y = 81;
 
 			public static final int WIKI_VANILLA_X = 0;
-			public static final int WIKI_VANILLA_Y = 9;
+			public static final int WIKI_VANILLA_Y = 10;
 
 			public static final int LOGOUT_X = 1;
 			public static final int LOGOUT_Y = 2;
@@ -274,8 +281,8 @@ public class CompactOrbsConstants
 		public static final int COMPASS_OPTIONS_OFFSET = 2;
 
 		//offsets used to anchor the frame around the compass
-		public static final int FRAME_X_OFFSET = 4;
-		public static final int FRAME_Y_OFFSET = 14;
+		public static final int FRAME_X_OFFSET = 2;
+		public static final int FRAME_Y_OFFSET = 12;
 
 		//offsets used to anchor the toggle button around the compass sprite
 		public static final int COMPASS_BUTTON_X_OFFSET = 31;
@@ -285,9 +292,18 @@ public class CompactOrbsConstants
 		public static final int COMPASS_BUTTON_HORIZONTAL_X_OFFSET = 4;
 		public static final int COMPASS_BUTTON_HORIZONTAL_Y_OFFSET = 22;
 
-		//location of the minimap toggle button
-		public static final int MINIMAP_BUTTON_X = 190;
-		public static final int MINIMAP_BUTTON_Y = 180;
+		//minimap toggle button locations @ToggleLocation
+		public static final int DEFAULT_MINIMAP_BUTTON_X = 190;
+		public static final int DEFAULT_MINIMAP_BUTTON_Y = 180;
+
+		public static final int ABOVE_XP_MINIMAP_BUTTON_X = 8;
+		public static final int ABOVE_XP_MINIMAP_BUTTON_Y = 0;
+
+		public static final int BELOW_MAP_MINIMAP_BUTTON_X = 120;
+		public static final int BELOW_MAP_MINIMAP_BUTTON_Y = 155;
+
+		public static final int BELOW_X_MINIMAP_BUTTON_x = DEFAULT_MINIMAP_BUTTON_X;
+		public static final int BELOW_X_MINIMAP_BUTTON_Y = 15;
 
 		//toggle button dimensions
 		public static final int TOGGLE_BUTTON_WIDTH = 17;
@@ -313,7 +329,7 @@ public class CompactOrbsConstants
 		public static final String SUFFIX_COMPASS = "Compass";
 
 		//suffix menu color for the toggle buttons
-		public static final Color COLOR = new Color(0xFF9040);
+		public static final Color COLOR = JagexColors.MENU_TARGET;
 	}
 
 	public static final class Sprite

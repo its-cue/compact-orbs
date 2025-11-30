@@ -25,21 +25,21 @@
 
 package com.compactorbs.widget;
 
-import com.compactorbs.CompactOrbsConfig;
 import com.compactorbs.CompactOrbsConstants;
 import com.compactorbs.CompactOrbsConstants.Script;
 import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
 import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
-import com.compactorbs.CompactOrbsConstants.Widgets.Orb;
-import static com.compactorbs.CompactOrbsManager.horizontalOffset;
-import static com.compactorbs.CompactOrbsManager.verticalOffset;
-import static com.compactorbs.CompactOrbsManager.worldMapOffset;
+import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.util.SetValue;
 import com.compactorbs.util.ValueKey;
 import com.compactorbs.widget.elements.Orbs;
+import com.compactorbs.widget.offset.OffsetManager;
+import com.compactorbs.widget.slot.SlotManager;
+import com.compactorbs.widget.slot.Slot;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.widgets.JavaScriptCallback;
@@ -47,19 +47,29 @@ import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetType;
 
 @Slf4j
+@Singleton
 public class WidgetManager
 {
 	@Inject
 	private Client client;
 
 	@Inject
-	private CompactOrbsConfig config;
+	private CompactOrbsManager manager;
 
-	public boolean targetRemapped = false;
+	@Inject
+	private SlotManager slotManager;
+
+	private boolean targetRemapped = false;
 
 	//update multiple widgets that match the script id (FORCE_UPDATE bypasses the check)
-	public void remapTargets(Iterable<? extends TargetWidget> widgets, boolean modify, int scriptId)
+	public void remapTargets(boolean compactLayout, int scriptId, TargetWidget... widgets)
 	{
+		//prevent visual changes when not logged in
+		if(!manager.isLoggedIn())
+		{
+			return;
+		}
+
 		for (TargetWidget target : widgets)
 		{
 			if (!shouldUpdateTarget(target, scriptId))
@@ -67,12 +77,12 @@ public class WidgetManager
 				continue;
 			}
 
-			remapTarget(target, modify);
+			remapTarget(target, compactLayout);
 		}
 	}
 
 	//update a target widgets X/Y or position mode, based on layout, if necessary
-	public void remapTarget(TargetWidget target, boolean modify)
+	public void remapTarget(TargetWidget target, boolean compactLayout)
 	{
 		Widget widget = getTargetWidget(target);
 		if (widget == null)
@@ -89,8 +99,8 @@ public class WidgetManager
 			return;
 		}
 
-		target.getPositions().forEach((key, value) ->
-			setValue(widget, key, value, modify)
+		getTarget(target).getPositionMap().forEach((key, value) ->
+			setValue(widget, key, value, compactLayout)
 		);
 
 		if (targetRemapped)
@@ -99,31 +109,61 @@ public class WidgetManager
 		}
 	}
 
+	//returns a target widget
+	private TargetWidget getTarget(TargetWidget target)
+	{
+		if (target instanceof Orbs)
+		{
+			return getSlotTarget(target);
+		}
+
+		return target;
+	}
+
+	//returns the original slot for the given orb
+	public TargetWidget getSlotTarget(TargetWidget target)
+	{
+		if (!Orbs.SWAPPABLE_ORBS.contains((Orbs) target) || !manager.enableOrbSwapping())
+		{
+			return target;
+		}
+
+		Slot assignedSlot = slotManager.getSlotOf(target);
+
+		if (assignedSlot == null)
+		{
+			return target;
+		}
+
+		//log.debug("orb target: {} assigned to slot: {}, using coordinates of: {}",
+		//	target, assignedSlot, assignedSlot.getOriginal());
+
+		return assignedSlot.getOriginal();
+	}
+
 	//sets the widgets X/Y or position mode as necessary
-	private void setValue(Widget widget, ValueKey key, SetValue value, boolean modify)
+	private void setValue(Widget widget, ValueKey key, SetValue value, boolean compactLayout)
 	{
 		if (value == null)
 		{
 			return;
 		}
 
-		//@index for the modified value, tied to enum OrbLayout()
-		Integer v = value.get(modify, config.layout().getIndex());
+		Integer v = value.get(compactLayout, manager.getLayout());
 		if (v == null)
 		{
 			return;
 		}
 
-		//handle dynamic offsets for widgets, based on layout and config settings
-		int offset = getOffset(widget, key, v, modify);
-
 		switch (key)
 		{
 			case X:
-				updateValue(widget::getOriginalX, widget::setOriginalX, offset);
+				updateValue(widget::getOriginalX, widget::setOriginalX,
+					OffsetManager.getOffset(widget, key, v, compactLayout, manager, slotManager));
 				break;
 			case Y:
-				updateValue(widget::getOriginalY, widget::setOriginalY, offset);
+				updateValue(widget::getOriginalY, widget::setOriginalY,
+					OffsetManager.getOffset(widget, key, v, compactLayout, manager, slotManager));
 				break;
 			case X_POSITION_MODE:
 				updateValue(widget::getXPositionMode, widget::setXPositionMode, v);
@@ -142,44 +182,6 @@ public class WidgetManager
 			setter.accept(value);
 			targetRemapped = true;
 		}
-	}
-
-	//returns the widgets offset based on key, layout, and config settings
-	private int getOffset(Widget widget, ValueKey key, int value, boolean modify)
-	{
-		boolean isCompass = widget.getParentId() == Modern.COMPASS_PARENT || widget.getParentId() == Classic.COMPASS_PARENT;
-		boolean isWikiContainer = widget.getParentId() == Orb.WIKI_ICON;
-		boolean isWikiVanilla = widget.getParentId() == Orb.WIKI_CONTAINER_VANILLA;
-		boolean isWorldMap = widget.getId() == Orb.WORLD_MAP;
-
-		//wiki plugin banner, and vanilla wiki banner container
-		if (isWikiContainer)
-		{
-			return value;
-		}
-
-		//vanilla wiki banner graphic
-		if (isWikiVanilla)
-		{
-			//set x/y to 0 (graphic should be at the top of the container, will help with giant clickbox for menu options)
-			//to prevent overlapping into orbs/compass when in compact layouts
-			return 0;
-		}
-
-		int offset = (key == ValueKey.X ? verticalOffset : horizontalOffset);
-
-		if (isCompass && key == ValueKey.X)
-		{
-			return value - offset;
-		}
-
-		if (isWorldMap)
-		{
-			int v = (modify ? (config.hideWorld() ? 0 : value + offset) : value);
-			return v + worldMapOffset;
-		}
-
-		return (!modify ? value : value + offset);
 	}
 
 	//set visibility for target widgets, excluding the wiki banner (handled in updateWikiBanner)
@@ -257,7 +259,7 @@ public class WidgetManager
 	}
 
 	//returns the parent widget for the given component ID
-	//can exist and be hidden, so making sure to check for visibility
+	//can exist and be hidden, so check for visibility
 	public Widget getParent(int componentId)
 	{
 		Widget parent = client.getWidget(componentId);

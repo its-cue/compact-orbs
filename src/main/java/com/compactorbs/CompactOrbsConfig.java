@@ -27,6 +27,7 @@ package com.compactorbs;
 
 import static com.compactorbs.CompactOrbsConstants.ConfigGroup.GROUP_NAME;
 import com.compactorbs.CompactOrbsConstants.ConfigKeys;
+import com.compactorbs.CompactOrbsConstants.Layout;
 import java.awt.event.KeyEvent;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -51,12 +52,44 @@ public interface CompactOrbsConfig extends Config
 
 	enum VerticalPosition
 	{
-		LEFT, RIGHT;
+		LEFT, RIGHT
 	}
 
 	enum HorizontalPosition
 	{
-		TOP, BOTTOM;
+		TOP, BOTTOM
+	}
+
+	//limit which slots can be swapped
+	@RequiredArgsConstructor
+	enum FilteredOrb
+	{
+		//must match Orbs enum for: Slot configuredOrbOf -> Orbs.valueOf(filtered.name())
+		HP_ORB_CONTAINER("Hp"),
+		PRAYER_ORB_CONTAINER("Prayer"),
+		RUN_ORB_CONTAINER("Run"),
+		SPEC_ORB_CONTAINER("Special");
+
+		private final String name;
+
+		@Override
+		public String toString()
+		{
+			return name;
+		}
+	}
+
+	@Getter
+	@RequiredArgsConstructor
+	enum TogglePlacement
+	{
+		DEFAULT(Layout.DEFAULT_MINIMAP_BUTTON_X, Layout.DEFAULT_MINIMAP_BUTTON_Y),
+		ABOVE_XP(Layout.ABOVE_XP_MINIMAP_BUTTON_X, Layout.ABOVE_XP_MINIMAP_BUTTON_Y),
+		BELOW_MAP(Layout.BELOW_MAP_MINIMAP_BUTTON_X, Layout.BELOW_MAP_MINIMAP_BUTTON_Y),
+		BELOW_X(Layout.BELOW_X_MINIMAP_BUTTON_x, Layout.BELOW_X_MINIMAP_BUTTON_Y);
+
+		private final int x;
+		private final int y;
 	}
 
 	@ConfigSection(
@@ -65,6 +98,13 @@ public interface CompactOrbsConfig extends Config
 		position = 0
 	)
 	String compact = "compact";
+
+	@ConfigSection(
+		name = "Orb Swapping",
+		description = "Options to swap orbs around",
+		position = 1
+	)
+	String swapping = "swapping";
 
 	@ConfigItem(
 		keyName = ConfigKeys.MINIMAP,
@@ -101,11 +141,28 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = ConfigKeys.MINIMAP_BUTTON_PLACEMENT,
+		name = "Toggle location",
+		description = "Change the location of the minimap toggle button when the minimap is visible <br>" +
+			"DEFAULT: bottom right, below the minimap <br>" +
+			"ABOVE_XP: above the XP drops orb <br>" +
+			"BELOW_MAP: centered below the minimap, next to the Store orb <br>" +
+			"BELOW_X: right below where the Logout X would be"
+		,
+		section = compact,
+		position = 2
+	)
+	default TogglePlacement minimapTogglePlacement()
+	{
+		return TogglePlacement.DEFAULT;
+	}
+
+	@ConfigItem(
 		keyName = ConfigKeys.MINIMAP_TOGGLE_BUTTON,
 		name = "Hide minimap button",
 		description = "Toggle the visibility of toggle button for the minimap",
 		section = compact,
-		position = 2
+		position = 3
 	)
 	default boolean hideMinimapToggle()
 	{
@@ -117,7 +174,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Hide compass button",
 		description = "Toggle the visibility of toggle button for the compass",
 		section = compact,
-		position = 3
+		position = 4
 	)
 	default boolean hideCompassToggle()
 	{
@@ -129,7 +186,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Layout",
 		description = "Switch between a compact vertical or horizontal layout",
 		section = compact,
-		position = 4
+		position = 5
 	)
 	default OrbLayout layout()
 	{
@@ -138,22 +195,25 @@ public interface CompactOrbsConfig extends Config
 
 	@ConfigItem(
 		keyName = ConfigKeys.HORIZONTAL,
-		name = "Horizontal position",
-		description = "Draw orbs from the top or bottom when using the compact horizontal layout",
+		name = "Horizontal direction",
+		description = "Shift orbs from top-down, or bottom-up <br>"
+			+ "Also dictates layouts position in the minimap container",
 		section = compact,
-		position = 5
+		position = 6
 	)
 	default HorizontalPosition horizontalPosition()
 	{
 		return HorizontalPosition.BOTTOM;
 	}
 
+	//change to account for alignment, not position
 	@ConfigItem(
 		keyName = ConfigKeys.VERTICAL,
-		name = "Vertical position",
-		description = "Draw orbs from left or right when using the compact vertical layout",
+		name = "Vertical direction",
+		description = "Shift orbs from left, or right <br>"
+			+ "Also dictates layouts position in the minimap container",
 		section = compact,
-		position = 6
+		position = 7
 	)
 	default VerticalPosition verticalPosition()
 	{
@@ -161,10 +221,71 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = ConfigKeys.ENABLE_ORB_SWAPPING,
+		name = "Enable orb swapping",
+		description = "Enable swapping orb positions with each other <br>"
+			+ "Only supports Hp, Prayer, Run, and Special orb",
+		section = swapping,
+		position = 1
+	)
+	default boolean enableOrbSwapping()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.HP_ORB_SLOT,
+		name = "HP slot",
+		description = "Select which orb should be in the HP Orb slot",
+		section = swapping,
+		position = 1
+	)
+	default FilteredOrb orbInHPSlot()
+	{
+		return FilteredOrb.HP_ORB_CONTAINER;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.PRAYER_ORB_SLOT,
+		name = "Prayer slot",
+		description = "Select which orb should be in the Prayer Orb slot",
+		section = swapping,
+		position = 2
+	)
+	default FilteredOrb orbInPrayerSlot()
+	{
+		return FilteredOrb.PRAYER_ORB_CONTAINER;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.RUN_ORB_SLOT,
+		name = "Run slot",
+		description = "Select which orb should be in the Run Orb slot",
+		section = swapping,
+		position = 3
+	)
+	default FilteredOrb orbInRunSlot()
+	{
+		return FilteredOrb.RUN_ORB_CONTAINER;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.SPECIAL_ORB_SLOT,
+		name = "Special slot",
+		description = "Select which orb should be in the Special Orb slot",
+		section = swapping,
+		position = 4
+	)
+	default FilteredOrb orbInSpecialSlot()
+	{
+		return FilteredOrb.SPEC_ORB_CONTAINER;
+	}
+
+	@ConfigItem(
 		keyName = ConfigKeys.HIDE_HP,
 		name = "Hide Hp",
 		description = "Toggle visibility of the HP orb",
-		position = 1
+		position = 2
 	)
 	default boolean hideHp()
 	{
@@ -175,7 +296,7 @@ public interface CompactOrbsConfig extends Config
 		keyName = ConfigKeys.HIDE_PRAYER,
 		name = "Hide Prayer",
 		description = "Toggle visibility of the Prayer orb",
-		position = 2
+		position = 3
 	)
 	default boolean hidePray()
 	{
@@ -186,7 +307,7 @@ public interface CompactOrbsConfig extends Config
 		keyName = ConfigKeys.HIDE_RUN,
 		name = "Hide Run",
 		description = "Toggle visibility of the Run energy orb",
-		position = 3
+		position = 4
 	)
 	default boolean hideRun()
 	{
@@ -197,7 +318,7 @@ public interface CompactOrbsConfig extends Config
 		keyName = ConfigKeys.HIDE_SPEC,
 		name = "Hide Special",
 		description = "Toggle visibility of the Special attack energy orb",
-		position = 4
+		position = 5
 	)
 	default boolean hideSpec()
 	{
@@ -208,7 +329,7 @@ public interface CompactOrbsConfig extends Config
 		keyName = ConfigKeys.HIDE_XP,
 		name = "Hide XP",
 		description = "Toggle visibility of the XP drops orb",
-		position = 5
+		position = 6
 	)
 	default boolean hideXp()
 	{
@@ -220,21 +341,9 @@ public interface CompactOrbsConfig extends Config
 		name = "Hide World Map",
 		description = "Toggle the visibility of the World Map <br>"
 			+ " Will retain hotkey functionality 'Ctrl + M', if in-game setting is enabled",
-		position = 6
-	)
-	default boolean hideWorld()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.HIDE_ACTIVITY,
-		name = "Hide Activity Advisor",
-		description = "Toggle the visibility of the Activity Advisor orb <br>"
-			+ "In-game setting must be be enabled",
 		position = 7
 	)
-	default boolean hideActivity()
+	default boolean hideWorld()
 	{
 		return false;
 	}
@@ -252,11 +361,23 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = ConfigKeys.HIDE_ACTIVITY,
+		name = "Hide Activity Advisor",
+		description = "Toggle the visibility of the Activity Advisor orb <br>"
+			+ "In-game setting must be be enabled",
+		position = 9
+	)
+	default boolean hideActivity()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = ConfigKeys.HIDE_WIKI,
 		name = "Hide Wiki banner",
 		description = "Toggle the visibility of the Wiki banner <br>"
 			+ "In-game setting must be be enabled",
-		position = 9
+		position = 10
 	)
 	default boolean hideWiki()
 	{
@@ -267,7 +388,7 @@ public interface CompactOrbsConfig extends Config
 		keyName = ConfigKeys.HIDE_LOGOUT_X,
 		name = "Hide Logout X",
 		description = "Toggle the visibility of the Logout-X when in resizable-modern display mode",
-		position = 10
+		position = 11
 	)
 	default boolean hideLogout()
 	{
@@ -278,7 +399,7 @@ public interface CompactOrbsConfig extends Config
 		keyName = ConfigKeys.HIDE_GRID,
 		name = "Hide Grid Master",
 		description = "Toggle the visibility of the Grid Master orb",
-		position = 11
+		position = 12
 	)
 	default boolean hideGrid()
 	{

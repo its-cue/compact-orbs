@@ -36,9 +36,7 @@ import com.compactorbs.util.ValueKey;
 import static com.compactorbs.util.ValueKey.X;
 import static com.compactorbs.util.ValueKey.Y;
 import com.compactorbs.widget.TargetWidget;
-import java.util.EnumSet;
 import java.util.Map;
-import java.util.Set;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -110,8 +108,6 @@ public enum Compass implements TargetWidget
 
 	private final int componentId;
 
-	private final Map<ValueKey, SetValue> positions;
-
-	public static final Set<Compass> ALL = EnumSet.allOf(Compass.class);
+	private final Map<ValueKey, SetValue> positionMap;
 
 }
