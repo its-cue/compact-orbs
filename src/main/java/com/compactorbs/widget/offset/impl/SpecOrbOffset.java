@@ -44,6 +44,11 @@ public class SpecOrbOffset implements OffsetTarget
 			return value;
 		}
 
+		if (manager.isHorizontalLayout())
+		{
+			x = slotManager.applyHiddenXOffset(Orbs.SPEC_ORB_CONTAINER, x);
+		}
+
 		return x;
 	}
 
@@ -57,9 +62,9 @@ public class SpecOrbOffset implements OffsetTarget
 			return value;
 		}
 
-		if(manager.isVerticalLayout())
+		if (manager.isVerticalLayout())
 		{
-			y = slotManager.applyHiddenOffset(Orbs.SPEC_ORB_CONTAINER, y);
+			y = slotManager.applyHiddenYOffset(Orbs.SPEC_ORB_CONTAINER, y);
 		}
 
 		return y;

@@ -31,7 +31,9 @@ import com.compactorbs.CompactOrbsConstants.ConfigKeys;
 import com.compactorbs.widget.TargetWidget;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.elements.Compass;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -77,11 +79,11 @@ public enum Slot
 	WIKI_SLOT(
 		Orbs.WIKI_ICON_CONTAINER
 	),
-	//only really a placeholder, for height, x and y (shares same with Compass.MODERN_COMPASS)
+	//compass modern/classic share same x/y/width/height, so either works
 	COMPASS_SLOT(
 		Compass.CLASSIC_COMPASS
 	),
-	//only really a placeholder, for height, x and y (shares same with Orbs.LOGOUT_X_STONE)
+	//logout icon/stone share same x/y/width/height, so either works
 	LOGOUT_X_SLOT(
 		Orbs.LOGOUT_X_ICON
 	);
@@ -98,7 +100,7 @@ public enum Slot
 		this(null, c -> null, original);
 	}
 
-	public TargetWidget configuredOrbOf(CompactOrbsConfig config)
+	public TargetWidget getConfiguredOrbOf(CompactOrbsConfig config)
 	{
 		FilteredOrb filtered = getter.apply(config);
 		if (filtered == null)
@@ -116,7 +118,7 @@ public enum Slot
 		}
 	}
 
-	public static Slot slotOf(TargetWidget target)
+	public static Slot getSlotOf(TargetWidget target)
 	{
 		for (Slot slot : values())
 		{
@@ -126,56 +128,79 @@ public enum Slot
 			}
 		}
 
-		return null;//may break swapping <-
+		return null;//handle null
 	}
 
 	public static List<Slot> getColumnOf(Slot slot)
 	{
-		if (VERTICAL_LEFT_COLUMN.contains(slot))
-		{
-			return VERTICAL_LEFT_COLUMN;
-		}
-		if (VERTICAL_RIGHT_COLUMN.contains(slot))
-		{
-			return VERTICAL_RIGHT_COLUMN;
-		}
-
-		log.debug("Slot {} is not in any column", slot);
-
-		return null;
+		return VERTICAL_LOOKUP.get(slot);
 	}
 
-	//vertical column left
-	public static final List<Slot> VERTICAL_LEFT_COLUMN = List.of(
-		XP_SLOT,
-		WORLD_MAP_SLOT,
-		STORE_SLOT,
-		ACTIVITY_SLOT
-	);
+	public static List<Slot> getRowOf(Slot slot)
+	{
+		return HORIZONTAL_LOOKUP.get(slot);
+	}
 
-	//vertical column right
-	public static final List<Slot> VERTICAL_RIGHT_COLUMN = List.of(
-		HP_SLOT,
-		PRAYER_SLOT,
-		RUN_SLOT,
-		SPEC_SLOT,
-		WIKI_SLOT
-	);
+	public static final List<Slot> VERTICAL_LEFT_COLUMN;
+	public static final List<Slot> VERTICAL_RIGHT_COLUMN;
+	public static final List<Slot> HORIZONTAL_TOP_ROW;
+	public static final List<Slot> HORIZONTAL_BOTTOM_ROW;
 
-	//TODO - may not really be necessary, with swapping, unlike with vertical
+	private static final Map<Slot, List<Slot>> VERTICAL_LOOKUP;
+	private static final Map<Slot, List<Slot>> HORIZONTAL_LOOKUP;
 
-	//left to right
-	public static final List<Slot> HORIZONTAL_TOP_ROW = List.of(
-		STORE_SLOT,
-		HP_SLOT,
-		RUN_SLOT
-	);
+	@SafeVarargs
+	private static Map<Slot, List<Slot>> buildLookup(List<Slot>... layout)
+	{
+		Map<Slot, List<Slot>> lookup = new HashMap<>();
+		for (List<Slot> group : layout)
+		{
+			for (Slot slot : group)
+			{
+				lookup.put(slot, group);
+			}
+		}
+		return Map.copyOf(lookup);
+	}
 
-	//left to right
-	public static final List<Slot> HORIZONTAL_BOTTOM_ROW = List.of(
-		ACTIVITY_SLOT,
-		PRAYER_SLOT,
-		SPEC_SLOT
-	);
+	static
+	{
+		VERTICAL_LEFT_COLUMN = List.of(
+			XP_SLOT,
+			WORLD_MAP_SLOT,
+			STORE_SLOT,
+			ACTIVITY_SLOT
+		);
+
+		VERTICAL_RIGHT_COLUMN = List.of(
+			HP_SLOT,
+			PRAYER_SLOT,
+			RUN_SLOT,
+			SPEC_SLOT,
+			WIKI_SLOT
+		);
+
+		HORIZONTAL_TOP_ROW = List.of(
+			STORE_SLOT,
+			HP_SLOT,
+			RUN_SLOT
+		);
+
+		HORIZONTAL_BOTTOM_ROW = List.of(
+			ACTIVITY_SLOT,
+			PRAYER_SLOT,
+			SPEC_SLOT
+		);
+
+		VERTICAL_LOOKUP = buildLookup(
+			VERTICAL_LEFT_COLUMN,
+			VERTICAL_RIGHT_COLUMN
+		);
+
+		HORIZONTAL_LOOKUP = buildLookup(
+			HORIZONTAL_TOP_ROW,
+			HORIZONTAL_BOTTOM_ROW
+		);
+	}
 
 }

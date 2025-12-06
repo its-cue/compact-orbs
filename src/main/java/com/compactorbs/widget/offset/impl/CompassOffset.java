@@ -47,6 +47,18 @@ public class CompassOffset implements OffsetTarget
 			return value;
 		}
 
+		if (manager.isHorizontalLayout()
+			&& manager.isVerticalLeft())
+		{
+			int hiddenWidth = slotManager.getHorizontalHiddenWidth();
+			x -= hiddenWidth;
+
+			if (hiddenWidth >= 148) //sum of hidden width, in horizontal mode
+			{
+				x += 2; //small offset to avoid full left cut-off
+			}
+		}
+
 		offsetX = x;
 		return offsetX;
 	}
@@ -61,10 +73,10 @@ public class CompassOffset implements OffsetTarget
 			return value;
 		}
 
-		if(manager.isVerticalLayout()
+		if (manager.isVerticalLayout()
 			&& manager.isHorizontalBottom())
 		{
-			int hiddenHeight = slotManager.getCeilingHeight();
+			int hiddenHeight = slotManager.getVerticalHiddenHeight();
 			y += hiddenHeight;
 
 		}

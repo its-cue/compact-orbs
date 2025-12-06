@@ -51,7 +51,19 @@ public class WorldMapOffset implements OffsetTarget
 			return v;
 		}
 
-		v = (manager.hideWorldMap ? 0 : v + manager.verticalOffset);
+		if (manager.hideWorldMap)
+		{
+			return manager.getWorldMapOffset();
+		}
+
+		v = v + manager.verticalOffset;
+
+		if (manager.isHorizontalLayout()
+			&& manager.isVerticalLeft())
+		{
+			int hiddenWidth = slotManager.getHorizontalHiddenWidth();
+			v += hiddenWidth;
+		}
 
 		return v + manager.getWorldMapOffset();
 	}
@@ -73,16 +85,16 @@ public class WorldMapOffset implements OffsetTarget
 			return v;
 		}
 
+		if (manager.hideWorldMap)
+		{
+			return manager.getWorldMapOffset();
+		}
+
 		y = v + manager.horizontalOffset;
 
 		if (manager.isVerticalLayout())
 		{
-			y = slotManager.applyHiddenOffset(Orbs.WORLD_MAP_CONTAINER, y);
-		}
-
-		if(manager.hideWorldMap)
-		{
-			y = 0;
+			y = slotManager.applyHiddenYOffset(Orbs.WORLD_MAP_CONTAINER, y);
 		}
 
 		return y + manager.getWorldMapOffset();

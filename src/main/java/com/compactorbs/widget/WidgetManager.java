@@ -159,11 +159,11 @@ public class WidgetManager
 		{
 			case X:
 				updateValue(widget::getOriginalX, widget::setOriginalX,
-					OffsetManager.getOffset(widget, key, v, compactLayout, manager, slotManager));
+					OffsetManager.getTargetOffset(widget, key, v, compactLayout, manager, slotManager));
 				break;
 			case Y:
 				updateValue(widget::getOriginalY, widget::setOriginalY,
-					OffsetManager.getOffset(widget, key, v, compactLayout, manager, slotManager));
+					OffsetManager.getTargetOffset(widget, key, v, compactLayout, manager, slotManager));
 				break;
 			case X_POSITION_MODE:
 				updateValue(widget::getXPositionMode, widget::setXPositionMode, v);
@@ -187,6 +187,11 @@ public class WidgetManager
 	//set visibility for target widgets, excluding the wiki banner (handled in updateWikiBanner)
 	public void setTargetsHidden(boolean hidden, TargetWidget... widgets)
 	{
+		if (!manager.isLoggedIn())
+		{
+			return;
+		}
+
 		for (TargetWidget target : widgets)
 		{
 			if (target == Orbs.WIKI_VANILLA_CONTAINER || target == Orbs.WIKI_ICON_CONTAINER)

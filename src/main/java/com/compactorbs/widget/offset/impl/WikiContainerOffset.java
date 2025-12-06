@@ -45,6 +45,13 @@ public class WikiContainerOffset implements OffsetTarget
 			return value;
 		}
 
+		if (manager.isHorizontalLayout()
+			&& manager.isVerticalLeft())
+		{
+			int hiddenWidth = slotManager.getHorizontalHiddenWidth();
+			x -= hiddenWidth;
+		}
+
 		return x;
 	}
 
@@ -58,15 +65,16 @@ public class WikiContainerOffset implements OffsetTarget
 			return value;
 		}
 
-		if(manager.isVerticalLayout())
+		if (manager.isVerticalLayout())
 		{
-			y = slotManager.applyHiddenOffset(Orbs.WIKI_ICON_CONTAINER, y);
+			y = slotManager.applyHiddenYOffset(Orbs.WIKI_ICON_CONTAINER, y);
 
-			if(manager.isHorizontalTop())
+			if (manager.isHorizontalTop())
 			{
 				//apply an offset when the amount hidden, leaves wiki slot as the last
 				//0-HP, 1-Pray, 2-Run, 3-Spec, 4-Wiki
-				if(slotManager.getHiddenCountAbove(Orbs.WIKI_ICON_CONTAINER) == Slot.VERTICAL_RIGHT_COLUMN.indexOf(Slot.WIKI_SLOT))
+				if (slotManager.getHiddenCountAbove(Orbs.WIKI_ICON_CONTAINER) == Slot.VERTICAL_RIGHT_COLUMN.indexOf(Slot.WIKI_SLOT)
+					&& !manager.preventReordering())
 				{
 					y += 10;
 				}

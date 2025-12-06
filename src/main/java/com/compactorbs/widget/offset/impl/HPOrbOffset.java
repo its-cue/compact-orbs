@@ -44,6 +44,11 @@ public class HPOrbOffset implements OffsetTarget
 			return value;
 		}
 
+		if (manager.isHorizontalLayout())
+		{
+			x = slotManager.applyHiddenXOffset(Orbs.HP_ORB_CONTAINER, x);
+		}
+
 		return x;
 	}
 
@@ -59,7 +64,7 @@ public class HPOrbOffset implements OffsetTarget
 
 		if (manager.isVerticalLayout())
 		{
-			y = slotManager.applyHiddenOffset(Orbs.HP_ORB_CONTAINER, y);
+			y = slotManager.applyHiddenYOffset(Orbs.HP_ORB_CONTAINER, y);
 		}
 
 		return y;

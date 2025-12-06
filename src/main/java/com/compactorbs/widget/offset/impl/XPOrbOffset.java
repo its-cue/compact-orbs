@@ -34,7 +34,6 @@ import lombok.Getter;
 @Getter
 public class XPOrbOffset implements OffsetTarget
 {
-
 	@Override
 	public int xOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
@@ -44,6 +43,21 @@ public class XPOrbOffset implements OffsetTarget
 		{
 			return value;
 		}
+
+		if (manager.isHorizontalLayout())
+		{
+			if (manager.isVerticalLeft())
+			{
+				int hiddenWidth = slotManager.getHorizontalHiddenWidth();
+				x -= hiddenWidth;
+			}
+
+			if (manager.hideWorldMap)
+			{
+				x -= 31;
+			}
+		}
+
 		return x;
 	}
 
@@ -57,9 +71,17 @@ public class XPOrbOffset implements OffsetTarget
 			return value;
 		}
 
-		if(manager.isVerticalLayout())
+		if (manager.isVerticalLayout())
 		{
-			y = slotManager.applyHiddenOffset(Orbs.XP_DROPS_CONTAINER, y);
+			y = slotManager.applyHiddenYOffset(Orbs.XP_DROPS_CONTAINER, y);
+		}
+
+		if (manager.isHorizontalLayout())
+		{
+			if (manager.hideWorldMap)
+			{
+				y -= 4;
+			}
 		}
 
 		return y;

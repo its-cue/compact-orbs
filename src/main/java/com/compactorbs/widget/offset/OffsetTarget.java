@@ -43,5 +43,4 @@ public interface OffsetTarget
 	int xOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager);
 
 	int yOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager);
-
 }

@@ -53,7 +53,7 @@ public class SlotManager
 	@Inject
 	private WidgetManager widgetManager;
 
-	//if previousId is -1 (guard only being in fixed mode)
+	//if previousId is -1, additional check to apply an update if in fixed mode atleast once
 	public boolean allowFixedModeUpdate;
 
 	//map of slots and their target widget (can be Orbs or Compass)
@@ -61,25 +61,24 @@ public class SlotManager
 
 	public void initSlots()
 	{
-		slotMap.clear();
+		reset();
 
 		allowFixedModeUpdate = true;
 
 		updateSlots(manager.enableOrbSwapping());
 	}
 
-	//@swapping used for config toggle to apply visual updates
+	//@onConfigChange used for config toggle to apply visual updates
 	//always update regardless of manager.enableOrbSwapping();
-	public void updateSlots(boolean configChange)
+	public void updateSlots(boolean onConfigChange)
 	{
 		for (Slot slot : Slot.values())
 		{
 			TargetWidget target = slot.getOriginal();
 
-			//not
 			if (target instanceof Orbs && manager.enableOrbSwapping())
 			{
-				TargetWidget configured = slot.configuredOrbOf(config);
+				TargetWidget configured = slot.getConfiguredOrbOf(config);
 				if (configured != null)
 				{
 					target = configured;
@@ -88,7 +87,7 @@ public class SlotManager
 			slotMap.put(slot, target);
 		}
 
-		remapTargetsForUpdate(configChange);
+		remapTargetsForUpdate(onConfigChange);
 	}
 
 	public void applySlotUpdate(Slot slot)
@@ -134,33 +133,33 @@ public class SlotManager
 	}
 
 	//return the height of the hidden orbs above
-	public int getHiddenHeightAbove(TargetWidget target)
+	public int getHiddenDimensionsAbove(TargetWidget target)
 	{
-		return getHiddenRelative(target, true, false);
+		return computeHiddenOffset(target, false, false);
 	}
 
 	//return the height of the hidden orbs below
-	public int getHiddenHeightBelow(TargetWidget target)
+	public int getHiddenDimensionsBelow(TargetWidget target)
 	{
-		return getHiddenRelative(target, true, true);
+		return computeHiddenOffset(target, false, true);
 	}
 
 	//return a count of the hidden orbs above
 	public int getHiddenCountAbove(TargetWidget target)
 	{
-		return getHiddenRelative(target, false, false);
+		return computeHiddenOffset(target, true, false);
 	}
 
 	//return a count of the hidden orbs below
 	public int getHiddenCountBelow(TargetWidget target)
 	{
-		return getHiddenRelative(target, false, true);
+		return computeHiddenOffset(target, true, true);
 	}
 
 	//return the amount of hidden orbs above or below a target widget
-	// @getHeight returns the height value of hidden orbs
-	// @below returns the count of hidden orbs, above or below
-	public int getHiddenRelative(TargetWidget target, boolean getHeight, boolean below)
+	// @dimension return hidden orb dimensions
+	// @below returns hidden orb count (for above, or below)
+	public int computeHiddenOffset(TargetWidget target, boolean count, boolean isBelow)
 	{
 		if (target == null)
 		{
@@ -173,52 +172,55 @@ public class SlotManager
 			return 0;
 		}
 
-		List<Slot> column = Slot.getColumnOf(targetSlot);
-		if (column == null || column.isEmpty())
+		List<Slot> columnOrRow = (manager.isHorizontalLayout()
+				? Slot.getRowOf(targetSlot)
+				: Slot.getColumnOf(targetSlot));
+
+		if (columnOrRow == null || columnOrRow.isEmpty())
 		{
 			return 0;
 		}
 
-		int targetIndex = column.indexOf(targetSlot);
+		int targetIndex = columnOrRow.indexOf(targetSlot);
 		if (targetIndex < 0)
 		{
 			return 0;
 		}
 
-		return below
-			? calcHiddenBelow(column, targetIndex, getHeight)
-			: calcHiddenAbove(column, targetIndex, getHeight);
+		return isBelow
+			? hiddenBelowOffset(columnOrRow, targetIndex, count)
+			: hiddenAboveOffset(columnOrRow, targetIndex, count);
 	}
 
-	private int calcHiddenAbove(List<Slot> column, int targetIndex, boolean getHeight)
+	private int hiddenAboveOffset(List<Slot> columnOrRow, int targetIndex, boolean count)
 	{
 		int total = 0;
 
 		for (int index = 0; index < targetIndex; index++)
 		{
-			total += getHiddenValueForSlot(column.get(index), getHeight);
+			total += getHiddenAmountForSlot(columnOrRow.get(index), count);
 		}
 
 		return total;
 	}
 
-	private int calcHiddenBelow(List<Slot> column, int targetIndex, boolean getHeight)
+	private int hiddenBelowOffset(List<Slot> columnOrRow, int targetIndex, boolean count)
 	{
 		int total = 0;
 
-		for (int index = targetIndex + 1; index < column.size(); index++)
+		for (int index = targetIndex + 1; index < columnOrRow.size(); index++)
 		{
-			//ignore wiki slot for /below/ calculation
-			if (column.get(index) != Slot.WIKI_SLOT)
+			//ignore wiki slot for /below/ calculation in vertical
+			if (columnOrRow.get(index) != Slot.WIKI_SLOT)
 			{
-				total += getHiddenValueForSlot(column.get(index), getHeight);
+				total += getHiddenAmountForSlot(columnOrRow.get(index), count);
 			}
 		}
 
 		return total;
 	}
 
-	private int getHiddenValueForSlot(Slot slot, boolean getHeight)
+	private int getHiddenAmountForSlot(Slot slot, boolean count)
 	{
 		TargetWidget target = slotMap.get(slot);
 		if (target == null)
@@ -226,26 +228,15 @@ public class SlotManager
 			return 0;
 		}
 
-		if (!isOrbAtSlotHidden(target))
+		if (!isOriginalOrbHidden(target))
 		{
 			return 0;
 		}
 
-		return getHeight ? getSlotHeight(slot) : 1;
+		return count ? 1 : getSlotSize(slot);
 	}
 
-	private boolean isOrbAtSlotHidden(TargetWidget target)
-	{
-		Slot slot = Slot.slotOf(target);
-
-		assert slot != null;
-		TargetWidget originalOrb = slot.getOriginal();
-
-		Supplier<Boolean> entry = manager.orbToToggle.get(originalOrb);
-		return entry != null && entry.get();
-	}
-
-	public int getSlotHeight(Slot slot)
+	public int getSlotSize(Slot slot)
 	{
 		TargetWidget target = getOrbOrNull(slot);
 		if (target == null)
@@ -259,10 +250,107 @@ public class SlotManager
 			return 0;
 		}
 
-		return widget.getOriginalHeight();
+		return manager.isHorizontalLayout() ? widget.getOriginalWidth() : widget.getOriginalHeight();
 	}
 
-	public boolean isOrbHidden(Slot slot)
+	public int getVerticalHiddenHeight()
+	{
+		if (manager.leaveEmptySpace() || manager.preventReordering())
+		{
+			return 0;
+		}
+
+		return Math.min(sumHiddenSize(Slot.VERTICAL_LEFT_COLUMN), sumHiddenSize(Slot.VERTICAL_RIGHT_COLUMN));
+	}
+
+	public int getHorizontalHiddenWidth()
+	{
+		if (manager.leaveEmptySpace() || manager.preventReordering())
+		{
+			return 0;
+		}
+
+		return Math.min(sumHiddenSize(Slot.HORIZONTAL_TOP_ROW), sumHiddenSize(Slot.HORIZONTAL_BOTTOM_ROW));
+	}
+
+	public int hiddenAboveOffset(TargetWidget target, int value)
+	{
+		if (target != null)
+		{
+			int sum = getHiddenDimensionsAbove(target);
+			value -= sum;
+		}
+
+		return value;
+	}
+
+	public int hiddenBelowOffset(TargetWidget target, int value)
+	{
+		if (target != null)
+		{
+			int sum = getHiddenDimensionsBelow(target);
+			value += sum;
+		}
+
+		return value;
+	}
+
+	public int applyHiddenYOffset(TargetWidget target, int y)
+	{
+		if (!manager.preventReordering())
+		{
+			if (manager.isHorizontalTop())
+			{
+				return hiddenAboveOffset(target, y);
+			}
+			else if (manager.isHorizontalBottom())
+			{
+				return hiddenBelowOffset(target, y);
+			}
+		}
+
+		return y;
+	}
+
+	public int applyHiddenXOffset(TargetWidget target, int x)
+	{
+		if (!manager.preventReordering())
+		{
+			if (manager.isVerticalLeft())
+			{
+				return hiddenAboveOffset(target, x);
+			}
+			else if (manager.isVerticalRight())
+			{
+				return hiddenBelowOffset(target, x);
+			}
+		}
+
+		return x;
+	}
+
+	private int sumHiddenSize(List<Slot> columnOrRow)
+	{
+		int total = 0;
+
+		for (Slot slot : columnOrRow)
+		{
+			TargetWidget target = slotMap.get(slot);
+
+			if (target != null && isCurrentOrbHidden(slot))
+			{
+				//ignore wiki slot
+				if (slot != Slot.WIKI_SLOT)
+				{
+					total += getSlotSize(slot);
+				}
+			}
+		}
+
+		return total;
+	}
+
+	public boolean isCurrentOrbHidden(Slot slot)
 	{
 		TargetWidget target = getOrbOrNull(slot);
 		if (target == null)
@@ -274,73 +362,18 @@ public class SlotManager
 		return entry != null && entry.get();
 	}
 
-	public int getCeilingHeight()
+	private boolean isOriginalOrbHidden(TargetWidget target)
 	{
-		int leftHeight = getTotalHeight(Slot.VERTICAL_LEFT_COLUMN);
-		int rightHeight = getTotalHeight(Slot.VERTICAL_RIGHT_COLUMN);
-
-		return Math.min(leftHeight, rightHeight);
-	}
-
-	private int getTotalHeight(List<Slot> column)
-	{
-		int totalHeight = 0;
-
-		for (Slot slot : column)
+		Slot slot = Slot.getSlotOf(target);
+		if (slot == null)
 		{
-			TargetWidget target = slotMap.get(slot);
-
-			if (target != null && isOrbHidden(slot))
-			{
-				//ignore wiki slot
-				if (slot != Slot.WIKI_SLOT)
-				{
-					totalHeight += getSlotHeight(slot);
-				}
-			}
+			return false;
 		}
 
-		return totalHeight;
-	}
+		TargetWidget original = slot.getOriginal();
 
-	public int calcHiddenAbove(TargetWidget target, int y)
-	{
-		if (target != null)
-		{
-			int hiddenAboveHeight = getHiddenHeightAbove(target);
-			y -= hiddenAboveHeight;
-		}
-
-		return y;
-	}
-
-	public int calcHiddenBelow(TargetWidget target, int y)
-	{
-		if (target != null)
-		{
-			int hiddenAboveHeight = getHiddenHeightBelow(target);
-			y += hiddenAboveHeight;
-		}
-
-		return y;
-	}
-
-	public int applyHiddenOffset(TargetWidget target, int y)
-	{
-		//if horizontal is top, everything shifts to the top (bottom-up)
-		if (manager.isHorizontalTop())
-		{
-			//get how many are hidden above, and adjust Y accordingly (this case, subtract)
-			return calcHiddenAbove(target, y);
-		}
-		//if horizontal is bottom, everything shifts to the bottom (top-down)
-		else if (manager.isHorizontalBottom())
-		{
-			//get how many are hidden below, and adjust Y accordingly (this case, add)
-			return calcHiddenBelow(target, y);
-		}
-
-		return y;
+		Supplier<Boolean> entry = manager.orbToToggle.get(original);
+		return entry != null && entry.get();
 	}
 
 	public void reset()
@@ -350,7 +383,7 @@ public class SlotManager
 
 	private TargetWidget getConfiguredOrb(Slot slot)
 	{
-		return slot.configuredOrbOf(config);
+		return slot.getConfiguredOrbOf(config);
 	}
 
 	public TargetWidget getCurrentOrb(Slot slot)

@@ -32,31 +32,36 @@ import net.runelite.api.widgets.Widget;
 
 public class OffsetManager
 {
-	public static int getOffset(Widget widget, ValueKey valueKey, int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	public static int getTargetOffset(Widget widget, ValueKey valueKey, int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		Offsets offsetKey = Offsets.fromWidget(widget);
-		if(offsetKey == null)
+		OffsetTarget offsetTarget = getTarget(widget);
+		if (offsetTarget == null)
 		{
-			return getDefaults(valueKey, value, compactLayout, manager.verticalOffset, manager.horizontalOffset);
+			return getDefault(valueKey, value, compactLayout, manager.verticalOffset, manager.horizontalOffset);
 		}
 
-		OffsetTarget offsetTarget = offsetKey.offsetTarget();
-		if(offsetTarget == null)
-		{
-			return getDefaults(valueKey, value, compactLayout, manager.verticalOffset, manager.horizontalOffset);
-		}
-
-		return valueKey == ValueKey.X
-				? offsetTarget.xOffset(value, compactLayout, manager, slotManager)
-				: offsetTarget.yOffset(value, compactLayout, manager, slotManager);
+		return getOffset(offsetTarget, valueKey, value, compactLayout, manager, slotManager);
 	}
 
-	private static int getDefaults(ValueKey valueKey, int value, boolean compactLayout, int xOffset, int yOffset)
+	private static OffsetTarget getTarget(Widget widget)
 	{
-		if(!compactLayout)
+		Offsets offsets = Offsets.fromWidget(widget);
+		return offsets != null ? offsets.offsetTarget() : null;
+	}
+
+	private static int getDefault(ValueKey valueKey, int value, boolean compactLayout, int xOffset, int yOffset)
+	{
+		if (!compactLayout)
 		{
 			return value;
 		}
 		return value + (valueKey == ValueKey.X ? xOffset : yOffset);
+	}
+
+	private static int getOffset(OffsetTarget target, ValueKey key, int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	{
+		return key == ValueKey.X
+			? target.xOffset(value, compactLayout, manager, slotManager)
+			: target.yOffset(value, compactLayout, manager, slotManager);
 	}
 }

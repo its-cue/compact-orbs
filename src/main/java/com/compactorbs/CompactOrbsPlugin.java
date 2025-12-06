@@ -58,7 +58,7 @@ import net.runelite.client.util.HotkeyListener;
 @PluginDescriptor(
 	name = "Compact Orbs",
 	description = "Collapse the minimap orbs into a compact view.",
-	tags = {"compact", "orbs", "hide", "minimap", "resizable", "classic", "modern", "world", "map", "wiki", "swap"},
+	tags = {"compact", "orbs", "layout", "hide", "minimap", "resizable", "classic", "modern", "world", "map", "wiki", "swap"},
 	conflicts = {"Fixed Resizable Hybrid", "Orb Hider", "Minimap Hider"}
 )
 public class CompactOrbsPlugin extends Plugin
@@ -181,7 +181,7 @@ public class CompactOrbsPlugin extends Plugin
 			manager.updateWikiBanner(config.hideWiki());
 		}
 
-		if(scriptId == Script.WORLD_MAP_UPDATE && manager.hideWorldMap)
+		if (scriptId == Script.WORLD_MAP_UPDATE && manager.hideWorldMap)
 		{
 			widgetManager.remapTarget(Orbs.WORLD_MAP_CONTAINER, manager.isMinimapHidden() && manager.isResized());
 			return;
@@ -224,11 +224,24 @@ public class CompactOrbsPlugin extends Plugin
 		{
 			switch (key)
 			{
+				case ConfigKeys.MINIMAP:
+				case ConfigKeys.COMPASS:
+				case ConfigKeys.HOTKEY_TOGGLE:
+				case ConfigKeys.HOTKEY_MINIMAP:
+					//do nothing (prevent default behaviour)
+					break;
+
 				case ConfigKeys.MINIMAP_BUTTON_PLACEMENT:
 					clientThread.invokeLater(manager::updateMinimapToggleButton);
 					break;
+
 				case ConfigKeys.MINIMAP_TOGGLE_BUTTON:
 				case ConfigKeys.COMPASS_TOGGLE_BUTTON:
+					if (!manager.isLoggedIn())
+					{
+						return;
+					}
+
 					clientThread.invokeLater(() -> manager.updateCustomChildren(true));
 					break;
 
@@ -264,6 +277,12 @@ public class CompactOrbsPlugin extends Plugin
 					clientThread.invokeLater(() ->
 					{
 						manager.updateOrbByConfig(event.getKey());
+
+						//return early if not logged in
+						if (!manager.isLoggedIn())
+						{
+							return;
+						}
 
 						//when in compact layouts
 						if (manager.isResized() && manager.isMinimapHidden())
@@ -306,6 +325,12 @@ public class CompactOrbsPlugin extends Plugin
 		@Override
 		public void hotkeyPressed()
 		{
+			if (config.minimapHotkey())
+			{
+				clientThread.invokeLater(manager::onMinimapToggle);
+				return;
+			}
+
 			boolean hidden = !(config.hideMinimapToggle() || config.hideCompassToggle());
 
 			configManager.setConfiguration(GROUP_NAME, ConfigKeys.MINIMAP_TOGGLE_BUTTON, hidden);

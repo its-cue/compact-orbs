@@ -43,6 +43,13 @@ public class LogoutXOffset implements OffsetTarget
 			return value;
 		}
 
+		if (manager.isHorizontalLayout()
+			&& manager.isVerticalLeft())
+		{
+			int hiddenWidth = slotManager.getHorizontalHiddenWidth();
+			x += hiddenWidth;
+		}
+
 		return x;
 	}
 
@@ -56,11 +63,20 @@ public class LogoutXOffset implements OffsetTarget
 			return value;
 		}
 
-		if(manager.isVerticalLayout()
+		if (manager.isVerticalLayout()
 			&& manager.isHorizontalBottom())
 		{
-			int hiddenHeight = slotManager.getCeilingHeight();
+			int hiddenHeight = slotManager.getVerticalHiddenHeight();
 			y += hiddenHeight;
+		}
+
+		//maybe just let it bypass - !manager.preventOrbReordering()
+		if (manager.isHorizontalLayout())
+		{
+			if (manager.isXpDropHidden() || manager.hideWorldMap)
+			{
+				y += 21;
+			}
 		}
 
 		return y;

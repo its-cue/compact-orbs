@@ -44,6 +44,11 @@ public class PrayerOrbOffset implements OffsetTarget
 			return value;
 		}
 
+		if (manager.isHorizontalLayout())
+		{
+			x = slotManager.applyHiddenXOffset(Orbs.PRAYER_ORB_CONTAINER, x);
+		}
+
 		return x;
 	}
 
@@ -57,9 +62,9 @@ public class PrayerOrbOffset implements OffsetTarget
 			return value;
 		}
 
-		if(manager.isVerticalLayout())
+		if (manager.isVerticalLayout())
 		{
-			y = slotManager.applyHiddenOffset(Orbs.PRAYER_ORB_CONTAINER, y);
+			y = slotManager.applyHiddenYOffset(Orbs.PRAYER_ORB_CONTAINER, y);
 		}
 
 		return y;

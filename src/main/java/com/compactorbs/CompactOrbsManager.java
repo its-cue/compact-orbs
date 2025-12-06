@@ -100,10 +100,15 @@ public class CompactOrbsManager
 	private final Map<String, Map.Entry<Supplier<Boolean>, TargetWidget[]>> hideByConfigMap = new HashMap<>();
 	private final Map<Integer, Map.Entry<Supplier<Boolean>, TargetWidget[]>> hideByScriptMap = new HashMap<>();
 
-	public Map<TargetWidget, Supplier<Boolean>> orbToToggle = new HashMap<>();
+	public final Map<TargetWidget, Supplier<Boolean>> orbToToggle = new HashMap<>();
 
 	public void init(int scriptId)
 	{
+		if (!isLoggedIn())
+		{
+			return;
+		}
+
 		updateWikiBanner(config.hideWiki());
 
 		updateOrbByScript(scriptId);
@@ -194,7 +199,7 @@ public class CompactOrbsManager
 	}
 
 	//toggle the minimap visibility, and update related widgets when using the custom toggle button
-	private void onMinimapToggle()
+	public void onMinimapToggle()
 	{
 		boolean toggle = !isMinimapHidden();
 		boolean remapCondition = toggle && !isCompassHidden();
@@ -372,6 +377,11 @@ public class CompactOrbsManager
 	//vanilla = official wiki banner
 	public void updateWikiBanner(boolean hidden)
 	{
+		if (!isLoggedIn())
+		{
+			return;
+		}
+
 		boolean wikiPluginActive = Boolean.TRUE.equals(
 			configManager.getConfiguration(ConfigGroup.RuneLite.GROUP_NAME,
 				ConfigKeys.RuneLite.WIKI_PLUGIN, Boolean.class)
@@ -431,20 +441,42 @@ public class CompactOrbsManager
 			return;
 		}
 
-		verticalOffset = Layout.Vertical.RIGHT_OFFSET;
+		boolean isCompactLayout = (isResized() && isMinimapHidden());
 
-		if (isVerticalLayout() && isVerticalLeft())
+		//zero out
+		verticalOffset = 0;
+
+		if (isVerticalLayout())
 		{
-			verticalOffset = (isResized() && isMinimapHidden()) ?
-				Layout.Vertical.LEFT_OFFSET : Layout.Vertical.RIGHT_OFFSET;
+			if (isCompactLayout)
+			{
+				if (isVerticalLeft())
+				{
+					verticalOffset = Layout.Vertical.LEFT_OFFSET;
+				}
+				else
+				{
+					verticalOffset = Layout.Vertical.RIGHT_OFFSET;
+				}
+			}
 		}
 
-		horizontalOffset = Layout.Horizontal.TOP_OFFSET;
+		//zero out
+		horizontalOffset = 0;
 
-		if (isHorizontalLayout() && isHorizontalBottom())
+		if (isHorizontalLayout())
 		{
-			horizontalOffset = (isResized() && isMinimapHidden()) ?
-				Layout.Horizontal.BOTTOM_OFFSET : Layout.Horizontal.TOP_OFFSET;
+			if (isCompactLayout)
+			{
+				if (isHorizontalBottom())
+				{
+					horizontalOffset = Layout.Horizontal.BOTTOM_OFFSET;
+				}
+				else
+				{
+					horizontalOffset = Layout.Horizontal.TOP_OFFSET;
+				}
+			}
 		}
 
 		getWorldMapOffset();
@@ -556,6 +588,16 @@ public class CompactOrbsManager
 		return config.horizontalPosition() == HorizontalPosition.TOP;
 	}
 
+	public boolean preventReordering()
+	{
+		return config.disableReordering();
+	}
+
+	public boolean leaveEmptySpace()
+	{
+		return config.leaveEmptySpace();
+	}
+
 	//returns true if minimap is hidden
 	public boolean isMinimapHidden()
 	{
@@ -566,6 +608,12 @@ public class CompactOrbsManager
 	public boolean isCompassHidden()
 	{
 		return config.hideCompass();
+	}
+
+	//returns true if the xp drop orb is hidden
+	public boolean isXpDropHidden()
+	{
+		return config.hideXp();
 	}
 
 	//returns true when compass frame should be hidden
@@ -627,10 +675,16 @@ public class CompactOrbsManager
 		{
 			x = Layout.DEFAULT_MINIMAP_BUTTON_X;
 
-			if (config.hideWiki())
+			if (config.hideWiki() && !preventReordering())
 			{
 				//offset when wiki is hidden, in horizontal layout
 				x -= 40;
+			}
+
+			if (isVerticalLeft())
+			{
+				int hiddenWidth = slotManager.getHorizontalHiddenWidth();
+				x -= hiddenWidth;
 			}
 
 			return x;
@@ -664,11 +718,12 @@ public class CompactOrbsManager
 				y += horizontalOffset;
 
 				//anchor minimap button to wiki icon container in vertical
-				y = slotManager.applyHiddenOffset(Orbs.WIKI_ICON_CONTAINER, y);
+				y = slotManager.applyHiddenYOffset(Orbs.WIKI_ICON_CONTAINER, y);
 
 				//apply an offset when the amount hidden, leaves wiki slot as the last
 				//0-HP, 1-Pray, 2-Run, 3-Spec, 4-Wiki
-				if (slotManager.getHiddenCountAbove(Orbs.WIKI_ICON_CONTAINER) == Slot.VERTICAL_RIGHT_COLUMN.indexOf(Slot.WIKI_SLOT))
+				if (slotManager.getHiddenCountAbove(Orbs.WIKI_ICON_CONTAINER) == Slot.VERTICAL_RIGHT_COLUMN.indexOf(Slot.WIKI_SLOT)
+					&& !preventReordering())
 				{
 					//match wiki container offset @WikiContainerOffset
 					y += 10;
@@ -691,7 +746,7 @@ public class CompactOrbsManager
 
 		if (horizontal)
 		{
-			return (Layout.DEFAULT_MINIMAP_BUTTON_Y / 2) + horizontalOffset;
+			return ((Layout.DEFAULT_MINIMAP_BUTTON_Y) / 2) + horizontalOffset - 10; //- 10: apply the horizontal Y change in constants
 		}
 
 		return y;
@@ -799,7 +854,7 @@ public class CompactOrbsManager
 				//while minimap is hidden, and button position is below map
 				if (key.equals(ConfigKeys.HIDE_STORE)
 					&& config.minimapTogglePlacement() == TogglePlacement.BELOW_MAP
-					&& !isMinimapHidden())
+					&& !isMinimapHidden() && isLoggedIn())
 				{
 					updateMinimapToggleButton();
 				}

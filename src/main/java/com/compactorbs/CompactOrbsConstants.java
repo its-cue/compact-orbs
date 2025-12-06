@@ -55,12 +55,15 @@ public class CompactOrbsConstants
 		public static final String MINIMAP = "hideMinimap";
 		public static final String COMPASS = "hideCompass";
 		public static final String HOTKEY_TOGGLE = "hotkeyToggle";
+		public static final String HOTKEY_MINIMAP = "hotkeyMinimap";
 		public static final String MINIMAP_TOGGLE_BUTTON = "hideMinimapButton";
 		public static final String COMPASS_TOGGLE_BUTTON = "hideCompassButton";
 		public static final String MINIMAP_BUTTON_PLACEMENT = "minimapButtonPlacement";
 		public static final String ORB_LAYOUT = "orbLayout";
 		public static final String HORIZONTAL = "horizontalPosition";
 		public static final String VERTICAL = "verticalPosition";
+		public static final String DISABLE_REORDERING = "disableReordering";
+		public static final String LEAVE_EMPTY_SPACE = "leaveEmptySpace";
 		public static final String ENABLE_ORB_SWAPPING = "enableOrbSwapping";
 		public static final String HP_ORB_SLOT = "hpOrbSlot";
 		public static final String PRAYER_ORB_SLOT = "prayerOrbSlot";
@@ -230,44 +233,44 @@ public class CompactOrbsConstants
 		public static final class Horizontal
 		{
 			public static final int XP_DROPS_X = 179;
-			public static final int XP_DROPS_Y = 27;
+			public static final int XP_DROPS_Y = 15;
 
 			public static final int HP_ORB_X = 35;
-			public static final int HP_ORB_Y = 35;
+			public static final int HP_ORB_Y = 25;
 
 			public static final int PRAYER_ORB_X = 35;
-			public static final int PRAYER_ORB_Y = 70;
+			public static final int PRAYER_ORB_Y = 60;
 
 			public static final int RUN_ORB_X = 92;
-			public static final int RUN_ORB_Y = 35;
+			public static final int RUN_ORB_Y = 25;
 
 			public static final int SPEC_ORB_X = 92;
-			public static final int SPEC_ORB_Y = 70;
+			public static final int SPEC_ORB_Y = 60;
 
 			public static final int STORE_ORB_X = 0;
-			public static final int STORE_ORB_Y = 35;
+			public static final int STORE_ORB_Y = 25;
 
 			public static final int ACTIVITY_ORB_X = 0;
-			public static final int ACTIVITY_ORB_Y = 70;
+			public static final int ACTIVITY_ORB_Y = 60;
 
 			public static final int WORLD_MAP_X = 31;//148
-			public static final int WORLD_MAP_Y = 16;
+			public static final int WORLD_MAP_Y = 6;
 
 			public static final int WIKI_ICON_X = 149;
-			public static final int WIKI_ICON_Y = 81;
+			public static final int WIKI_ICON_Y = 71;
 
 			public static final int WIKI_VANILLA_X = 0;
 			public static final int WIKI_VANILLA_Y = 10;
 
 			public static final int LOGOUT_X = 1;
-			public static final int LOGOUT_Y = 2;
+			public static final int LOGOUT_Y = 1;
 
 			public static final int COMPASS_X = Original.COMPASS_X + 117;
-			public static final int COMPASS_Y = Original.COMPASS_Y + 57;
+			public static final int COMPASS_Y = Original.COMPASS_Y + 47;
 
 			//horizontal offset
 			public static final int TOP_OFFSET = 0;
-			public static final int BOTTOM_OFFSET = 90;
+			public static final int BOTTOM_OFFSET = 100;
 		}
 
 		//world map x and y when in fixed mode
