@@ -227,7 +227,7 @@ public interface CompactOrbsConfig extends Config
 	)
 	default boolean leaveEmptySpace()
 	{
-		return true;
+		return false;
 	}
 
 	@ConfigSection(
