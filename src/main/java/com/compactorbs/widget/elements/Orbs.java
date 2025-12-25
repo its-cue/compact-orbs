@@ -339,16 +339,16 @@ public enum Orbs implements TargetWidget
 
 	private final int componentId, arrayId, scriptId;
 
-	private final Map<ValueKey, SetValue> positionMap;
+	private final Map<ValueKey, SetValue> valueMap;
 
-	Orbs(int componentId, int scriptId, Map<ValueKey, SetValue> positionMap)
+	Orbs(int componentId, int scriptId, Map<ValueKey, SetValue> valueMap)
 	{
-		this(componentId, -1, scriptId, positionMap);
+		this(componentId, -1, scriptId, valueMap);
 	}
 
-	Orbs(int componentId, Map<ValueKey, SetValue> positionMap)
+	Orbs(int componentId, Map<ValueKey, SetValue> valueMap)
 	{
-		this(componentId, -1, -1, positionMap);
+		this(componentId, -1, -1, valueMap);
 	}
 
 	//only includes widgets that require updating

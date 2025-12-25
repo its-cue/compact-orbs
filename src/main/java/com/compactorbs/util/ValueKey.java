@@ -29,6 +29,11 @@ public enum ValueKey
 {
 	X,
 	Y,
+	WIDTH,
+	HEIGHT,
 	X_POSITION_MODE,
-	Y_POSITION_MODE
+	Y_POSITION_MODE,
+	WIDTH_MODE,
+	HEIGHT_MODE
+
 }

@@ -80,6 +80,7 @@ public class CompactOrbsConstants
 		public static final String HIDE_WIKI = "hideWiki";
 		public static final String HIDE_LOGOUT_X = "hideLogoutX";
 		public static final String HIDE_GRID = "hideGrid";
+		public static final String ENABLE_MINIMAP_OVERLAY = "enableMinimapOverlay";
 
 		public static final class Wiki
 		{
@@ -123,6 +124,9 @@ public class CompactOrbsConstants
 		//logout X redraw when opening tabs/using hotkey
 		public static final int TOP_LEVEL_REDRAW = ScriptID.TOPLEVEL_REDRAW;
 		public static final int TOP_LEVEL_SIDE_CUSTOMIZE = 919;
+
+		//buff bar widget, used for the minimap overlay
+		public static final int BUFF_BAR_CONTENT_UPDATE = 4730;
 
 		//relevant update scripts for the target orbs
 		public static final int WORLD_MAP_UPDATE = 1700;
@@ -183,6 +187,11 @@ public class CompactOrbsConstants
 
 			public static final int COMPASS_X = 34;
 			public static final int COMPASS_Y = 5;
+			public static final int COMPASS_DIMENSION = 35;
+
+			public static final int MINIMAP_X = 6;
+			public static final int MINIMAP_Y = 8;
+			public static final int MINIMAP_DIMENSION = 152;
 		}
 
 		/* Vertical positions for orb/compass widgets */
@@ -273,6 +282,34 @@ public class CompactOrbsConstants
 			public static final int BOTTOM_OFFSET = 100;
 		}
 
+		public static final class MinimapOverlay
+		{
+			public static final int CONTAINER_WIDTH = 182;
+			public static final int CONTAINER_HEIGHT = 166;
+
+			//difference between original width, and clone width
+			public static final int WIDTH_DIFF = 29;
+
+			public static final int NO_CLICK_X = 0;
+			public static final int[] NO_CLICK_Y =
+				{
+					4, 44, 100, 125, 140, 155
+				};
+
+			public static final int[] NO_CLICK_WIDTH =
+				{
+					178, 166, 161, 151, 141, 121
+				};
+
+			public static final int[] NO_CLICK_HEIGHT =
+				{
+					40, 56, 25, 15, 15, 11
+				};
+
+			public static final int MINIMAP_CONTENT = 1338;
+			public static final int COMPASS_CONTENT = 1339;
+		}
+
 		//world map x and y when in fixed mode
 		public static final int FIXED_WORLD_MAP_X = 10;
 		public static final int FIXED_WORLD_MAP_Y = 115;
@@ -337,6 +374,11 @@ public class CompactOrbsConstants
 
 	public static final class Sprite
 	{
+		//minimap clone sprites
+		public static final int COMPASS_MASK = SpriteID.RESIZE_COMPASS_MASK;
+		public static final int MINIMAP_MASK = SpriteID.RESIZE_MAP_MASK;
+		public static final int MINIMAP_FRAME = SpriteID.OSRS_STRETCH_MAPSURROUND;
+
 		//border frame for the compass when the minimap is hidden
 		public static final int COMPASS_FRAME = SpriteID.COMPASS_OUTLINE;
 
@@ -350,6 +392,12 @@ public class CompactOrbsConstants
 
 	public static final class Widgets
 	{
+		public static final class MinimapOverlay
+		{
+			//unused widget layer (official client only?) BuffBar (651.0)
+			public static final int UNIVERSE = InterfaceID.BuffBar.UNIVERSE;
+		}
+
 		public static final class Orb
 		{
 			//orbs container interface

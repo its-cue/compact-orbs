@@ -39,6 +39,7 @@ import com.compactorbs.CompactOrbsConstants.Varbit;
 import com.compactorbs.CompactOrbsConstants.VarbitValue;
 import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
 import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
+import com.compactorbs.CompactOrbsConstants.Widgets.MinimapOverlay;
 import com.compactorbs.CompactOrbsConstants.Widgets.Orb;
 import com.compactorbs.widget.TargetWidget;
 import com.compactorbs.widget.WidgetManager;
@@ -57,6 +58,9 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.WidgetPositionMode;
+import net.runelite.api.widgets.WidgetSizeMode;
+import net.runelite.api.widgets.WidgetType;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.util.ColorUtil;
 
@@ -92,6 +96,9 @@ public class CompactOrbsManager
 	//update flag for the custom widgets
 	public boolean pendingChildrenUpdate;
 
+	//minimap overlay flag, when layer is ready for children
+	public boolean pendingMinimapOverlayChildren;
+
 	//custom widgets created when in compact layout
 	private Widget compassFrame;
 	private Widget minimapButton;
@@ -120,6 +127,9 @@ public class CompactOrbsManager
 				//update on initial load, when in fixed mode
 				widgetManager.remapTargets(false, Script.FORCE_UPDATE, Orbs.FIXED.toArray(Orbs[]::new));
 				widgetManager.remapTarget(Orbs.WORLD_MAP_CONTAINER, false);
+
+				//always hide the minimap overlay in fixed mode
+				widgetManager.setHidden(CompactOrbsConstants.Widgets.MinimapOverlay.UNIVERSE, true);
 
 				//reset update flags
 				previousParentId = -1;
@@ -192,6 +202,8 @@ public class CompactOrbsManager
 
 			widgetManager.remapTargets(false, Script.FORCE_UPDATE, Compass.values());
 		}
+
+		resetMinimapOverlayContainer();
 
 		//protect certain fixed mode orbs from being changed when in fixed mode
 		widgetManager.remapTargets(false, Script.FORCE_UPDATE,
@@ -327,6 +339,9 @@ public class CompactOrbsManager
 			updateMinimapToggleButton();
 			updateCompassToggleButton();
 
+			//treat minimap overlay as 'custom'
+			updateMinimapOverlayVisibility();
+
 			//clear update flag
 			pendingChildrenUpdate = false;
 		}
@@ -371,6 +386,113 @@ public class CompactOrbsManager
 		compassFrame = null;
 		minimapButton = null;
 		compassButton = null;
+	}
+
+	//update visibility of the minimap overlay
+	public void updateMinimapOverlayVisibility()
+	{
+		widgetManager.setHidden(CompactOrbsConstants.Widgets.MinimapOverlay.UNIVERSE, hideMinimapOverlay());
+	}
+
+	//set hooked layer back to default
+	private void resetMinimapOverlayContainer()
+	{
+		configureMinimapOverlayContainer(false);
+		widgetManager.clearChildren(MinimapOverlay.UNIVERSE);
+	}
+
+	//initial setup for the minimap overlay
+	//@enabled - for startup/shutdown behaviour
+	public void configureMinimapOverlayContainer(boolean enabled)
+	{
+		Widget parent = client.getWidget(CompactOrbsConstants.Widgets.MinimapOverlay.UNIVERSE);
+		if (parent == null)
+		{
+			return;
+		}
+
+		//don't modify if it already has been modified
+		if (enabled && parent.getXPositionMode() == 2)
+		{
+			return;
+		}
+
+		if (!enabled)
+		{
+			parent.setForcedPosition(-1, -1);
+			parent.setHidden(false);
+		}
+
+		//set layer to be used for the minimap overlay
+		parent.
+			setOriginalWidth(enabled ? Layout.MinimapOverlay.CONTAINER_WIDTH : 0).
+			setOriginalHeight(enabled ? Layout.MinimapOverlay.CONTAINER_HEIGHT : 0).
+			setWidthMode(enabled ? WidgetSizeMode.ABSOLUTE : WidgetSizeMode.MINUS).
+			setHeightMode(enabled ? WidgetSizeMode.ABSOLUTE : WidgetSizeMode.MINUS).
+			setXPositionMode(enabled ? WidgetPositionMode.ABSOLUTE_RIGHT : WidgetPositionMode.ABSOLUTE_CENTER).
+			setYPositionMode(enabled ? WidgetPositionMode.ABSOLUTE_TOP : WidgetPositionMode.ABSOLUTE_CENTER);
+
+		//update changes
+		parent.revalidate();
+
+		//flagged as ready for children
+		pendingMinimapOverlayChildren = true;
+	}
+
+	//create necessary widgets for the minimap overlay
+	public void createMinimapOverlayChildren()
+	{
+		Widget parent = client.getWidget(MinimapOverlay.UNIVERSE);
+		if (parent == null)
+		{
+			return;
+		}
+
+		//add no_click layers
+		for (int index = 0; index < Layout.MinimapOverlay.NO_CLICK_Y.length; index++)
+		{
+			widgetManager.createMinimapNoClickLayer(
+				parent, index,
+				Layout.MinimapOverlay.NO_CLICK_Y[index],
+				Layout.MinimapOverlay.NO_CLICK_WIDTH[index],
+				Layout.MinimapOverlay.NO_CLICK_HEIGHT[index]
+			);
+		}
+
+		//add compass
+		widgetManager.createMinimapElement(
+			parent, 6,
+			Layout.MinimapOverlay.COMPASS_CONTENT,
+			Sprite.COMPASS_MASK,
+			Layout.Original.COMPASS_X - Layout.MinimapOverlay.WIDTH_DIFF, //difference between original width, and overlay widget
+			Layout.Original.COMPASS_Y,
+			Layout.Original.COMPASS_DIMENSION,
+			Layout.Original.COMPASS_DIMENSION,
+			WidgetPositionMode.ABSOLUTE_LEFT,
+			WidgetPositionMode.ABSOLUTE_TOP
+		);
+
+		//add minimap
+		widgetManager.createMinimapElement(
+			parent, 7,
+			Layout.MinimapOverlay.MINIMAP_CONTENT,
+			Sprite.MINIMAP_MASK,
+			Layout.Original.MINIMAP_X,
+			Layout.Original.MINIMAP_Y,
+			Layout.Original.MINIMAP_DIMENSION,
+			Layout.Original.MINIMAP_DIMENSION,
+			WidgetPositionMode.ABSOLUTE_RIGHT,
+			WidgetPositionMode.ABSOLUTE_TOP
+		);
+
+		//add minimap frame
+		Widget frame = parent.createChild(8, WidgetType.GRAPHIC);
+		frame.setSpriteId(Sprite.MINIMAP_FRAME).
+			setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT).
+			setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP).
+			setOriginalWidth(Layout.MinimapOverlay.CONTAINER_WIDTH).
+			setOriginalHeight(Layout.MinimapOverlay.CONTAINER_HEIGHT).
+			revalidate();
 	}
 
 	//show or hide the wiki banner (vanilla or plugin) based on which exists
@@ -626,6 +748,17 @@ public class CompactOrbsManager
 	private boolean hideCustomToggles()
 	{
 		return (config.hideMinimapToggle() && config.hideCompassToggle()) || isMinimized();
+	}
+
+	//change to hideOverlay
+	public boolean hideMinimapOverlay()
+	{
+		return !(isMinimapOverlayEnabled() && isMinimapHidden() && !isMinimized()) || !isResized();
+	}
+
+	public boolean isMinimapOverlayEnabled()
+	{
+		return config.showMinimapInCompactView();
 	}
 
 	//in-game native minimap hiding

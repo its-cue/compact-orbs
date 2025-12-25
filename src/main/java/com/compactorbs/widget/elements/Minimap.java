@@ -27,7 +27,10 @@ package com.compactorbs.widget.elements;
 
 import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
 import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
+import com.compactorbs.util.SetValue;
+import com.compactorbs.util.ValueKey;
 import com.compactorbs.widget.TargetWidget;
+import java.util.Map;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -56,5 +59,12 @@ public enum Minimap implements TargetWidget
 	MODERN_MINIMAP(Modern.MINIMAP);
 
 	private final int componentId;
+
+	private final Map<ValueKey, SetValue> valueMap;
+
+	Minimap(int componentId)
+	{
+		this(componentId, Map.of());
+	}
 
 }

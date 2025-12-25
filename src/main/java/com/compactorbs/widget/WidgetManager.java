@@ -44,6 +44,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.WidgetPositionMode;
 import net.runelite.api.widgets.WidgetType;
 
 @Slf4j
@@ -65,7 +66,7 @@ public class WidgetManager
 	public void remapTargets(boolean compactLayout, int scriptId, TargetWidget... widgets)
 	{
 		//prevent visual changes when not logged in
-		if(!manager.isLoggedIn())
+		if (!manager.isLoggedIn())
 		{
 			return;
 		}
@@ -99,7 +100,7 @@ public class WidgetManager
 			return;
 		}
 
-		getTarget(target).getPositionMap().forEach((key, value) ->
+		getTarget(target).getValueMap().forEach((key, value) ->
 			setValue(widget, key, value, compactLayout)
 		);
 
@@ -165,12 +166,27 @@ public class WidgetManager
 				updateValue(widget::getOriginalY, widget::setOriginalY,
 					OffsetManager.getTargetOffset(widget, key, v, compactLayout, manager, slotManager));
 				break;
+			case WIDTH:
+				updateValue(widget::getOriginalWidth, widget::setOriginalWidth, v);
+				break;
+			case HEIGHT:
+				updateValue(widget::getOriginalHeight, widget::setOriginalHeight, v);
+				break;
 			case X_POSITION_MODE:
 				updateValue(widget::getXPositionMode, widget::setXPositionMode, v);
 				break;
 			case Y_POSITION_MODE:
 				updateValue(widget::getYPositionMode, widget::setYPositionMode, v);
 				break;
+			case WIDTH_MODE:
+				updateValue(widget::getWidthMode, widget::setWidthMode, v);
+				break;
+			case HEIGHT_MODE:
+				updateValue(widget::getHeightMode, widget::setHeightMode, v);
+				break;
+
+			default:
+				throw new IllegalStateException("Unhandled ValueKey: " + key);
 		}
 	}
 
@@ -234,6 +250,17 @@ public class WidgetManager
 				}
 			}
 		}
+	}
+
+	public void setHidden(int componentId, boolean hidden)
+	{
+		Widget widget = client.getWidget(componentId);
+		if (widget == null)
+		{
+			return;
+		}
+
+		widget.setHidden(hidden);
 	}
 
 	//get the widget for the given TargetWidget
@@ -369,5 +396,42 @@ public class WidgetManager
 		}
 
 		return button;
+	}
+
+	public void createMinimapNoClickLayer(Widget parent, int index, int y, int width, int height)
+	{
+		Widget widget = parent.createChild(index, WidgetType.LAYER);
+		widget
+			.setOriginalX(CompactOrbsConstants.Layout.MinimapOverlay.NO_CLICK_X)
+			.setOriginalY(y)
+			.setOriginalWidth(width)
+			.setOriginalHeight(height)
+			.setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT)
+			.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP)
+			.setNoClickThrough(true);
+
+		widget.revalidate();
+	}
+
+	public void createMinimapElement(
+		Widget parent, int index,
+		int contentType,
+		int spriteId,
+		int x, int y,
+		int width, int height,
+		int xPosMode, int yPosMode)
+	{
+		Widget clone = parent.createChild(index, WidgetType.GRAPHIC);
+		clone
+			.setContentType(contentType)
+			.setOriginalX(x)
+			.setOriginalY(y)
+			.setOriginalWidth(width)
+			.setOriginalHeight(height)
+			.setSpriteId(spriteId)
+			.setXPositionMode(xPosMode)
+			.setYPositionMode(yPosMode);
+
+		clone.revalidate();
 	}
 }

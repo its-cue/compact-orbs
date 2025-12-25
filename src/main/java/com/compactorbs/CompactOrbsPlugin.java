@@ -33,6 +33,7 @@ import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
 import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
 import com.compactorbs.CompactOrbsConstants.Widgets.Orb;
 import com.compactorbs.widget.elements.Compass;
+import com.compactorbs.widget.overlay.MinimapOverlay;
 import com.compactorbs.widget.slot.SlotManager;
 import com.compactorbs.widget.WidgetManager;
 import com.compactorbs.widget.elements.Orbs;
@@ -52,6 +53,7 @@ import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.HotkeyListener;
 
 @Slf4j
@@ -82,6 +84,12 @@ public class CompactOrbsPlugin extends Plugin
 	private KeyManager keyManager;
 
 	@Inject
+	private MinimapOverlay minimapOverlay;
+
+	@Inject
+	private OverlayManager overlayManager;
+
+	@Inject
 	private WidgetManager widgetManager;
 
 	@Inject
@@ -90,6 +98,8 @@ public class CompactOrbsPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
+		overlayManager.add(minimapOverlay);
+
 		keyManager.registerKeyListener(hotkeyListener);
 
 		registerOrbToggleEntries();
@@ -105,6 +115,7 @@ public class CompactOrbsPlugin extends Plugin
 			if (manager.isLoggedIn())
 			{
 				manager.init(Script.FORCE_UPDATE);
+				manager.configureMinimapOverlayContainer(true);
 			}
 		});
 	}
@@ -112,6 +123,8 @@ public class CompactOrbsPlugin extends Plugin
 	@Override
 	protected void shutDown() throws Exception
 	{
+		overlayManager.remove(minimapOverlay);
+
 		keyManager.unregisterKeyListener(hotkeyListener);
 
 		clientThread.invoke(manager::reset);
@@ -123,10 +136,8 @@ public class CompactOrbsPlugin extends Plugin
 		if (manager.isLoggedIn())
 		{
 			manager.createCustomChildren();
-			slotManager.allowFixedModeUpdate = true;
 
-			//logging in while plugin is active, make sure the map isn't empty
-			slotManager.initSlots();
+			slotManager.allowFixedModeUpdate = true;
 		}
 	}
 
@@ -147,6 +158,18 @@ public class CompactOrbsPlugin extends Plugin
 			if (scriptId == Script.TOP_LEVEL_REDRAW)
 			{
 				manager.pendingChildrenUpdate = manager.isCutSceneActive();
+			}
+		}
+
+		//buff bar content script, fires frequently (lazy reset)
+		if (scriptId == Script.BUFF_BAR_CONTENT_UPDATE)
+		{
+			if (minimapOverlay.hasUpdatedBounds() && manager.pendingMinimapOverlayChildren)
+			{
+				log.debug("buff bar is ready for children");
+
+				manager.pendingMinimapOverlayChildren = false;
+				clientThread.invokeLater(manager::createMinimapOverlayChildren);
 			}
 		}
 
@@ -211,6 +234,7 @@ public class CompactOrbsPlugin extends Plugin
 			id == WidgetManager.getInterfaceId(Modern.ORBS))
 		{
 			manager.init(Script.FORCE_UPDATE);
+			manager.configureMinimapOverlayContainer(true);
 		}
 	}
 
@@ -273,6 +297,10 @@ public class CompactOrbsPlugin extends Plugin
 					clientThread.invokeLater(() -> manager.init(Script.FORCE_UPDATE));
 					break;
 
+				case ConfigKeys.ENABLE_MINIMAP_OVERLAY:
+					clientThread.invokeLater(() -> manager.updateMinimapOverlayVisibility());
+					break;
+
 				default:
 					clientThread.invokeLater(() ->
 					{
@@ -325,6 +353,12 @@ public class CompactOrbsPlugin extends Plugin
 		@Override
 		public void hotkeyPressed()
 		{
+			//prevent hotkey in fixed mode
+			if (!manager.isResized())
+			{
+				return;
+			}
+
 			if (config.minimapHotkey())
 			{
 				clientThread.invokeLater(manager::onMinimapToggle);

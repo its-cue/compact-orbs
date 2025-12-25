@@ -80,7 +80,7 @@ public class XPOrbOffset implements OffsetTarget
 		{
 			if (manager.hideWorldMap)
 			{
-				y -= 4;
+				y -= 6;
 			}
 		}
 

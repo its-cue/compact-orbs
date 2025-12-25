@@ -43,8 +43,5 @@ public interface TargetWidget
 		return -1;
 	}
 
-	default Map<ValueKey, SetValue> getPositionMap()
-	{
-		return Map.of();
-	}
+	Map<ValueKey, SetValue> getValueMap();
 }

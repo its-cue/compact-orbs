@@ -108,6 +108,6 @@ public enum Compass implements TargetWidget
 
 	private final int componentId;
 
-	private final Map<ValueKey, SetValue> positionMap;
+	private final Map<ValueKey, SetValue> valueMap;
 
 }

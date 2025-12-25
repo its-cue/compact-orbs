@@ -75,7 +75,7 @@ public class LogoutXOffset implements OffsetTarget
 		{
 			if (manager.isXpDropHidden() || manager.hideWorldMap)
 			{
-				y += 21;
+				y += 19;
 			}
 		}
 

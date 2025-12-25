@@ -116,7 +116,7 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigSection(
-		name = "Compact Layouts",
+		name = "Layout",
 		description = "Options for modifying the layouts and toggle buttons",
 		position = 0
 	)
@@ -474,4 +474,24 @@ public interface CompactOrbsConfig extends Config
 		return false;
 	}
 
+	@ConfigSection(
+		name = "Misc.",
+		description = "Experimental",
+		closedByDefault = true,
+		position = 99
+	)
+	String misc = "misc";
+
+	@ConfigItem(
+		keyName = ConfigKeys.ENABLE_MINIMAP_OVERLAY,
+		name = "Show minimap in compact view",
+		description = "Show a separate minimap overlay, only during compact view <br>" +
+			"NOTE: overlay functions identically to the Vanilla minimap (will NOT show overlays, marked tiles, names, etc.)",
+		section = misc,
+		position = 0
+	)
+	default boolean showMinimapInCompactView()
+	{
+		return false;
+	}
 }
