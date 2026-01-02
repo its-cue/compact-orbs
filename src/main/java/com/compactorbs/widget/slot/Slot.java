@@ -31,10 +31,10 @@ import com.compactorbs.CompactOrbsConstants.ConfigKeys;
 import com.compactorbs.widget.TargetWidget;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.elements.Compass;
+import com.compactorbs.widget.slot.SlotManager.SlotLayoutMode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,23 +45,55 @@ import lombok.extern.slf4j.Slf4j;
 public enum Slot
 {
 	HP_SLOT(
-		ConfigKeys.HP_ORB_SLOT,
-		CompactOrbsConfig::orbInHPSlot,
+		Map.of(
+			SlotLayoutMode.COMPACT, new SlotConfig(
+				ConfigKeys.HP_ORB_SLOT,
+				CompactOrbsConfig::orbInHPSlot
+			),
+			SlotLayoutMode.VANILLA, new SlotConfig(
+				ConfigKeys.HP_ORB_SLOT_VANILLA,
+				CompactOrbsConfig::orbInHpSlotVanilla
+			)
+		),
 		Orbs.HP_ORB_CONTAINER
 	),
 	PRAYER_SLOT(
-		ConfigKeys.PRAYER_ORB_SLOT,
-		CompactOrbsConfig::orbInPrayerSlot,
+		Map.of(
+			SlotLayoutMode.COMPACT, new SlotConfig(
+				ConfigKeys.PRAYER_ORB_SLOT,
+				CompactOrbsConfig::orbInPrayerSlot
+			),
+			SlotLayoutMode.VANILLA, new SlotConfig(
+				ConfigKeys.PRAYER_ORB_SLOT_VANILLA,
+				CompactOrbsConfig::orbInPrayerSlotVanilla
+			)
+		),
 		Orbs.PRAYER_ORB_CONTAINER
 	),
 	RUN_SLOT(
-		ConfigKeys.RUN_ORB_SLOT,
-		CompactOrbsConfig::orbInRunSlot,
+		Map.of(
+			SlotLayoutMode.COMPACT, new SlotConfig(
+				ConfigKeys.RUN_ORB_SLOT,
+				CompactOrbsConfig::orbInRunSlot
+			),
+			SlotLayoutMode.VANILLA, new SlotConfig(
+				ConfigKeys.RUN_ORB_SLOT_VANILLA,
+				CompactOrbsConfig::orbInRunSlotVanilla
+			)
+		),
 		Orbs.RUN_ORB_CONTAINER
 	),
 	SPEC_SLOT(
-		ConfigKeys.SPECIAL_ORB_SLOT,
-		CompactOrbsConfig::orbInSpecialSlot,
+		Map.of(
+			SlotLayoutMode.COMPACT, new SlotConfig(
+				ConfigKeys.SPECIAL_ORB_SLOT,
+				CompactOrbsConfig::orbInSpecialSlot
+			),
+			SlotLayoutMode.VANILLA, new SlotConfig(
+				ConfigKeys.SPECIAL_ORB_SLOT_VANILLA,
+				CompactOrbsConfig::orbInSpecialSlotVanilla
+			)
+		),
 		Orbs.SPEC_ORB_CONTAINER
 	),
 	XP_SLOT(
@@ -88,21 +120,23 @@ public enum Slot
 		Orbs.LOGOUT_X_ICON
 	);
 
-	//key for config, relative orb to slot
-	private final String configKey;
-
-	private final Function<CompactOrbsConfig, FilteredOrb> getter;
-
+	private final Map<SlotLayoutMode, SlotConfig> slotConfigMap;
 	private final TargetWidget original;
 
 	Slot(TargetWidget original)
 	{
-		this(null, c -> null, original);
+		this(Map.of(), original);
 	}
 
-	public TargetWidget getConfiguredOrbOf(CompactOrbsConfig config)
+	public TargetWidget getOrbByConfig(CompactOrbsConfig config, SlotLayoutMode layout)
 	{
-		FilteredOrb filtered = getter.apply(config);
+		SlotConfig entry = slotConfigMap.get(layout);
+		if (entry == null)
+		{
+			return original;
+		}
+
+		FilteredOrb filtered = entry.getGetter().apply(config);
 		if (filtered == null)
 		{
 			return original;
@@ -118,28 +152,7 @@ public enum Slot
 		}
 	}
 
-	public static Slot getSlotOf(TargetWidget target)
-	{
-		for (Slot slot : values())
-		{
-			if (slot.getOriginal().equals(target))
-			{
-				return slot;
-			}
-		}
-
-		return null;//handle null
-	}
-
-	public static List<Slot> getColumnOf(Slot slot)
-	{
-		return VERTICAL_LOOKUP.get(slot);
-	}
-
-	public static List<Slot> getRowOf(Slot slot)
-	{
-		return HORIZONTAL_LOOKUP.get(slot);
-	}
+	private static final Map<String, SlotLayout> CONFIG_LOOKUP;
 
 	public static final List<Slot> VERTICAL_LEFT_COLUMN;
 	public static final List<Slot> VERTICAL_RIGHT_COLUMN;
@@ -148,6 +161,22 @@ public enum Slot
 
 	private static final Map<Slot, List<Slot>> VERTICAL_LOOKUP;
 	private static final Map<Slot, List<Slot>> HORIZONTAL_LOOKUP;
+
+	public static List<Slot> getColumnSlots(Slot slot)
+	{
+		return VERTICAL_LOOKUP.get(slot);
+	}
+
+	public static List<Slot> getRowSlots(Slot slot)
+	{
+		return HORIZONTAL_LOOKUP.get(slot);
+	}
+
+	//get a slot by its configKey (used in onConfigChanged)
+	public static SlotLayout getSlotByConfigKey(String configKey)
+	{
+		return CONFIG_LOOKUP.get(configKey);
+	}
 
 	@SafeVarargs
 	private static Map<Slot, List<Slot>> buildLookup(List<Slot>... layout)
@@ -158,6 +187,23 @@ public enum Slot
 			for (Slot slot : group)
 			{
 				lookup.put(slot, group);
+			}
+		}
+		return Map.copyOf(lookup);
+	}
+
+	private static Map<String, SlotLayout> buildConfigLookup()
+	{
+		Map<String, SlotLayout> lookup = new HashMap<>();
+		for (SlotLayoutMode layout : SlotLayoutMode.values())
+		{
+			for (Slot slot : Slot.values())
+			{
+				SlotConfig entry = slot.slotConfigMap.get(layout);
+				if (entry != null)
+				{
+					lookup.put(entry.getConfigKey(), new SlotLayout(slot, layout));
+				}
 			}
 		}
 		return Map.copyOf(lookup);
@@ -201,6 +247,7 @@ public enum Slot
 			HORIZONTAL_TOP_ROW,
 			HORIZONTAL_BOTTOM_ROW
 		);
-	}
 
+		CONFIG_LOOKUP = buildConfigLookup();
+	}
 }

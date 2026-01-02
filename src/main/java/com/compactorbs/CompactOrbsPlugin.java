@@ -34,6 +34,7 @@ import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
 import com.compactorbs.CompactOrbsConstants.Widgets.Orb;
 import com.compactorbs.widget.elements.Compass;
 import com.compactorbs.widget.overlay.MinimapOverlay;
+import com.compactorbs.widget.slot.SlotLayout;
 import com.compactorbs.widget.slot.SlotManager;
 import com.compactorbs.widget.WidgetManager;
 import com.compactorbs.widget.elements.Orbs;
@@ -244,91 +245,85 @@ public class CompactOrbsPlugin extends Plugin
 		String group = event.getGroup();
 		String key = event.getKey();
 
-		if (group.equals(GROUP_NAME))
+		if (!group.equals(GROUP_NAME))
 		{
-			switch (key)
-			{
-				case ConfigKeys.MINIMAP:
-				case ConfigKeys.COMPASS:
-				case ConfigKeys.HOTKEY_TOGGLE:
-				case ConfigKeys.HOTKEY_MINIMAP:
-					//do nothing (prevent default behaviour)
-					break;
+			return;
+		}
 
-				case ConfigKeys.MINIMAP_BUTTON_PLACEMENT:
-					clientThread.invokeLater(manager::updateMinimapToggleButton);
-					break;
+		SlotLayout slotLayout = Slot.getSlotByConfigKey(event.getKey());
+		if (slotLayout != null)
+		{
+			clientThread.invokeLater(() ->
+				slotManager.applySlotSwap(slotLayout.getSlot(), slotLayout.getLayout())
+			);
+			return;
+		}
 
-				case ConfigKeys.MINIMAP_TOGGLE_BUTTON:
-				case ConfigKeys.COMPASS_TOGGLE_BUTTON:
+		switch (key)
+		{
+			case ConfigKeys.MINIMAP:
+			case ConfigKeys.COMPASS:
+			case ConfigKeys.HOTKEY_TOGGLE:
+			case ConfigKeys.HOTKEY_MINIMAP:
+				//do nothing (prevent default behaviour)
+				break;
+
+			case ConfigKeys.MINIMAP_BUTTON_PLACEMENT:
+				clientThread.invokeLater(manager::updateMinimapToggleButton);
+				break;
+
+			case ConfigKeys.MINIMAP_TOGGLE_BUTTON:
+			case ConfigKeys.COMPASS_TOGGLE_BUTTON:
+				if (!manager.isLoggedIn())
+				{
+					return;
+				}
+
+				clientThread.invokeLater(() -> manager.updateCustomChildren(true));
+				break;
+
+			//update all slots
+			case ConfigKeys.ENABLE_ORB_SWAPPING:
+				clientThread.invoke(() -> slotManager.generateSlots(true));
+				break;
+
+			case ConfigKeys.ORB_LAYOUT:
+			case ConfigKeys.HORIZONTAL:
+			case ConfigKeys.VERTICAL:
+				clientThread.invokeLater(() -> manager.init(Script.FORCE_UPDATE));
+				break;
+
+			case ConfigKeys.ENABLE_MINIMAP_OVERLAY:
+				clientThread.invokeLater(() -> manager.updateMinimapOverlayVisibility());
+				break;
+
+			default:
+				clientThread.invokeLater(() ->
+				{
+					manager.updateOrbByConfig(event.getKey());
+
+					//return early if not logged in
 					if (!manager.isLoggedIn())
 					{
 						return;
 					}
 
-					clientThread.invokeLater(() -> manager.updateCustomChildren(true));
-					break;
-
-				//update all slots
-				case ConfigKeys.ENABLE_ORB_SWAPPING:
-					clientThread.invoke(() -> slotManager.updateSlots(true));
-					break;
-
-				//update orb slot map, when moving an orb to a different slot
-				case ConfigKeys.HP_ORB_SLOT:
-					clientThread.invokeLater(() -> slotManager.applySlotUpdate(Slot.HP_SLOT));
-					break;
-
-				case ConfigKeys.PRAYER_ORB_SLOT:
-					clientThread.invokeLater(() -> slotManager.applySlotUpdate(Slot.PRAYER_SLOT));
-					break;
-
-				case ConfigKeys.RUN_ORB_SLOT:
-					clientThread.invokeLater(() -> slotManager.applySlotUpdate(Slot.RUN_SLOT));
-					break;
-
-				case ConfigKeys.SPECIAL_ORB_SLOT:
-					clientThread.invokeLater(() -> slotManager.applySlotUpdate(Slot.SPEC_SLOT));
-					break;
-
-				case ConfigKeys.ORB_LAYOUT:
-				case ConfigKeys.HORIZONTAL:
-				case ConfigKeys.VERTICAL:
-					clientThread.invokeLater(() -> manager.init(Script.FORCE_UPDATE));
-					break;
-
-				case ConfigKeys.ENABLE_MINIMAP_OVERLAY:
-					clientThread.invokeLater(() -> manager.updateMinimapOverlayVisibility());
-					break;
-
-				default:
-					clientThread.invokeLater(() ->
+					//when in compact layouts
+					if (manager.isCompactMode())
 					{
-						manager.updateOrbByConfig(event.getKey());
+						//update the orbs positions when hiding/showing
+						widgetManager.remapTargets(true, Script.FORCE_UPDATE, Orbs.values());
 
-						//return early if not logged in
-						if (!manager.isLoggedIn())
-						{
-							return;
-						}
+						//update the compass positions - to enable repositioning based on hidden/shown orbs
+						widgetManager.remapTargets(true, Script.FORCE_UPDATE, Compass.values());
 
-						//when in compact layouts
-						if (manager.isResized() && manager.isMinimapHidden())
-						{
-							//update the orbs positions when hiding/showing
-							widgetManager.remapTargets(true, Script.FORCE_UPDATE, Orbs.values());
-
-							//update the compass positions - to enable repositioning based on hidden/shown orbs
-							widgetManager.remapTargets(true, Script.FORCE_UPDATE, Compass.values());
-
-							//update custom children
-							manager.updateCompassFrameChild();
-							manager.updateCompassToggleButton();
-							manager.updateMinimapToggleButton();
-						}
-					});
-					break;
-			}
+						//update custom children
+						manager.updateCompassFrameChild();
+						manager.updateCompassToggleButton();
+						manager.updateMinimapToggleButton();
+					}
+				});
+				break;
 		}
 	}
 

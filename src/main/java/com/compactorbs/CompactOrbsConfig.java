@@ -233,6 +233,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigSection(
 		name = "Hotkey",
 		description = "Hotkey settings",
+		closedByDefault = true,
 		position = 1
 	)
 	String hotkey = "hotkey";
@@ -273,8 +274,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.ENABLE_ORB_SWAPPING,
 		name = "Enable orb swapping",
-		description = "Enable swapping orb positions with each other <br>"
-			+ "Only supports Hp, Prayer, Run, and Special orb",
+		description = "Allow orb swapping via slot configuration",
 		section = swapping,
 		position = 0
 	)
@@ -284,11 +284,23 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = ConfigKeys.HP_ORB_SLOT,
-		name = "HP slot",
-		description = "Select which orb should be in the HP Orb slot",
+		keyName = "",
+		name = "Compact slots:",
+		description = "Slot order when in compact-view <br>" +
+			"Note: each slot must contain a unique orb (otherwise slots will reset to defaults)",
 		section = swapping,
 		position = 1
+	)
+	default void compactHeader()
+	{
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.HP_ORB_SLOT,
+		name = "  HP",
+		description = "Select an orb to be in this slot",
+		section = swapping,
+		position = 2
 	)
 	default FilteredOrb orbInHPSlot()
 	{
@@ -297,10 +309,10 @@ public interface CompactOrbsConfig extends Config
 
 	@ConfigItem(
 		keyName = ConfigKeys.PRAYER_ORB_SLOT,
-		name = "Prayer slot",
-		description = "Select which orb should be in the Prayer Orb slot",
+		name = "  Prayer",
+		description = "Select an orb to be in this slot",
 		section = swapping,
-		position = 2
+		position = 3
 	)
 	default FilteredOrb orbInPrayerSlot()
 	{
@@ -309,10 +321,10 @@ public interface CompactOrbsConfig extends Config
 
 	@ConfigItem(
 		keyName = ConfigKeys.RUN_ORB_SLOT,
-		name = "Run slot",
-		description = "Select which orb should be in the Run Orb slot",
+		name = "  Run",
+		description = "Select an orb to be in this slot",
 		section = swapping,
-		position = 3
+		position = 4
 	)
 	default FilteredOrb orbInRunSlot()
 	{
@@ -321,12 +333,83 @@ public interface CompactOrbsConfig extends Config
 
 	@ConfigItem(
 		keyName = ConfigKeys.SPECIAL_ORB_SLOT,
-		name = "Special slot",
-		description = "Select which orb should be in the Special Orb slot",
+		name = "  Special",
+		description = "Select an orb to be in this slot",
 		section = swapping,
-		position = 4
+		position = 5
 	)
 	default FilteredOrb orbInSpecialSlot()
+	{
+		return FilteredOrb.SPEC_ORB_CONTAINER;
+	}
+
+	@ConfigItem(
+		keyName = "",
+		name = "\u200B",
+		description = "",
+		section = swapping,
+		position = 6
+	)
+	default void slotDivider()
+	{
+	}
+
+	@ConfigItem(
+		keyName = "",
+		name = "Vanilla slots:",
+		description = "Slot order when not in compact-view <br>" +
+			"Note: each slot must contain a unique orb (otherwise slots will reset to defaults)",
+		section = swapping,
+		position = 7
+	)
+	default void vanillaHeader()
+	{
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.HP_ORB_SLOT_VANILLA,
+		name = "  HP",
+		description = "Select an orb to be in this slot",
+		section = swapping,
+		position = 8
+	)
+	default FilteredOrb orbInHpSlotVanilla()
+	{
+		return FilteredOrb.HP_ORB_CONTAINER;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.PRAYER_ORB_SLOT_VANILLA,
+		name = "  Prayer",
+		description = "Select an orb to be in this slot",
+		section = swapping,
+		position = 9
+	)
+	default FilteredOrb orbInPrayerSlotVanilla()
+	{
+		return FilteredOrb.PRAYER_ORB_CONTAINER;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.RUN_ORB_SLOT_VANILLA,
+		name = "  Run",
+		description = "Select an orb to be in this slot",
+		section = swapping,
+		position = 10
+	)
+	default FilteredOrb orbInRunSlotVanilla()
+	{
+		return FilteredOrb.RUN_ORB_CONTAINER;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.SPECIAL_ORB_SLOT_VANILLA,
+		name = "  Special",
+		description = "Select an orb to be in this slot",
+		section = swapping,
+		position = 11
+	)
+	default FilteredOrb orbInSpecialSlotVanilla()
 	{
 		return FilteredOrb.SPEC_ORB_CONTAINER;
 	}
@@ -334,6 +417,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigSection(
 		name = "Orb Visibility",
 		description = "Options to hide or show orbs",
+		closedByDefault = true,
 		position = 3
 	)
 	String visibility = "visibility";

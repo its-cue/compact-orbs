@@ -69,6 +69,10 @@ public class CompactOrbsConstants
 		public static final String PRAYER_ORB_SLOT = "prayerOrbSlot";
 		public static final String RUN_ORB_SLOT = "runOrbSlot";
 		public static final String SPECIAL_ORB_SLOT = "specialOrbSlot";
+		public static final String HP_ORB_SLOT_VANILLA = "hpOrbSlotVanilla";
+		public static final String PRAYER_ORB_SLOT_VANILLA = "prayerOrbSlotVanilla";
+		public static final String RUN_ORB_SLOT_VANILLA = "runOrbSlotVanilla";
+		public static final String SPECIAL_ORB_SLOT_VANILLA = "specialOrbSlotVanilla";
 		public static final String HIDE_HP = "hideHp";
 		public static final String HIDE_PRAYER = "hidePrayer";
 		public static final String HIDE_RUN = "hideRun";

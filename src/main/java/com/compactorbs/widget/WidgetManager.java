@@ -71,6 +71,9 @@ public class WidgetManager
 			return;
 		}
 
+		//ensure slot layout correctness before remapping
+		slotManager.updateCurrentSlotLayout();
+
 		for (TargetWidget target : widgets)
 		{
 			if (!shouldUpdateTarget(target, scriptId))
@@ -121,7 +124,7 @@ public class WidgetManager
 		return target;
 	}
 
-	//returns the original slot for the given orb
+	//returns which orb the target should reference
 	public TargetWidget getSlotTarget(TargetWidget target)
 	{
 		if (!Orbs.SWAPPABLE_ORBS.contains((Orbs) target) || !manager.enableOrbSwapping())
@@ -129,17 +132,13 @@ public class WidgetManager
 			return target;
 		}
 
-		Slot assignedSlot = slotManager.getSlotOf(target);
-
-		if (assignedSlot == null)
+		Slot slot = slotManager.findSlotByOrb(target, slotManager.currentSlotLayoutMode);
+		if (slot == null)
 		{
 			return target;
 		}
 
-		//log.debug("orb target: {} assigned to slot: {}, using coordinates of: {}",
-		//	target, assignedSlot, assignedSlot.getOriginal());
-
-		return assignedSlot.getOriginal();
+		return slot.getOriginal();
 	}
 
 	//sets the widgets X/Y or position mode as necessary

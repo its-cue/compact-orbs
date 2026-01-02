@@ -32,6 +32,7 @@ import com.compactorbs.widget.TargetWidget;
 import com.compactorbs.widget.WidgetManager;
 import com.compactorbs.widget.elements.Orbs;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -53,73 +54,77 @@ public class SlotManager
 	@Inject
 	private WidgetManager widgetManager;
 
+	public SlotLayoutMode currentSlotLayoutMode;
+
+	public enum SlotLayoutMode
+	{
+		COMPACT,
+		VANILLA
+	}
+
 	//if previousId is -1, additional check to apply an update if in fixed mode atleast once
 	public boolean allowFixedModeUpdate;
 
-	//map of slots and their target widget (can be Orbs or Compass)
-	public final EnumMap<Slot, TargetWidget> slotMap = new EnumMap<>(Slot.class);
+	//map of slots and their target widget per layout mode
+	private final EnumMap<SlotLayoutMode, EnumMap<Slot, TargetWidget>> slotLayoutMap = new EnumMap<>(SlotLayoutMode.class);
 
 	public void initSlots()
 	{
+		validateSlotConfig();
+		generateSlots(manager.enableOrbSwapping());
+	}
+
+	public void reset()
+	{
+		slotLayoutMap.clear();
+	}
+
+	public void generateSlots(boolean updateVisual)
+	{
 		reset();
 
-		allowFixedModeUpdate = true;
-
-		updateSlots(manager.enableOrbSwapping());
-	}
-
-	//@onConfigChange used for config toggle to apply visual updates
-	//always update regardless of manager.enableOrbSwapping();
-	public void updateSlots(boolean onConfigChange)
-	{
-		for (Slot slot : Slot.values())
+		for (SlotLayoutMode layout : SlotLayoutMode.values())
 		{
-			TargetWidget target = slot.getOriginal();
-
-			if (target instanceof Orbs && manager.enableOrbSwapping())
+			for (Slot slot : Slot.values())
 			{
-				TargetWidget configured = slot.getConfiguredOrbOf(config);
-				if (configured != null)
-				{
-					target = configured;
-				}
+				getSlotsByLayout(layout).put(slot, getOrbBySlot(slot, layout));
 			}
-			slotMap.put(slot, target);
 		}
 
-		remapTargetsForUpdate(onConfigChange);
+		remapTargetsForUpdate(updateVisual);
 	}
 
-	public void applySlotUpdate(Slot slot)
+	//handle config change event, swap orb to desired slot and update visuals if swapping is enabled
+	public void applySlotSwap(Slot slot, SlotLayoutMode layout)
 	{
-		//orb bound for the targeted slot
-		TargetWidget incomingOrb = getConfiguredOrb(slot);
+		TargetWidget desired = slot.getOrbByConfig(config, layout);
+		TargetWidget current = getSlotsByLayout(layout).get(slot);
 
-		//orb that is currently in the targeted slot
-		TargetWidget outgoingOrb = getCurrentOrb(slot);
-
-		if (incomingOrb == outgoingOrb)
+		if (desired == current)
 		{
 			return;
 		}
 
-		//get slot of the incoming orb for replacement
-		Slot slotOfIncoming = getSlotOf(incomingOrb);
-
-		slotMap.put(slot, incomingOrb);
-
-		if (slotOfIncoming != slot)
-		{
-			slotMap.put(slotOfIncoming, outgoingOrb);
-			manager.updateConfigForSlot(slotOfIncoming, outgoingOrb);
-		}
-
-		//apply visual change if swapping is enabled
+		swapSlots(layout, slot, desired, current);
 		remapTargetsForUpdate(manager.enableOrbSwapping());
 	}
 
-	//make visual changes if swapping is true (onConfigChanged event is always true)
-	//remapTargets only makes changes if loggedIn
+	//place the incoming orb at current slot, move outgoing orb to source slot
+	//update config for the slot receiving the outgoing orb
+	private void swapSlots(SlotLayoutMode layout, Slot targetSlot, TargetWidget incoming, TargetWidget outgoing)
+	{
+		Slot sourceSlot = findSlotByOrb(incoming, layout);
+
+		getSlotsByLayout(layout).put(targetSlot, incoming);
+
+		if (sourceSlot != null && sourceSlot != targetSlot)
+		{
+			getSlotsByLayout(layout).put(sourceSlot, outgoing);
+			manager.updateConfigForSlot(sourceSlot, outgoing, layout);
+		}
+	}
+
+	//apply visual updates if swapping is enabled
 	private void remapTargetsForUpdate(boolean updateVisual)
 	{
 		if (updateVisual)
@@ -166,20 +171,15 @@ public class SlotManager
 			return 0;
 		}
 
-		Slot targetSlot = getSlotOf(target);
+		Slot targetSlot = findSlotByOrb(target, SlotLayoutMode.COMPACT);
 		if (targetSlot == null)
 		{
 			return 0;
 		}
 
 		List<Slot> columnOrRow = (manager.isHorizontalLayout()
-				? Slot.getRowOf(targetSlot)
-				: Slot.getColumnOf(targetSlot));
-
-		if (columnOrRow == null || columnOrRow.isEmpty())
-		{
-			return 0;
-		}
+			? Slot.getRowSlots(targetSlot)
+			: Slot.getColumnSlots(targetSlot));
 
 		int targetIndex = columnOrRow.indexOf(targetSlot);
 		if (targetIndex < 0)
@@ -198,7 +198,11 @@ public class SlotManager
 
 		for (int index = 0; index < targetIndex; index++)
 		{
-			total += getHiddenAmountForSlot(columnOrRow.get(index), count);
+			TargetWidget orbInSlot = getCurrentSlots().get(columnOrRow.get(index));
+			if (isOrbHidden(orbInSlot))
+			{
+				total += count ? 1 : getSlotSize(columnOrRow.get(index));
+			}
 		}
 
 		return total;
@@ -210,35 +214,25 @@ public class SlotManager
 
 		for (int index = targetIndex + 1; index < columnOrRow.size(); index++)
 		{
-			//ignore wiki slot for /below/ calculation in vertical
-			if (columnOrRow.get(index) != Slot.WIKI_SLOT)
+			Slot slot = columnOrRow.get(index);
+			if (slot == Slot.WIKI_SLOT)
 			{
-				total += getHiddenAmountForSlot(columnOrRow.get(index), count);
+				continue;
+			}
+
+			TargetWidget orbInSlot = getCurrentSlots().get(slot);
+			if (isOrbHidden(orbInSlot))
+			{
+				total += count ? 1 : getSlotSize(slot);
 			}
 		}
 
 		return total;
 	}
 
-	private int getHiddenAmountForSlot(Slot slot, boolean count)
+	private int getSlotSize(Slot slot)
 	{
-		TargetWidget target = slotMap.get(slot);
-		if (target == null)
-		{
-			return 0;
-		}
-
-		if (!isOriginalOrbHidden(target))
-		{
-			return 0;
-		}
-
-		return count ? 1 : getSlotSize(slot);
-	}
-
-	public int getSlotSize(Slot slot)
-	{
-		TargetWidget target = getOrbOrNull(slot);
+		TargetWidget target = getCurrentSlots().get(slot);
 		if (target == null)
 		{
 			return 0;
@@ -250,7 +244,9 @@ public class SlotManager
 			return 0;
 		}
 
-		return manager.isHorizontalLayout() ? widget.getOriginalWidth() : widget.getOriginalHeight();
+		return manager.isHorizontalLayout()
+			? widget.getOriginalWidth()
+			: widget.getOriginalHeight();
 	}
 
 	public int getVerticalHiddenHeight()
@@ -260,7 +256,10 @@ public class SlotManager
 			return 0;
 		}
 
-		return Math.min(sumHiddenSize(Slot.VERTICAL_LEFT_COLUMN), sumHiddenSize(Slot.VERTICAL_RIGHT_COLUMN));
+		return Math.min(
+			sumHiddenSize(Slot.VERTICAL_LEFT_COLUMN),
+			sumHiddenSize(Slot.VERTICAL_RIGHT_COLUMN)
+		);
 	}
 
 	public int getHorizontalHiddenWidth()
@@ -270,10 +269,35 @@ public class SlotManager
 			return 0;
 		}
 
-		return Math.min(sumHiddenSize(Slot.HORIZONTAL_TOP_ROW), sumHiddenSize(Slot.HORIZONTAL_BOTTOM_ROW));
+		return Math.min(
+			sumHiddenSize(Slot.HORIZONTAL_TOP_ROW),
+			sumHiddenSize(Slot.HORIZONTAL_BOTTOM_ROW)
+		);
 	}
 
-	public int hiddenAboveOffset(TargetWidget target, int value)
+	private int sumHiddenSize(List<Slot> columnOrRow)
+	{
+		int total = 0;
+
+		for (Slot slot : columnOrRow)
+		{
+			if (slot == Slot.WIKI_SLOT)
+			{
+				continue;
+			}
+
+			TargetWidget target = getCurrentSlots().get(slot);
+
+			if (isOrbHidden(target))
+			{
+				total += getSlotSize(slot);
+			}
+		}
+
+		return total;
+	}
+
+	private int hiddenAboveOffset(TargetWidget target, int value)
 	{
 		if (target != null)
 		{
@@ -284,7 +308,7 @@ public class SlotManager
 		return value;
 	}
 
-	public int hiddenBelowOffset(TargetWidget target, int value)
+	private int hiddenBelowOffset(TargetWidget target, int value)
 	{
 		if (target != null)
 		{
@@ -329,30 +353,8 @@ public class SlotManager
 		return x;
 	}
 
-	private int sumHiddenSize(List<Slot> columnOrRow)
+	private boolean isOrbHidden(TargetWidget target)
 	{
-		int total = 0;
-
-		for (Slot slot : columnOrRow)
-		{
-			TargetWidget target = slotMap.get(slot);
-
-			if (target != null && isCurrentOrbHidden(slot))
-			{
-				//ignore wiki slot
-				if (slot != Slot.WIKI_SLOT)
-				{
-					total += getSlotSize(slot);
-				}
-			}
-		}
-
-		return total;
-	}
-
-	public boolean isCurrentOrbHidden(Slot slot)
-	{
-		TargetWidget target = getOrbOrNull(slot);
 		if (target == null)
 		{
 			return false;
@@ -362,55 +364,106 @@ public class SlotManager
 		return entry != null && entry.get();
 	}
 
-	private boolean isOriginalOrbHidden(TargetWidget target)
+	public Slot findSlotByOrb(TargetWidget target, SlotLayoutMode layout)
 	{
-		Slot slot = Slot.getSlotOf(target);
-		if (slot == null)
+		Map<Slot, TargetWidget> map = getSlotsByLayout(layout);
+		if (map == null || map.isEmpty())
 		{
-			return false;
+			return null;
 		}
 
-		TargetWidget original = slot.getOriginal();
-
-		Supplier<Boolean> entry = manager.orbToToggle.get(original);
-		return entry != null && entry.get();
-	}
-
-	public void reset()
-	{
-		slotMap.clear();
-	}
-
-	private TargetWidget getConfiguredOrb(Slot slot)
-	{
-		return slot.getConfiguredOrbOf(config);
-	}
-
-	public TargetWidget getCurrentOrb(Slot slot)
-	{
-		return slotMap.get(slot);
-	}
-
-	public Slot getSlotOf(TargetWidget target)
-	{
-		for (Map.Entry<Slot, TargetWidget> e : slotMap.entrySet())
+		for (Map.Entry<Slot, TargetWidget> entry : map.entrySet())
 		{
-			if (e.getValue() == target)
+			if (entry.getValue() == target)
 			{
-				return e.getKey();
+				return entry.getKey();
 			}
 		}
 
 		return null;
 	}
 
-	private TargetWidget getOrbOrNull(Slot slot)
+	private TargetWidget getOrbBySlot(Slot slot, SlotLayoutMode layout)
 	{
-		if (slot == null)
+		TargetWidget target = slot.getOriginal();
+		if (target instanceof Orbs && manager.enableOrbSwapping())
 		{
-			return null;
+			TargetWidget configured = slot.getOrbByConfig(config, layout);
+			if (configured != null)
+			{
+				return configured;
+			}
+		}
+		return target;
+	}
+
+	private Map<Slot, TargetWidget> getSlotsByLayout(SlotLayoutMode layout)
+	{
+		return slotLayoutMap.computeIfAbsent(layout, k -> new EnumMap<>(Slot.class));
+	}
+
+	private Map<Slot, TargetWidget> getCurrentSlots()
+	{
+		if (currentSlotLayoutMode == null)
+		{
+			updateCurrentSlotLayout();
 		}
 
-		return getCurrentOrb(slot);
+		return getSlotsByLayout(currentSlotLayoutMode);
+	}
+
+	public void updateCurrentSlotLayout()
+	{
+		if (manager.isCompactMode())
+		{
+			currentSlotLayoutMode = SlotLayoutMode.COMPACT;
+			return;
+		}
+
+		currentSlotLayoutMode = SlotLayoutMode.VANILLA;
+	}
+
+	//validate each slot in the config has a unique orb per layout
+	private void validateSlotConfig()
+	{
+		for (SlotLayoutMode layout : SlotLayoutMode.values())
+		{
+			Map<TargetWidget, Slot> seen = new HashMap<>();
+			boolean repeat = false;
+
+			for (Slot slot : Slot.values())
+			{
+				if (slot.getSlotConfigMap().isEmpty())
+				{
+					continue;
+				}
+
+				TargetWidget orb = slot.getOrbByConfig(config, layout);
+				if (seen.containsKey(orb))
+				{
+					log.debug("Non-unique orb {} found in layout: {}", orb, layout);
+					repeat = true;
+					break;
+				}
+
+				seen.put(orb, slot);
+			}
+
+			//should only happen if config changes were made while plugin was inactive
+			//and slots in the same layout contain a repeat orb
+			if (repeat)
+			{
+				for (Slot slot : Slot.values())
+				{
+					if (slot.getSlotConfigMap().isEmpty())
+					{
+						continue;
+					}
+
+					//reset all configs to default
+					manager.updateConfigForSlot(slot, slot.getOriginal(), layout);
+				}
+			}
+		}
 	}
 }

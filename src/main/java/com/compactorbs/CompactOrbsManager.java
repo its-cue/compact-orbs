@@ -48,6 +48,7 @@ import com.compactorbs.widget.elements.Minimap;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.offset.Offsets;
 import com.compactorbs.widget.slot.Slot;
+import com.compactorbs.widget.slot.SlotConfig;
 import com.compactorbs.widget.slot.SlotManager;
 import java.util.HashMap;
 import java.util.Map;
@@ -668,6 +669,12 @@ public class CompactOrbsManager
 		return config.layout().getIndex();
 	}
 
+	//return true if in compact view
+	public boolean isCompactMode()
+	{
+		return isResized() && isMinimapHidden();
+	}
+
 	//returns true if orb swapping is enabled
 	public boolean enableOrbSwapping()
 	{
@@ -996,11 +1003,12 @@ public class CompactOrbsManager
 	}
 
 	//update a slots config for the passed widget value @SlotManager
-	public void updateConfigForSlot(Slot key, TargetWidget value)
+	public void updateConfigForSlot(Slot key, TargetWidget value, SlotManager.SlotLayoutMode layout)
 	{
-		if (key.getGetter() != null && key.getConfigKey() != null)
+		SlotConfig entry = key.getSlotConfigMap().get(layout);
+		if (entry != null && entry.getConfigKey() != null)
 		{
-			configManager.setConfiguration(ConfigGroup.GROUP_NAME, key.getConfigKey(), value);
+			configManager.setConfiguration(ConfigGroup.GROUP_NAME, entry.getConfigKey(), value);
 		}
 	}
 }
