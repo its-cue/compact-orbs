@@ -100,6 +100,9 @@ public class CompactOrbsManager
 	//minimap overlay flag, when layer is ready for children
 	public boolean pendingMinimapOverlayChildren;
 
+	//prevent an onConfigChanged event for a specific key
+	public String suppressConfigChangedKey;
+
 	//custom widgets created when in compact layout
 	private Widget compassFrame;
 	private Widget minimapButton;
@@ -245,12 +248,16 @@ public class CompactOrbsManager
 	//flip the config (key) and execute the chain of actions when using the custom toggle buttons
 	private void executeToggle(Supplier<Boolean> getter, String key, Runnable... actions)
 	{
+		suppressConfigChangedKey = key;
+
 		configManager.setConfiguration(ConfigGroup.GROUP_NAME, key, !Boolean.TRUE.equals(getter.get()));
 
 		for (Runnable action : actions)
 		{
 			action.run();
 		}
+
+		suppressConfigChangedKey = null;
 	}
 
 	//create the compass frame and toggle buttons, clearing them if the parent id changed,
@@ -274,7 +281,7 @@ public class CompactOrbsManager
 			compassFrame = widgetManager.createGraphic(
 				parent,
 				0, 0, //handled in updateCustomChildren()
-				Layout.FRAME_WIDTH, Layout.FRAME_HEIGHT,
+				Layout.COMPASS_FRAME_SIZE, Layout.COMPASS_FRAME_SIZE,
 				Layout.OPACITY,
 				Sprite.COMPASS_FRAME
 			);
@@ -285,7 +292,7 @@ public class CompactOrbsManager
 			minimapButton = widgetManager.createToggleButton(
 				parent,
 				0, 0, //handled in updateCustomChildren()
-				Layout.TOGGLE_BUTTON_WIDTH, Layout.TOGGLE_BUTTON_HEIGHT,
+				Layout.TOGGLE_BUTTON_SIZE, Layout.TOGGLE_BUTTON_SIZE,
 				Layout.OPACITY,
 				getSpriteId(isMinimapHidden()),
 				getMenuOption(ConfigKeys.MINIMAP),
@@ -300,7 +307,7 @@ public class CompactOrbsManager
 			compassButton = widgetManager.createToggleButton(
 				parent,
 				0, 0, //handled in updateCustomChildren()
-				Layout.TOGGLE_BUTTON_WIDTH, Layout.TOGGLE_BUTTON_HEIGHT,
+				Layout.TOGGLE_BUTTON_SIZE, Layout.TOGGLE_BUTTON_SIZE,
 				Layout.OPACITY,
 				getSpriteId(isCompassHidden()),
 				getMenuOption(ConfigKeys.COMPASS),
@@ -327,7 +334,7 @@ public class CompactOrbsManager
 			return;
 		}
 
-		if (isMinimized())
+		if (isMinimapMinimized())
 		{
 			//put logout button back when switching to native hiding
 			widgetManager.remapTargets(false, Script.FORCE_UPDATE, Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
@@ -449,8 +456,10 @@ public class CompactOrbsManager
 			return;
 		}
 
+		int index;
+
 		//add no_click layers
-		for (int index = 0; index < Layout.MinimapOverlay.NO_CLICK_Y.length; index++)
+		for (index = 0; index < Layout.MinimapOverlay.NO_CLICK_Y.length; index++)
 		{
 			widgetManager.createMinimapNoClickLayer(
 				parent, index,
@@ -460,22 +469,32 @@ public class CompactOrbsManager
 			);
 		}
 
+		int compassX = Layout.Original.COMPASS_X - (Layout.Original.MAP_CONTAINER_WIDTH - Layout.MinimapOverlay.CONTAINER_WIDTH);
 		//add compass
 		widgetManager.createMinimapElement(
-			parent, 6,
+			parent, index,
 			Layout.MinimapOverlay.COMPASS_CONTENT,
 			Sprite.COMPASS_MASK,
-			Layout.Original.COMPASS_X - Layout.MinimapOverlay.WIDTH_DIFF, //difference between original width, and overlay widget
+			compassX,
 			Layout.Original.COMPASS_Y,
 			Layout.Original.COMPASS_DIMENSION,
 			Layout.Original.COMPASS_DIMENSION,
 			WidgetPositionMode.ABSOLUTE_LEFT,
 			WidgetPositionMode.ABSOLUTE_TOP
 		);
+		index++;
+
+		//add compass menuOp
+		widgetManager.createCompassMenuOp(
+			parent, index,
+			compassX,
+			Layout.Original.COMPASS_Y
+		);
+		index++;
 
 		//add minimap
 		widgetManager.createMinimapElement(
-			parent, 7,
+			parent, index,
 			Layout.MinimapOverlay.MINIMAP_CONTENT,
 			Sprite.MINIMAP_MASK,
 			Layout.Original.MINIMAP_X,
@@ -485,9 +504,10 @@ public class CompactOrbsManager
 			WidgetPositionMode.ABSOLUTE_RIGHT,
 			WidgetPositionMode.ABSOLUTE_TOP
 		);
+		index++;
 
 		//add minimap frame
-		Widget frame = parent.createChild(8, WidgetType.GRAPHIC);
+		Widget frame = parent.createChild(index, WidgetType.GRAPHIC);
 		frame.setSpriteId(Sprite.MINIMAP_FRAME).
 			setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT).
 			setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP).
@@ -544,7 +564,14 @@ public class CompactOrbsManager
 			return;
 		}
 
-		boolean shouldHide = hidden || (wikiPluginActive && showWikiMinimapButton && vanilla);
+		if (!wikiIconSettingEnabled())
+		{
+			hidden = true;
+		}
+
+		boolean shouldHide = hidden
+			|| (wikiPluginActive && showWikiMinimapButton && vanilla);
+
 		banner.setHidden(shouldHide);
 	}
 
@@ -642,7 +669,11 @@ public class CompactOrbsManager
 		return action + " " + ColorUtil.wrapWithColorTag(target, Menu.COLOR);
 	}
 
-	//returns true if client is in resizable mode
+	public int getLayout()
+	{
+		return config.layout().getIndex();
+	}
+
 	public boolean isResized()
 	{
 		return client.isResized();
@@ -653,65 +684,41 @@ public class CompactOrbsManager
 		return client.getGameState() == GameState.LOGGED_IN;
 	}
 
-	public boolean activityOrbIsVisibleSetting()
-	{
-		return client.getVarbitValue(Varbit.ACTIVITY_ORB_TOGGLE) == VarbitValue.ACTIVITY_ORB_VISIBLE;
-	}
-
-	public boolean storeOrbIsVisibleSetting()
-	{
-		return client.getVarbitValue(Varbit.STORE_ORB_TOGGLE) == VarbitValue.STORE_ORB_VISIBLE;
-	}
-
-	//returns the current layout (vertical or horizontal)
-	public int getLayout()
-	{
-		return config.layout().getIndex();
-	}
-
-	//return true if in compact view
-	public boolean isCompactMode()
+	public boolean isCompactLayout()
 	{
 		return isResized() && isMinimapHidden();
 	}
 
-	//returns true if orb swapping is enabled
 	public boolean enableOrbSwapping()
 	{
 		return config.enableOrbSwapping();
 	}
 
-	//returns true if layout is vertical
 	public boolean isVerticalLayout()
 	{
 		return config.layout() == OrbLayout.VERTICAL;
 	}
 
-	//returns true if position is vertical left
 	public boolean isVerticalLeft()
 	{
 		return config.verticalPosition() == VerticalPosition.LEFT;
 	}
 
-	//returns true if position is vertical right
 	public boolean isVerticalRight()
 	{
 		return config.verticalPosition() == VerticalPosition.RIGHT;
 	}
 
-	//returns true if layout is horizontal
 	public boolean isHorizontalLayout()
 	{
 		return config.layout() == OrbLayout.HORIZONTAL;
 	}
 
-	//returns true if position is horizontal bottom
 	public boolean isHorizontalBottom()
 	{
 		return config.horizontalPosition() == HorizontalPosition.BOTTOM;
 	}
 
-	//returns true if layout is horizontal top
 	public boolean isHorizontalTop()
 	{
 		return config.horizontalPosition() == HorizontalPosition.TOP;
@@ -727,40 +734,34 @@ public class CompactOrbsManager
 		return config.leaveEmptySpace();
 	}
 
-	//returns true if minimap is hidden
 	public boolean isMinimapHidden()
 	{
 		return config.hideMinimap();
 	}
 
-	//returns true if compass is hidden
 	public boolean isCompassHidden()
 	{
 		return config.hideCompass();
 	}
 
-	//returns true if the xp drop orb is hidden
 	public boolean isXpDropHidden()
 	{
 		return config.hideXp();
 	}
 
-	//returns true when compass frame should be hidden
 	private boolean hideCompassFrame()
 	{
-		return !isMinimapHidden() || isCompassHidden() || isMinimized();
+		return !isMinimapHidden() || isCompassHidden() || isMinimapMinimized();
 	}
 
-	//returns true when toggle buttons should be hidden
 	private boolean hideCustomToggles()
 	{
-		return (config.hideMinimapToggle() && config.hideCompassToggle()) || isMinimized();
+		return (config.hideMinimapToggle() && config.hideCompassToggle()) || isMinimapMinimized();
 	}
 
-	//change to hideOverlay
 	public boolean hideMinimapOverlay()
 	{
-		return !(isMinimapOverlayEnabled() && isMinimapHidden() && !isMinimized()) || !isResized();
+		return !(isMinimapOverlayEnabled() && isMinimapHidden() && !isMinimapMinimized()) || !isResized();
 	}
 
 	public boolean isMinimapOverlayEnabled()
@@ -768,13 +769,26 @@ public class CompactOrbsManager
 		return config.showMinimapInCompactView();
 	}
 
-	//in-game native minimap hiding
-	public boolean isMinimized()
+	public boolean activityOrbSettingEnabled()
+	{
+		return client.getVarbitValue(Varbit.ACTIVITY_ORB_TOGGLE) == VarbitValue.ACTIVITY_ORB_VISIBLE;
+	}
+
+	public boolean storeOrbSettingEnabled()
+	{
+		return client.getVarbitValue(Varbit.STORE_ORB_TOGGLE) == VarbitValue.STORE_ORB_VISIBLE;
+	}
+
+	private boolean wikiIconSettingEnabled()
+	{
+		return client.getVarbitValue(Varbit.WIKI_ICON_TOGGLE) == VarbitValue.WIKI_ICON_VISIBLE;
+	}
+
+	public boolean isMinimapMinimized()
 	{
 		return client.getVarbitValue(Varbit.MINIMAP_TOGGLE) == VarbitValue.MINIMAP_MINIMIZED;
 	}
 
-	//check if a cutscene is active
 	public boolean isCutSceneActive()
 	{
 		return client.getVarbitValue(Varbit.CUTSCENE_STATUS) == VarbitValue.CUTSCENE_ACTIVE;

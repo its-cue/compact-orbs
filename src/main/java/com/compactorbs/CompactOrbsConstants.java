@@ -102,21 +102,21 @@ public class CompactOrbsConstants
 		public static final int MINIMAP_TOGGLE = VarbitID.MINIMAP_TOGGLE;
 		public static final int ACTIVITY_ORB_TOGGLE = VarbitID.OPTION_CONTENT_RECOMMENDER_HIDE;
 		public static final int STORE_ORB_TOGGLE = VarbitID.TLI_STOREBUTTON_TOGGLE_DESKTOP;
+		public static final int WIKI_ICON_TOGGLE = VarbitID.WIKI_ICON_DISABLED;
 		public static final int CUTSCENE_STATUS = VarbitID.CUTSCENE_STATUS;
 	}
 
 	public static final class VarbitValue
 	{
-		// 1 (is minimized), 0 (not minimized)
+		//native minimap hiding
 		public static final int MINIMAP_MINIMIZED = 1;
 
-		// 0 (is visible), 1 (not visible)
+		//in-game setting for each orb
 		public static final int ACTIVITY_ORB_VISIBLE = 0;
-
-		// 1 (is visible), 0 (not visible)
 		public static final int STORE_ORB_VISIBLE = 1;
+		public static final int WIKI_ICON_VISIBLE = 0;
 
-		// 1 (active), 0 (inactive)
+		//cutscene
 		public static final int CUTSCENE_ACTIVE = 1;
 	}
 
@@ -148,6 +148,9 @@ public class CompactOrbsConstants
 				WIKI_ICON_UPDATE,
 				GRID_MASTER_ORB_UPDATE
 			);
+
+		public static final int TOPLEVEL_COMPASS_OP = 1050;
+		public static final int TOPLEVEL_COMPASS_SETOP = 7044;
 	}
 
 	/* Layout positions, dimensions, and other style changes */
@@ -156,6 +159,10 @@ public class CompactOrbsConstants
 		/* Original positions for orb/compass widgets */
 		public static final class Original
 		{
+			//containers
+			public static final int MAP_CONTAINER_WIDTH = 211;
+
+			//layout
 			public static final int XP_DROPS_X = 0;
 			public static final int XP_DROPS_Y = 17;
 
@@ -291,10 +298,6 @@ public class CompactOrbsConstants
 			public static final int CONTAINER_WIDTH = 182;
 			public static final int CONTAINER_HEIGHT = 166;
 
-			//difference between original width, and clone width
-			public static final int WIDTH_DIFF = 29;
-
-			public static final int NO_CLICK_X = 0;
 			public static final int[] NO_CLICK_Y =
 				{
 					4, 44, 100, 125, 140, 155
@@ -350,12 +353,10 @@ public class CompactOrbsConstants
 		public static final int BELOW_X_MINIMAP_BUTTON_Y = 15;
 
 		//toggle button dimensions
-		public static final int TOGGLE_BUTTON_WIDTH = 17;
-		public static final int TOGGLE_BUTTON_HEIGHT = 17;
+		public static final int TOGGLE_BUTTON_SIZE = 17;
 
 		//compass frame dimensions
-		public static final int FRAME_WIDTH = 43;
-		public static final int FRAME_HEIGHT = 43;
+		public static final int COMPASS_FRAME_SIZE = 43;
 
 		//toggle button opacity when onMouseOver || onMouseLeave
 		public static final int OPACITY = 0;
@@ -398,8 +399,10 @@ public class CompactOrbsConstants
 	{
 		public static final class MinimapOverlay
 		{
-			//unused widget layer (official client only?) BuffBar (651.0)
-			public static final int UNIVERSE = InterfaceID.BuffBar.UNIVERSE;
+			//seems BuffBar could be used for the leagues relic display?
+			//can instead use StatBoostsHud (seems to be mobile/steam only)
+			//script can stay the same as entry since it fires frequently
+			public static final int UNIVERSE = InterfaceID.StatBoostsHud.UNIVERSE;//InterfaceID.BuffBar.UNIVERSE;
 		}
 
 		public static final class Orb

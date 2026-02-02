@@ -42,9 +42,11 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetPositionMode;
+import net.runelite.api.widgets.WidgetSizeMode;
 import net.runelite.api.widgets.WidgetType;
 
 @Slf4j
@@ -262,6 +264,19 @@ public class WidgetManager
 		widget.setHidden(hidden);
 	}
 
+	public void revalidate(TargetWidget... widgets)
+	{
+		for (TargetWidget target : widgets)
+		{
+			Widget widget = client.getWidget(target.getComponentId());
+			if (widget == null)
+			{
+				continue;
+			}
+			widget.revalidate();
+		}
+	}
+
 	//get the widget for the given TargetWidget
 	public Widget getTargetWidget(TargetWidget target)
 	{
@@ -401,7 +416,7 @@ public class WidgetManager
 	{
 		Widget widget = parent.createChild(index, WidgetType.LAYER);
 		widget
-			.setOriginalX(CompactOrbsConstants.Layout.MinimapOverlay.NO_CLICK_X)
+			.setOriginalX(0)
 			.setOriginalY(y)
 			.setOriginalWidth(width)
 			.setOriginalHeight(height)
@@ -410,6 +425,49 @@ public class WidgetManager
 			.setNoClickThrough(true);
 
 		widget.revalidate();
+	}
+
+	public void createCompassMenuOp(Widget parent, int index, int x, int y)
+	{
+		//layer container
+		Widget layer = parent.createChild(index, WidgetType.LAYER);
+		layer
+			.setOriginalX(x)
+			.setOriginalY(y)
+			.setOriginalWidth(36)
+			.setOriginalHeight(36)
+			.revalidate();
+
+		Widget noClick = layer.createChild(0, WidgetType.TEXT);
+		noClick
+			.setXPositionMode(WidgetPositionMode.ABSOLUTE_CENTER)
+			.setYPositionMode(WidgetPositionMode.ABSOLUTE_CENTER)
+			.setWidthMode(WidgetSizeMode.MINUS)
+			.setHeightMode(WidgetSizeMode.MINUS);
+
+		noClick.setNoClickThrough(true);
+		noClick.setHasListener(true);
+		noClick.revalidate();
+
+		Widget menuOp = layer.createChild(1, WidgetType.TEXT);
+		menuOp
+			.setXPositionMode(WidgetPositionMode.ABSOLUTE_CENTER)
+			.setYPositionMode(WidgetPositionMode.ABSOLUTE_CENTER)
+			.setWidthMode(WidgetSizeMode.MINUS)
+			.setHeightMode(WidgetSizeMode.MINUS)
+			.setAction(0, "");
+
+		menuOp.setHasListener(true);
+
+		//pointer args for the scripts
+		var opindex0 = -2147483644;
+		var component0 = -2147483645;
+		var comsubid1 = -2147483643;
+
+		menuOp.setOnOpListener(Script.TOPLEVEL_COMPASS_OP, opindex0);
+		menuOp.setOnVarTransmitListener(Script.TOPLEVEL_COMPASS_SETOP, component0, comsubid1);
+		menuOp.setVarTransmitTrigger(VarPlayerID.MAP_FLAGS_CACHED);
+		menuOp.revalidate();
 	}
 
 	public void createMinimapElement(

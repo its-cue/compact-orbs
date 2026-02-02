@@ -83,7 +83,7 @@ public class MinimapOverlay extends Overlay
 		if (!manager.isMinimapOverlayEnabled() //not enabled
 			|| !manager.isMinimapHidden() //map is visible
 			|| !manager.isResized() //fixed mode
-			|| manager.isMinimized()) //native minimized map
+			|| manager.isMinimapMinimized()) //native minimized map
 		{
 			return null;
 		}

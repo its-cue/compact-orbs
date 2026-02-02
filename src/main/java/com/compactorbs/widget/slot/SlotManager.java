@@ -132,7 +132,10 @@ public class SlotManager
 			widgetManager.remapTargets(
 				manager.isMinimapHidden() && manager.isResized(),
 				CompactOrbsConstants.Script.FORCE_UPDATE,
-				Orbs.SWAPPABLE_ORBS.toArray(Orbs[]::new)
+				//swappable orbs
+				Orbs.HP_ORB_CONTAINER, Orbs.PRAYER_ORB_CONTAINER, Orbs.RUN_ORB_CONTAINER, Orbs.SPEC_ORB_CONTAINER,
+				//other
+				Orbs.ACTIVITY_ORB_CONTAINER, Orbs.STORE_ORB_CONTAINER
 			);
 		}
 	}
@@ -414,7 +417,7 @@ public class SlotManager
 
 	public void updateCurrentSlotLayout()
 	{
-		if (manager.isCompactMode())
+		if (manager.isCompactLayout())
 		{
 			currentSlotLayoutMode = SlotLayoutMode.COMPACT;
 			return;

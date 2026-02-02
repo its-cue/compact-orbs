@@ -150,7 +150,7 @@ public class CompactOrbsPlugin extends Plugin
 		if (scriptId == Script.TOP_LEVEL_REDRAW || scriptId == Script.TOP_LEVEL_SIDE_CUSTOMIZE)
 		{
 			//keep the logout X hidden
-			if (config.hideLogout() && !manager.isMinimized())
+			if (config.hideLogout() && !manager.isMinimapMinimized())
 			{
 				widgetManager.setTargetsHidden(config.hideLogout(), Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
 			}
@@ -176,14 +176,14 @@ public class CompactOrbsPlugin extends Plugin
 
 		//don't make changes unless a script updates the minimap widgets,
 		// or if the minimap is natively minimized
-		if (!Script.MINIMAP_UPDATE_SCRIPTS.contains(scriptId) || manager.isMinimized())
+		if (!Script.MINIMAP_UPDATE_SCRIPTS.contains(scriptId) || manager.isMinimapMinimized())
 		{
 			return;
 		}
 
 		//override the in-game settings if enabled
 		if (scriptId == Script.ACTIVITY_ORB_UPDATE &&
-			manager.activityOrbIsVisibleSetting() &&
+			manager.activityOrbSettingEnabled() &&
 			config.hideActivity())
 		{
 			widgetManager.setHidden(Orbs.ACTIVITY_ORB_CONTAINER, config.hideActivity());
@@ -192,7 +192,7 @@ public class CompactOrbsPlugin extends Plugin
 
 		//override the in-game settings if enabled
 		if (scriptId == Script.STORE_ORB_UPDATE &&
-			manager.storeOrbIsVisibleSetting() &&
+			manager.storeOrbSettingEnabled() &&
 			config.hideStore())
 		{
 			widgetManager.setHidden(Orbs.STORE_ORB_CONTAINER, config.hideStore());
@@ -262,6 +262,14 @@ public class CompactOrbsPlugin extends Plugin
 		switch (key)
 		{
 			case ConfigKeys.MINIMAP:
+				if (key.equals(manager.suppressConfigChangedKey))
+				{
+					return;
+				}
+
+				//rebuild to prevent stale layout when config is set to defaults
+				clientThread.invokeLater(() -> manager.init(Script.FORCE_UPDATE));
+				break;
 			case ConfigKeys.COMPASS:
 			case ConfigKeys.HOTKEY_TOGGLE:
 			case ConfigKeys.HOTKEY_MINIMAP:
@@ -309,7 +317,7 @@ public class CompactOrbsPlugin extends Plugin
 					}
 
 					//when in compact layouts
-					if (manager.isCompactMode())
+					if (manager.isCompactLayout())
 					{
 						//update the orbs positions when hiding/showing
 						widgetManager.remapTargets(true, Script.FORCE_UPDATE, Orbs.values());
