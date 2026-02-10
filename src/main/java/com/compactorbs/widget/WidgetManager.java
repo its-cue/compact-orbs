@@ -412,9 +412,9 @@ public class WidgetManager
 		return button;
 	}
 
-	public void createMinimapNoClickLayer(Widget parent, int index, int y, int width, int height)
+	public void createMinimapNoClickLayer(Widget parent, int y, int width, int height)
 	{
-		Widget widget = parent.createChild(index, WidgetType.LAYER);
+		Widget widget = parent.createChild(-1, WidgetType.LAYER);
 		widget
 			.setOriginalX(0)
 			.setOriginalY(y)
@@ -427,10 +427,10 @@ public class WidgetManager
 		widget.revalidate();
 	}
 
-	public void createCompassMenuOp(Widget parent, int index, int x, int y)
+	public void createCompassMenuOp(Widget parent, int x, int y)
 	{
 		//layer container
-		Widget layer = parent.createChild(index, WidgetType.LAYER);
+		Widget layer = parent.createChild(-1, WidgetType.LAYER);
 		layer
 			.setOriginalX(x)
 			.setOriginalY(y)
@@ -438,7 +438,7 @@ public class WidgetManager
 			.setOriginalHeight(36)
 			.revalidate();
 
-		Widget noClick = layer.createChild(0, WidgetType.TEXT);
+		Widget noClick = layer.createChild(-1, WidgetType.TEXT);
 		noClick
 			.setXPositionMode(WidgetPositionMode.ABSOLUTE_CENTER)
 			.setYPositionMode(WidgetPositionMode.ABSOLUTE_CENTER)
@@ -449,7 +449,7 @@ public class WidgetManager
 		noClick.setHasListener(true);
 		noClick.revalidate();
 
-		Widget menuOp = layer.createChild(1, WidgetType.TEXT);
+		Widget menuOp = layer.createChild(-1, WidgetType.TEXT);
 		menuOp
 			.setXPositionMode(WidgetPositionMode.ABSOLUTE_CENTER)
 			.setYPositionMode(WidgetPositionMode.ABSOLUTE_CENTER)
@@ -471,14 +471,14 @@ public class WidgetManager
 	}
 
 	public void createMinimapElement(
-		Widget parent, int index,
+		Widget parent,
 		int contentType,
 		int spriteId,
 		int x, int y,
 		int width, int height,
 		int xPosMode, int yPosMode)
 	{
-		Widget clone = parent.createChild(index, WidgetType.GRAPHIC);
+		Widget clone = parent.createChild(-1, WidgetType.GRAPHIC);
 		clone
 			.setContentType(contentType)
 			.setOriginalX(x)

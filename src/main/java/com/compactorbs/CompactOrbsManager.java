@@ -456,13 +456,11 @@ public class CompactOrbsManager
 			return;
 		}
 
-		int index;
-
 		//add no_click layers
-		for (index = 0; index < Layout.MinimapOverlay.NO_CLICK_Y.length; index++)
+		for (int index = 0; index < Layout.MinimapOverlay.NO_CLICK_Y.length; index++)
 		{
 			widgetManager.createMinimapNoClickLayer(
-				parent, index,
+				parent,
 				Layout.MinimapOverlay.NO_CLICK_Y[index],
 				Layout.MinimapOverlay.NO_CLICK_WIDTH[index],
 				Layout.MinimapOverlay.NO_CLICK_HEIGHT[index]
@@ -470,9 +468,10 @@ public class CompactOrbsManager
 		}
 
 		int compassX = Layout.Original.COMPASS_X - (Layout.Original.MAP_CONTAINER_WIDTH - Layout.MinimapOverlay.CONTAINER_WIDTH);
+
 		//add compass
 		widgetManager.createMinimapElement(
-			parent, index,
+			parent,
 			Layout.MinimapOverlay.COMPASS_CONTENT,
 			Sprite.COMPASS_MASK,
 			compassX,
@@ -482,19 +481,17 @@ public class CompactOrbsManager
 			WidgetPositionMode.ABSOLUTE_LEFT,
 			WidgetPositionMode.ABSOLUTE_TOP
 		);
-		index++;
 
 		//add compass menuOp
 		widgetManager.createCompassMenuOp(
-			parent, index,
+			parent,
 			compassX,
 			Layout.Original.COMPASS_Y
 		);
-		index++;
 
 		//add minimap
 		widgetManager.createMinimapElement(
-			parent, index,
+			parent,
 			Layout.MinimapOverlay.MINIMAP_CONTENT,
 			Sprite.MINIMAP_MASK,
 			Layout.Original.MINIMAP_X,
@@ -504,10 +501,9 @@ public class CompactOrbsManager
 			WidgetPositionMode.ABSOLUTE_RIGHT,
 			WidgetPositionMode.ABSOLUTE_TOP
 		);
-		index++;
 
 		//add minimap frame
-		Widget frame = parent.createChild(index, WidgetType.GRAPHIC);
+		Widget frame = parent.createChild(-1, WidgetType.GRAPHIC);
 		frame.setSpriteId(Sprite.MINIMAP_FRAME).
 			setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT).
 			setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP).
