@@ -189,7 +189,10 @@ public class CompactOrbsPlugin extends Plugin
 
 		if (scriptId == Script.ORBS_XPDROPS_INIT || scriptId == Script.ORBS_XPDROPS_UPDATE)
 		{
-			widgetManager.syncMenuOp(manager.overlayXpOrb, Orb.XP_DROPS);
+			if (manager.overlayXpOrb != null)
+			{
+				widgetManager.syncMenuOp(manager.overlayXpOrb, Orb.XP_DROPS);
+			}
 		}
 
 		//don't make changes unless a script updates the minimap widgets,

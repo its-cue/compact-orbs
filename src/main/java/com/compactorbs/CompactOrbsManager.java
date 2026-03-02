@@ -667,6 +667,11 @@ public class CompactOrbsManager
 
 	public void handleOverlayLogoutX()
 	{
+		if (overlayLogoutXStone == null || overlayLogoutXIcon == null)
+		{
+			return;
+		}
+
 		widgetManager.syncSprite(overlayLogoutXStone, Modern.LOGOUT_X_STONE);
 		if (!hideOverlayLogoutX())
 		{
@@ -957,6 +962,11 @@ public class CompactOrbsManager
 
 	public boolean hideOverlayLogoutX()
 	{
+		if (widgetManager.getCurrentParent() == null)
+		{
+			return true;
+		}
+
 		return widgetManager.getCurrentParent().getId() != Modern.ORBS || !config.showOverlayLogoutX();
 	}
 
