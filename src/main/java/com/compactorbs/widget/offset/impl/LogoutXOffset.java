@@ -25,6 +25,7 @@
 
 package com.compactorbs.widget.offset.impl;
 
+import com.compactorbs.CompactOrbsConstants;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.offset.OffsetTarget;
 import com.compactorbs.widget.slot.SlotManager;
@@ -40,7 +41,17 @@ public class LogoutXOffset implements OffsetTarget
 
 		if (!compactLayout)
 		{
+			if (manager.hideLogoutX)
+			{
+				return -CompactOrbsConstants.Layout.LOGOUT_X_WIDTH;
+			}
+
 			return value;
+		}
+
+		if (manager.hideLogoutX)
+		{
+			return -CompactOrbsConstants.Layout.LOGOUT_X_WIDTH;
 		}
 
 		if (manager.isHorizontalLayout()

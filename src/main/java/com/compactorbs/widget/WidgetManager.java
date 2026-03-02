@@ -36,17 +36,17 @@ import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.offset.OffsetManager;
 import com.compactorbs.widget.slot.SlotManager;
 import com.compactorbs.widget.slot.Slot;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
-import net.runelite.api.gameval.VarPlayerID;
+import net.runelite.api.MenuAction;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetPositionMode;
-import net.runelite.api.widgets.WidgetSizeMode;
 import net.runelite.api.widgets.WidgetType;
 
 @Slf4j
@@ -331,6 +331,84 @@ public class WidgetManager
 		}
 	}
 
+	public void invokeMenuOp(int componentId, int id)
+	{
+		client.menuAction(-1, componentId, MenuAction.CC_OP, id, -1, "", "");
+	}
+
+	public void syncMenuOp(Widget target, int componentId)
+	{
+		if (target == null)
+		{
+			return;
+		}
+
+		Widget widget = client.getWidget(componentId);
+		if (widget == null)
+		{
+			return;
+		}
+
+		String[] actions = widget.getActions();
+		if (actions == null)
+		{
+			return;
+		}
+
+		for (int i = 0; i < actions.length; i++)
+		{
+			target.setAction(i, actions[i]);
+		}
+	}
+
+	public void syncSprite(Widget target, int componentId)
+	{
+		if (target == null)
+		{
+			return;
+		}
+
+		Widget widget = client.getWidget(componentId);
+		if (widget == null)
+		{
+			return;
+		}
+
+		target.setSpriteId(widget.getSpriteId());
+	}
+
+	public void syncOpacity(Widget target, int componentId)
+	{
+		if (target == null)
+		{
+			return;
+		}
+
+		Widget widget = client.getWidget(componentId);
+		if (widget == null)
+		{
+			return;
+		}
+
+		target.setOpacity(widget.getOpacity());
+	}
+
+	public void syncHidden(Widget target, int componentId)
+	{
+		if (target == null)
+		{
+			return;
+		}
+
+		Widget widget = client.getWidget(componentId);
+		if (widget == null)
+		{
+			return;
+		}
+
+		target.setHidden(widget.isHidden());
+	}
+
 	//check if a target widget should be updated based on script id (or FORCE_UPDATE)
 	private boolean shouldUpdateTarget(TargetWidget target, int scriptId)
 	{
@@ -355,31 +433,208 @@ public class WidgetManager
 		return componentId & 0xff;
 	}
 
-	//create a simple graphic widget
-	public Widget createGraphic(
-		Widget parent,
-		int x, int y,
-		int width, int height,
-		int opacity,
-		int spriteId)
+	public static int resolveSprite(
+		int state, boolean hover,
+		int spriteA, int hoverA,
+		int spriteB, int hoverB)
 	{
-		Widget graphic = parent.createChild(-1, WidgetType.GRAPHIC);
-		graphic
-			.setOriginalX(x)
-			.setOriginalY(y)
-			.setOriginalWidth(width)
-			.setOriginalHeight(height)
-			.setOpacity(opacity)
-			.setHidden(false)
-			.setSpriteId(spriteId);
-
-		return graphic;
+		return state == 0
+			? (hover ? hoverA : spriteA)
+			: (hover ? hoverB : spriteB);
 	}
 
-	//create an interactive toggle button (with sprite, menu option, and optional event listeners)
+	private Widget createWidget(
+		Widget parent,
+		int type,
+		Consumer<Widget> config)
+	{
+		Widget widget = parent.createChild(-1, type);
+		config.accept(widget);
+		widget.revalidate();
+		return widget;
+	}
+
+	@SafeVarargs
+	public final Widget createLayer(Widget parent, Consumer<Widget>... configs)
+	{
+		return createWidget(parent, WidgetType.LAYER, config(configs));
+	}
+
+
+	@SafeVarargs
+	public final Widget createText(Widget parent, Consumer<Widget>... configs)
+	{
+		return createWidget(parent, WidgetType.TEXT, config(configs));
+	}
+
+	@SafeVarargs
+	public final Widget createGraphic(Widget parent, Consumer<Widget>... configs)
+	{
+		return createWidget(parent, WidgetType.GRAPHIC, config(configs));
+	}
+
+	@SafeVarargs
+	public static Consumer<Widget> config(Consumer<Widget>... configs)
+	{
+		return w ->
+		{
+			for (Consumer<Widget> config : configs)
+			{
+				config.accept(w);
+			}
+		};
+	}
+
+	public static Consumer<Widget> contentType(int type)
+	{
+		return w -> w.setContentType(type);
+	}
+
+	public static Consumer<Widget> pos(int x, int y)
+	{
+		return w -> w.setOriginalX(x).setOriginalY(y);
+	}
+
+	public static Consumer<Widget> size(int width, int height)
+	{
+		return w -> w.setOriginalWidth(width).setOriginalHeight(height);
+	}
+
+	public static Consumer<Widget> posMode(int xPos, int yPos)
+	{
+		return w -> w.setXPositionMode(xPos).setYPositionMode(yPos);
+	}
+
+	public static Consumer<Widget> sizeMode(int wMode, int hMode)
+	{
+		return w -> w.setWidthMode(wMode).setHeightMode(hMode);
+	}
+
+	public static Consumer<Widget> opacity(int opacity)
+	{
+		return w -> w.setOpacity(opacity);
+	}
+
+	public static Consumer<Widget> hidden(boolean hidden)
+	{
+		return w -> w.setHidden(hidden);
+	}
+
+	public static Consumer<Widget> sprite(int spriteId)
+	{
+		return w -> w.setSpriteId(spriteId);
+	}
+
+	public static Consumer<Widget> name(String name)
+	{
+		return w -> w.setName(name);
+	}
+
+	public static Consumer<Widget> listener()
+	{
+		return w -> w.setHasListener(true);
+	}
+
+	public static Consumer<Widget> noClickThrough()
+	{
+		return w -> w.setNoClickThrough(true);
+	}
+
+	public static Consumer<Widget> onOp(Object... args)
+	{
+		return w ->
+		{
+			if (args != null)
+			{
+				w.setOnOpListener(args);
+			}
+		};
+	}
+
+	public static Consumer<Widget> onVarTransmit(Object... args)
+	{
+		return w ->
+		{
+			if (args != null)
+			{
+				w.setOnVarTransmitListener(args);
+			}
+		};
+	}
+
+	public static Consumer<Widget> varTransmitTrigger(int... trigger)
+	{
+		return w -> w.setVarTransmitTrigger(trigger);
+	}
+
+	public static Consumer<Widget> onHover(JavaScriptCallback mouseOver, JavaScriptCallback mouseLeave)
+	{
+
+		return w ->
+		{
+			if (mouseOver != null)
+			{
+				w.setOnMouseOverListener(mouseOver);
+			}
+
+			if (mouseLeave != null)
+			{
+				w.setOnMouseLeaveListener(mouseLeave);
+			}
+		};
+	}
+
+	public Consumer<Widget> onHoverWithVarTransmit(BiConsumer<Widget, Boolean> change, int... trigger)
+	{
+		return w ->
+		{
+			w.setOnMouseOverListener((JavaScriptCallback) e ->
+				change.accept(w, true)
+			);
+
+			w.setOnMouseLeaveListener((JavaScriptCallback) e ->
+				change.accept(w, false)
+			);
+
+			w.setOnVarTransmitListener((JavaScriptCallback) e ->
+			{
+				boolean hovering = w.contains(client.getMouseCanvasPosition());
+
+				change.accept(w, hovering);
+			});
+
+			w.setVarTransmitTrigger(trigger);
+		};
+	}
+
+	public static Consumer<Widget> action(int index, String action)
+	{
+		return w ->
+		{
+			if (action != null)
+			{
+				w.setAction(index, action);
+			}
+		};
+	}
+
+	public Consumer<Widget> syncMenuOp(int componentId)
+	{
+		return w -> syncMenuOp(w, componentId);
+	}
+
+	public Consumer<Widget> syncOpacity(int componentId)
+	{
+		return w -> syncOpacity(w, componentId);
+	}
+
+	public Consumer<Widget> syncSprite(int componentId)
+	{
+		return w -> syncSprite(w, componentId);
+	}
+
 	public Widget createToggleButton(
 		Widget parent,
-		int x, int y,
 		int width, int height,
 		int opacity,
 		int spriteId,
@@ -388,107 +643,20 @@ public class WidgetManager
 		JavaScriptCallback mouseOver,
 		JavaScriptCallback mouseLeave)
 	{
-		Widget button = createGraphic(parent, x, y, width, height, opacity, spriteId);
-		button.setHasListener(true);
-		button.setNoClickThrough(true);
-
-		if (menuOp != null)
-		{
-			button.setAction(0, menuOp);
-		}
-		if (opListener != null)
-		{
-			button.setOnOpListener(opListener);
-		}
-		if (mouseOver != null)
-		{
-			button.setOnMouseOverListener(mouseOver);
-		}
-		if (mouseLeave != null)
-		{
-			button.setOnMouseLeaveListener(mouseLeave);
-		}
-
-		return button;
-	}
-
-	public void createMinimapNoClickLayer(Widget parent, int y, int width, int height)
-	{
-		Widget widget = parent.createChild(-1, WidgetType.LAYER);
-		widget
-			.setOriginalX(0)
-			.setOriginalY(y)
-			.setOriginalWidth(width)
-			.setOriginalHeight(height)
-			.setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT)
-			.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP)
-			.setNoClickThrough(true);
-
-		widget.revalidate();
-	}
-
-	public void createCompassMenuOp(Widget parent, int x, int y)
-	{
-		//layer container
-		Widget layer = parent.createChild(-1, WidgetType.LAYER);
-		layer
-			.setOriginalX(x)
-			.setOriginalY(y)
-			.setOriginalWidth(36)
-			.setOriginalHeight(36)
-			.revalidate();
-
-		Widget noClick = layer.createChild(-1, WidgetType.TEXT);
-		noClick
-			.setXPositionMode(WidgetPositionMode.ABSOLUTE_CENTER)
-			.setYPositionMode(WidgetPositionMode.ABSOLUTE_CENTER)
-			.setWidthMode(WidgetSizeMode.MINUS)
-			.setHeightMode(WidgetSizeMode.MINUS);
-
-		noClick.setNoClickThrough(true);
-		noClick.setHasListener(true);
-		noClick.revalidate();
-
-		Widget menuOp = layer.createChild(-1, WidgetType.TEXT);
-		menuOp
-			.setXPositionMode(WidgetPositionMode.ABSOLUTE_CENTER)
-			.setYPositionMode(WidgetPositionMode.ABSOLUTE_CENTER)
-			.setWidthMode(WidgetSizeMode.MINUS)
-			.setHeightMode(WidgetSizeMode.MINUS)
-			.setAction(0, "");
-
-		menuOp.setHasListener(true);
-
-		//pointer args for the scripts
-		var opindex0 = -2147483644;
-		var component0 = -2147483645;
-		var comsubid1 = -2147483643;
-
-		menuOp.setOnOpListener(Script.TOPLEVEL_COMPASS_OP, opindex0);
-		menuOp.setOnVarTransmitListener(Script.TOPLEVEL_COMPASS_SETOP, component0, comsubid1);
-		menuOp.setVarTransmitTrigger(VarPlayerID.MAP_FLAGS_CACHED);
-		menuOp.revalidate();
-	}
-
-	public void createMinimapElement(
-		Widget parent,
-		int contentType,
-		int spriteId,
-		int x, int y,
-		int width, int height,
-		int xPosMode, int yPosMode)
-	{
-		Widget clone = parent.createChild(-1, WidgetType.GRAPHIC);
-		clone
-			.setContentType(contentType)
-			.setOriginalX(x)
-			.setOriginalY(y)
-			.setOriginalWidth(width)
-			.setOriginalHeight(height)
-			.setSpriteId(spriteId)
-			.setXPositionMode(xPosMode)
-			.setYPositionMode(yPosMode);
-
-		clone.revalidate();
+		return createGraphic(
+			parent,
+			size(width, height),
+			opacity(opacity),
+			sprite(spriteId),
+			hidden(false),
+			action(0, menuOp),
+			listener(),
+			noClickThrough(),
+			onOp(opListener),
+			onHover(
+				mouseOver,
+				mouseLeave
+			)
+		);
 	}
 }

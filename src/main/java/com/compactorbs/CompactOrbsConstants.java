@@ -85,6 +85,9 @@ public class CompactOrbsConstants
 		public static final String HIDE_LOGOUT_X = "hideLogoutX";
 		public static final String HIDE_GRID = "hideGrid";
 		public static final String ENABLE_MINIMAP_OVERLAY = "enableMinimapOverlay";
+		public static final String ENABLE_WORLD_MAP_OVERLAY = "enableWorldMapOverlay";
+		public static final String ENABLE_XP_DROP_OVERLAY = "enableXPDropOverlay";
+		public static final String ENABLE_LOGOUT_X_OVERLAY = "enableLogoutXOverlay";
 
 		public static final class Wiki
 		{
@@ -104,6 +107,7 @@ public class CompactOrbsConstants
 		public static final int STORE_ORB_TOGGLE = VarbitID.TLI_STOREBUTTON_TOGGLE_DESKTOP;
 		public static final int WIKI_ICON_TOGGLE = VarbitID.WIKI_ICON_DISABLED;
 		public static final int CUTSCENE_STATUS = VarbitID.CUTSCENE_STATUS;
+		public static final int XP_DROPS_TOGGLE = VarbitID.XPDROPS_ENABLED;
 	}
 
 	public static final class VarbitValue
@@ -118,6 +122,9 @@ public class CompactOrbsConstants
 
 		//cutscene
 		public static final int CUTSCENE_ACTIVE = 1;
+
+		//xp orb enabled
+		public static final int XP_DROPS_ENABLED = 1;
 	}
 
 	public static final class Script
@@ -127,10 +134,21 @@ public class CompactOrbsConstants
 
 		//logout X redraw when opening tabs/using hotkey
 		public static final int TOP_LEVEL_REDRAW = ScriptID.TOPLEVEL_REDRAW;
+		public static final int TOP_LEVEL_SUBCHANGE = 903;
 		public static final int TOP_LEVEL_SIDE_CUSTOMIZE = 919;
 
 		//buff bar widget, used for the minimap overlay
 		public static final int BUFF_BAR_CONTENT_UPDATE = 4730;
+
+		//audio jingle for widget interaction (world map)
+		public static final int OP_SOUND = 489;
+
+		//minimap overlay, custom world map button
+		public static final int ORBS_WORLDMAP_INIT = 1492;
+
+		//minimap overlay, custom xp drops button
+		public static final int ORBS_XPDROPS_INIT = 1039;
+		public static final int ORBS_XPDROPS_UPDATE = 1041;
 
 		//relevant update scripts for the target orbs
 		public static final int WORLD_MAP_UPDATE = 1700;
@@ -151,6 +169,11 @@ public class CompactOrbsConstants
 
 		public static final int TOPLEVEL_COMPASS_OP = 1050;
 		public static final int TOPLEVEL_COMPASS_SETOP = 7044;
+
+		//cs2
+		public static final int COMSUBID1 = -2147483643;
+		public static final int OPINDEX0 = -2147483644;
+		public static final int COMPONENT0 = -2147483645;
 	}
 
 	/* Layout positions, dimensions, and other style changes */
@@ -358,6 +381,13 @@ public class CompactOrbsConstants
 		//compass frame dimensions
 		public static final int COMPASS_FRAME_SIZE = 43;
 
+		//misc widget dimensions
+		public static final int COMPASS_SIZE = 36;
+		public static final int WORLD_MAP_SIZE = 30;
+		public static final int XP_ORB_SIZE = 27;
+		public static final int LOGOUT_X_WIDTH = 26;
+		public static final int LOGOUT_X_HEIGHT = 23;
+
 		//toggle button opacity when onMouseOver || onMouseLeave
 		public static final int OPACITY = 0;
 		public static final int OPACITY_HOVER = 130;
@@ -375,6 +405,9 @@ public class CompactOrbsConstants
 
 		//suffix menu color for the toggle buttons
 		public static final Color COLOR = JagexColors.MENU_TARGET;
+
+		//overlay xp drops 'target' string
+		public static final String SUFFIX_XP = "XP drops";
 	}
 
 	public static final class Sprite
@@ -383,6 +416,20 @@ public class CompactOrbsConstants
 		public static final int COMPASS_MASK = SpriteID.RESIZE_COMPASS_MASK;
 		public static final int MINIMAP_MASK = SpriteID.RESIZE_MAP_MASK;
 		public static final int MINIMAP_FRAME = SpriteID.OSRS_STRETCH_MAPSURROUND;
+
+		//world map overlay sprites
+		public static final int WORLD_MAP_BACKING = SpriteID.RING_30;
+		public static final int WORLD_MAP_GLOBE = SpriteID.WorldmapIcon._0;
+		public static final int WORLD_MAP_GLOBE_HOVER = SpriteID.WorldmapIcon._1;
+
+		//xp drop overlay sprites
+		public static final int XP_DROP = SpriteID.OrbXp._0;
+		public static final int XP_DROP_CLICKED = SpriteID.OrbXp._1;
+		public static final int XP_DROP_HOVER = SpriteID.OrbXp._2;
+		public static final int XP_DROP_HOVER_CLICKED = SpriteID.OrbXp._3;
+
+		//logout x overlay sprite
+		public static final int LOGOUT_X_BUTTON = SpriteID.CloseButtons._7;
 
 		//border frame for the compass when the minimap is hidden
 		public static final int COMPASS_FRAME = SpriteID.COMPASS_OUTLINE;
@@ -422,6 +469,9 @@ public class CompactOrbsConstants
 			public static final int WIKI_CONTAINER_VANILLA = InterfaceID.Orbs.WIKI_ICON;
 			public static final int WIKI_ICON_VANILLA = InterfaceID.Orbs.WIKI_ICON_GRAPHIC;
 			public static final int WORLD_MAP = InterfaceID.Orbs.ORB_WORLDMAP;
+
+			//overlay worldmap globe
+			public static final int WORLDMAP = InterfaceID.Orbs.WORLDMAP;
 		}
 
 		//classic-resizable widgets

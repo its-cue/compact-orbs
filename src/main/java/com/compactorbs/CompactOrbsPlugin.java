@@ -108,6 +108,7 @@ public class CompactOrbsPlugin extends Plugin
 		manager.pendingChildrenUpdate = false;
 
 		manager.hideWorldMap = config.hideWorld();
+		manager.hideLogoutX = config.hideLogout();
 
 		clientThread.invoke(() ->
 		{
@@ -147,13 +148,11 @@ public class CompactOrbsPlugin extends Plugin
 	{
 		int scriptId = event.getScriptId();
 
-		if (scriptId == Script.TOP_LEVEL_REDRAW || scriptId == Script.TOP_LEVEL_SIDE_CUSTOMIZE)
+		if (scriptId == Script.TOP_LEVEL_REDRAW
+			|| scriptId == Script.TOP_LEVEL_SIDE_CUSTOMIZE
+			|| scriptId == Script.TOP_LEVEL_SUBCHANGE)
 		{
-			//keep the logout X hidden
-			if (config.hideLogout() && !manager.isMinimapMinimized())
-			{
-				widgetManager.setTargetsHidden(config.hideLogout(), Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
-			}
+			manager.handleOverlayLogoutX();
 
 			//flag updates for custom widgets when a cutscene is active
 			if (scriptId == Script.TOP_LEVEL_REDRAW)
@@ -172,6 +171,25 @@ public class CompactOrbsPlugin extends Plugin
 				manager.pendingMinimapOverlayChildren = false;
 				clientThread.invokeLater(manager::createMinimapOverlayChildren);
 			}
+		}
+
+		if (scriptId == Script.ORBS_WORLDMAP_INIT || scriptId == Script.WORLD_MAP_UPDATE)
+		{
+			widgetManager.syncMenuOp(manager.overlayWorldMapBacking, Orb.WORLDMAP);
+
+			if (manager.overlayWorldMapGlobe != null)
+			{
+				boolean hovering = manager.overlayWorldMapGlobe.contains(client.getMouseCanvasPosition());
+				if (!hovering)
+				{
+					widgetManager.syncOpacity(manager.overlayWorldMapGlobe, Orb.WORLDMAP);
+				}
+			}
+		}
+
+		if (scriptId == Script.ORBS_XPDROPS_INIT || scriptId == Script.ORBS_XPDROPS_UPDATE)
+		{
+			widgetManager.syncMenuOp(manager.overlayXpOrb, Orb.XP_DROPS);
 		}
 
 		//don't make changes unless a script updates the minimap widgets,
@@ -303,6 +321,25 @@ public class CompactOrbsPlugin extends Plugin
 
 			case ConfigKeys.ENABLE_MINIMAP_OVERLAY:
 				clientThread.invokeLater(() -> manager.updateMinimapOverlayVisibility());
+				break;
+
+			case ConfigKeys.ENABLE_WORLD_MAP_OVERLAY:
+				clientThread.invokeLater(() ->
+					manager.overlayWorldMapLayer.setHidden(!config.showOverlayWorldMap())
+				);
+				break;
+
+			case ConfigKeys.ENABLE_XP_DROP_OVERLAY:
+				clientThread.invokeLater(() ->
+					manager.overlayXpOrb.setHidden(!config.showOverlayXPDrop())
+				);
+				break;
+
+			case ConfigKeys.ENABLE_LOGOUT_X_OVERLAY:
+				clientThread.invokeLater(() ->
+				{
+					manager.handleOverlayLogoutX();
+				});
 				break;
 
 			default:
