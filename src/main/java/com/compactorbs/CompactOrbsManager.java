@@ -673,6 +673,8 @@ public class CompactOrbsManager
 		}
 
 		widgetManager.syncSprite(overlayLogoutXStone, Modern.LOGOUT_X_STONE);
+		widgetManager.syncMenuOp(overlayLogoutXStone, Modern.LOGOUT_X_STONE);
+
 		if (!hideOverlayLogoutX())
 		{
 			widgetManager.syncHidden(overlayLogoutXStone, Modern.LOGOUT_X_STONE);
