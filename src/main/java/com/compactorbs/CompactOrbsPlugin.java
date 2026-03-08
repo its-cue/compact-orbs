@@ -175,10 +175,10 @@ public class CompactOrbsPlugin extends Plugin
 
 		if (scriptId == Script.ORBS_WORLDMAP_INIT || scriptId == Script.WORLD_MAP_UPDATE)
 		{
-			widgetManager.syncMenuOp(manager.overlayWorldMapBacking, Orb.WORLDMAP);
-
 			if (manager.overlayWorldMapGlobe != null)
 			{
+				widgetManager.syncMenuOp(manager.overlayWorldMapGlobe, Orb.WORLDMAP);
+
 				boolean hovering = manager.overlayWorldMapGlobe.contains(client.getMouseCanvasPosition());
 				if (!hovering)
 				{

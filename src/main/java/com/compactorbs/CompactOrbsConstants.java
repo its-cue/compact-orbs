@@ -140,9 +140,6 @@ public class CompactOrbsConstants
 		//buff bar widget, used for the minimap overlay
 		public static final int BUFF_BAR_CONTENT_UPDATE = 4730;
 
-		//audio jingle for widget interaction (world map)
-		public static final int OP_SOUND = 489;
-
 		//minimap overlay, custom world map button
 		public static final int ORBS_WORLDMAP_INIT = 1492;
 

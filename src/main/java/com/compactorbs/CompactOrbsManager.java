@@ -558,6 +558,15 @@ public class CompactOrbsManager
 			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_CENTER, WidgetPositionMode.ABSOLUTE_CENTER),
 			WidgetManager.sprite(Sprite.WORLD_MAP_BACKING),
 			WidgetManager.noClickThrough(),
+			WidgetManager.listener()
+		);
+
+		overlayWorldMapGlobe = widgetManager.createGraphic(
+			overlayWorldMapLayer,
+			WidgetManager.pos(0, 0),
+			WidgetManager.size(Layout.WORLD_MAP_SIZE - 8, Layout.WORLD_MAP_SIZE - 8),
+			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_CENTER, WidgetPositionMode.ABSOLUTE_CENTER),
+			WidgetManager.sprite(Sprite.WORLD_MAP_GLOBE),
 			WidgetManager.listener(),
 			WidgetManager.onOp(
 				(JavaScriptCallback) event ->
@@ -572,17 +581,6 @@ public class CompactOrbsManager
 					}
 				}
 			),
-			widgetManager.syncMenuOp(Orb.WORLDMAP)
-		);
-
-		overlayWorldMapGlobe = widgetManager.createGraphic(
-			overlayWorldMapLayer,
-			WidgetManager.pos(0, 0),
-			WidgetManager.size(Layout.WORLD_MAP_SIZE - 8, Layout.WORLD_MAP_SIZE - 8),
-			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_CENTER, WidgetPositionMode.ABSOLUTE_CENTER),
-			WidgetManager.sprite(Sprite.WORLD_MAP_GLOBE),
-			WidgetManager.listener(),
-			WidgetManager.onOp(Script.OP_SOUND, Script.OPINDEX0, -1),
 			WidgetManager.onHover(
 				event ->
 				{
@@ -594,7 +592,8 @@ public class CompactOrbsManager
 					overlayWorldMapGlobe.setSpriteId(Sprite.WORLD_MAP_GLOBE);
 					widgetManager.syncOpacity(overlayWorldMapGlobe, Orb.WORLDMAP);
 				}
-			)
+			),
+			widgetManager.syncMenuOp(Orb.WORLDMAP)
 		);
 
 		overlayXpOrb = widgetManager.createGraphic(
