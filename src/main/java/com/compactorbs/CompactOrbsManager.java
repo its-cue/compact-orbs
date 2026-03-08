@@ -520,7 +520,6 @@ public class CompactOrbsManager
 			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_CENTER, WidgetPositionMode.ABSOLUTE_CENTER),
 			WidgetManager.sizeMode(WidgetSizeMode.MINUS, WidgetSizeMode.MINUS),
 			WidgetManager.listener(),
-			WidgetManager.action(0, ""),
 			WidgetManager.onOp(Script.TOPLEVEL_COMPASS_OP, Script.OPINDEX0),
 			WidgetManager.onVarTransmit(Script.TOPLEVEL_COMPASS_SETOP, Script.COMPONENT0, Script.COMSUBID1),
 			WidgetManager.varTransmitTrigger(VarPlayerID.MAP_FLAGS_CACHED)
@@ -603,7 +602,6 @@ public class CompactOrbsManager
 			WidgetManager.sprite(!isXpDropsEnabled() ? Sprite.XP_DROP : Sprite.XP_DROP_CLICKED),
 			WidgetManager.hidden(hideOverlayXPDrop()),
 			WidgetManager.name(ColorUtil.wrapWithColorTag(Menu.SUFFIX_XP, Menu.COLOR)),
-			WidgetManager.action(0, ""),
 			WidgetManager.noClickThrough(),
 			WidgetManager.listener(),
 			WidgetManager.onOp(

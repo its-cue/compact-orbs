@@ -39,19 +39,14 @@ public class LogoutXOffset implements OffsetTarget
 	{
 		int x = value + manager.verticalOffset;
 
-		if (!compactLayout)
-		{
-			if (manager.hideLogoutX)
-			{
-				return -CompactOrbsConstants.Layout.LOGOUT_X_WIDTH;
-			}
-
-			return value;
-		}
-
 		if (manager.hideLogoutX)
 		{
 			return -CompactOrbsConstants.Layout.LOGOUT_X_WIDTH;
+		}
+
+		if (!compactLayout)
+		{
+			return value;
 		}
 
 		if (manager.isHorizontalLayout()

@@ -36,6 +36,7 @@ import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.offset.OffsetManager;
 import com.compactorbs.widget.slot.SlotManager;
 import com.compactorbs.widget.slot.Slot;
+import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
@@ -355,9 +356,20 @@ public class WidgetManager
 			return;
 		}
 
+		String[] targetActions = target.getActions();
+
 		for (int i = 0; i < actions.length; i++)
 		{
-			target.setAction(i, actions[i]);
+			String action = null;
+			if (targetActions != null && i < targetActions.length)
+			{
+				action = targetActions[i];
+			}
+
+			if (!Objects.equals(action, actions[i]))
+			{
+				target.setAction(i, actions[i]);
+			}
 		}
 	}
 
@@ -374,7 +386,11 @@ public class WidgetManager
 			return;
 		}
 
-		target.setSpriteId(widget.getSpriteId());
+		int spriteId = widget.getSpriteId();
+		if (target.getSpriteId() != spriteId)
+		{
+			target.setSpriteId(spriteId);
+		}
 	}
 
 	public void syncOpacity(Widget target, int componentId)
@@ -390,7 +406,11 @@ public class WidgetManager
 			return;
 		}
 
-		target.setOpacity(widget.getOpacity());
+		int opacity = widget.getOpacity();
+		if (target.getOpacity() != opacity)
+		{
+			target.setOpacity(opacity);
+		}
 	}
 
 	public void syncHidden(Widget target, int componentId)
@@ -406,7 +426,11 @@ public class WidgetManager
 			return;
 		}
 
-		target.setHidden(widget.isHidden());
+		boolean hidden = widget.isHidden();
+		if (target.isHidden() != hidden)
+		{
+			target.setHidden(hidden);
+		}
 	}
 
 	//check if a target widget should be updated based on script id (or FORCE_UPDATE)
@@ -448,6 +472,11 @@ public class WidgetManager
 		int type,
 		Consumer<Widget> config)
 	{
+		if (parent == null)
+		{
+			return null;
+		}
+
 		Widget widget = parent.createChild(-1, type);
 		config.accept(widget);
 		widget.revalidate();
@@ -500,14 +529,14 @@ public class WidgetManager
 		return w -> w.setOriginalWidth(width).setOriginalHeight(height);
 	}
 
-	public static Consumer<Widget> posMode(int xPos, int yPos)
+	public static Consumer<Widget> posMode(int xMode, int yMode)
 	{
-		return w -> w.setXPositionMode(xPos).setYPositionMode(yPos);
+		return w -> w.setXPositionMode(xMode).setYPositionMode(yMode);
 	}
 
-	public static Consumer<Widget> sizeMode(int wMode, int hMode)
+	public static Consumer<Widget> sizeMode(int widthMode, int heightMode)
 	{
-		return w -> w.setWidthMode(wMode).setHeightMode(hMode);
+		return w -> w.setWidthMode(widthMode).setHeightMode(heightMode);
 	}
 
 	public static Consumer<Widget> opacity(int opacity)
@@ -540,24 +569,24 @@ public class WidgetManager
 		return w -> w.setNoClickThrough(true);
 	}
 
-	public static Consumer<Widget> onOp(Object... args)
+	public static Consumer<Widget> onOp(Object... objects)
 	{
 		return w ->
 		{
-			if (args != null)
+			if (objects != null)
 			{
-				w.setOnOpListener(args);
+				w.setOnOpListener(objects);
 			}
 		};
 	}
 
-	public static Consumer<Widget> onVarTransmit(Object... args)
+	public static Consumer<Widget> onVarTransmit(Object... objects)
 	{
 		return w ->
 		{
-			if (args != null)
+			if (objects != null)
 			{
-				w.setOnVarTransmitListener(args);
+				w.setOnVarTransmitListener(objects);
 			}
 		};
 	}
