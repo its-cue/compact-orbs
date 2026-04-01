@@ -39,7 +39,9 @@ public class LogoutXOffset implements OffsetTarget
 	{
 		int x = value + manager.verticalOffset;
 
-		if (manager.hideLogoutX)
+		if (manager.hideLogoutX
+			&& (manager.showOverlayLogoutX() || manager.isMinimapOverlayEnabled())
+			&& !manager.isMinimapMinimized())
 		{
 			return -CompactOrbsConstants.Layout.LOGOUT_X_WIDTH;
 		}

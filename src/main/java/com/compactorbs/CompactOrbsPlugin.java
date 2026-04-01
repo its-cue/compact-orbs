@@ -32,13 +32,13 @@ import com.compactorbs.CompactOrbsConstants.Varbit;
 import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
 import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
 import com.compactorbs.CompactOrbsConstants.Widgets.Orb;
+import com.compactorbs.widget.WidgetManager;
 import com.compactorbs.widget.elements.Compass;
+import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.overlay.MinimapOverlay;
+import com.compactorbs.widget.slot.Slot;
 import com.compactorbs.widget.slot.SlotLayout;
 import com.compactorbs.widget.slot.SlotManager;
-import com.compactorbs.widget.WidgetManager;
-import com.compactorbs.widget.elements.Orbs;
-import com.compactorbs.widget.slot.Slot;
 import com.google.inject.Provides;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -116,6 +116,8 @@ public class CompactOrbsPlugin extends Plugin
 
 			if (manager.isLoggedIn())
 			{
+				manager.handleLogoutXHiddenState(false);
+
 				manager.init(Script.FORCE_UPDATE);
 				manager.configureMinimapOverlayContainer(true);
 			}
@@ -149,10 +151,11 @@ public class CompactOrbsPlugin extends Plugin
 		int scriptId = event.getScriptId();
 
 		if (scriptId == Script.TOP_LEVEL_REDRAW
-			|| scriptId == Script.TOP_LEVEL_SIDE_CUSTOMIZE
-			|| scriptId == Script.TOP_LEVEL_SUBCHANGE)
+			|| scriptId == Script.TOP_LEVEL_SUBCHANGE
+			|| scriptId == Script.TOP_LEVEL_SIDE_CUSTOMIZE)
 		{
-			manager.handleOverlayLogoutX();
+			manager.handleLogoutXHiddenState(false);
+			manager.updateOverlayLogoutX();
 
 			//flag updates for custom widgets when a cutscene is active
 			if (scriptId == Script.TOP_LEVEL_REDRAW)
@@ -246,7 +249,7 @@ public class CompactOrbsPlugin extends Plugin
 		}
 	}
 
-	@Subscribe
+	@Subscribe(priority = -1.0f)
 	public void onWidgetLoaded(WidgetLoaded event)
 	{
 		int id = event.getGroupId();
@@ -303,11 +306,6 @@ public class CompactOrbsPlugin extends Plugin
 
 			case ConfigKeys.MINIMAP_TOGGLE_BUTTON:
 			case ConfigKeys.COMPASS_TOGGLE_BUTTON:
-				if (!manager.isLoggedIn())
-				{
-					return;
-				}
-
 				clientThread.invokeLater(() -> manager.updateCustomChildren(true));
 				break;
 
@@ -341,7 +339,12 @@ public class CompactOrbsPlugin extends Plugin
 			case ConfigKeys.ENABLE_LOGOUT_X_OVERLAY:
 				clientThread.invokeLater(() ->
 				{
-					manager.handleOverlayLogoutX();
+					if (!manager.isMinimapOverlayEnabled())
+					{
+						return;
+					}
+
+					manager.handleLogoutXHiddenState(true);
 				});
 				break;
 
@@ -350,14 +353,7 @@ public class CompactOrbsPlugin extends Plugin
 				{
 					manager.updateOrbByConfig(event.getKey());
 
-					//return early if not logged in
-					if (!manager.isLoggedIn())
-					{
-						return;
-					}
-
-					//when in compact layouts
-					if (manager.isCompactLayout())
+					if (manager.isCompactLayout() && widgetManager.getCurrentParent() != null)
 					{
 						//update the orbs positions when hiding/showing
 						widgetManager.remapTargets(true, Script.FORCE_UPDATE, Orbs.values());

@@ -34,8 +34,8 @@ import com.compactorbs.util.SetValue;
 import com.compactorbs.util.ValueKey;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.offset.OffsetManager;
-import com.compactorbs.widget.slot.SlotManager;
 import com.compactorbs.widget.slot.Slot;
+import com.compactorbs.widget.slot.SlotManager;
 import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -68,12 +68,6 @@ public class WidgetManager
 	//update multiple widgets that match the script id (FORCE_UPDATE bypasses the check)
 	public void remapTargets(boolean compactLayout, int scriptId, TargetWidget... widgets)
 	{
-		//prevent visual changes when not logged in
-		if (!manager.isLoggedIn())
-		{
-			return;
-		}
-
 		//ensure slot layout correctness before remapping
 		slotManager.updateCurrentSlotLayout();
 
@@ -205,11 +199,6 @@ public class WidgetManager
 	//set visibility for target widgets, excluding the wiki banner (handled in updateWikiBanner)
 	public void setTargetsHidden(boolean hidden, TargetWidget... widgets)
 	{
-		if (!manager.isLoggedIn())
-		{
-			return;
-		}
-
 		for (TargetWidget target : widgets)
 		{
 			if (target == Orbs.WIKI_VANILLA_CONTAINER || target == Orbs.WIKI_ICON_CONTAINER)
@@ -236,22 +225,20 @@ public class WidgetManager
 			return;
 		}
 
-		if (hidden != widget.isHidden())
-		{
-			widget.setHidden(hidden);
+		widget.setHidden(hidden);
 
-			//specifically for compass menu options (could be others?)
-			if (widget.getChildren() != null)
+		//specifically for compass menu options (could be others?)
+		if (widget.getChildren() != null)
+		{
+			for (Widget child : widget.getChildren())
 			{
-				for (Widget child : widget.getChildren())
+				if (child != null)
 				{
-					if (child != null)
-					{
-						child.setHidden(hidden);
-					}
+					child.setHidden(hidden);
 				}
 			}
 		}
+
 	}
 
 	public void setHidden(int componentId, boolean hidden)
@@ -426,10 +413,144 @@ public class WidgetManager
 			return;
 		}
 
-		boolean hidden = widget.isHidden();
+		boolean hidden = widget.isSelfHidden();
 		if (target.isHidden() != hidden)
 		{
 			target.setHidden(hidden);
+		}
+	}
+
+	public void syncText(Widget target, int componentId)
+	{
+		if (target == null)
+		{
+			return;
+		}
+
+		Widget widget = client.getWidget(componentId);
+		if (widget == null)
+		{
+			return;
+		}
+
+		String text = widget.getText();
+		if (!Objects.equals(target.getText(), text))
+		{
+			target.setText(text);
+		}
+	}
+
+	public void syncColor(Widget target, int componentId)
+	{
+		if (target == null)
+		{
+			return;
+		}
+
+		Widget widget = client.getWidget(componentId);
+		if (widget == null)
+		{
+			return;
+		}
+
+		int color = widget.getTextColor();
+		if (target.getTextColor() != color)
+		{
+			target.setTextColor(color);
+		}
+	}
+
+	public void syncHeight(Widget target, int componentId)
+	{
+		if (target == null)
+		{
+			return;
+		}
+
+		Widget widget = client.getWidget(componentId);
+		if (widget == null)
+		{
+			return;
+		}
+
+		int height = widget.getOriginalHeight();
+		if (target.getOriginalHeight() != height)
+		{
+			target.setOriginalHeight(height);
+			target.revalidate();
+		}
+	}
+
+	public void syncName(Widget target, int componentId)
+	{
+		if (target == null)
+		{
+			return;
+		}
+
+		Widget widget = client.getWidget(componentId);
+		if (widget == null)
+		{
+			return;
+		}
+
+		String name = widget.getName();
+		if (!Objects.equals(target.getName(), name))
+		{
+			target.setName(name);
+		}
+	}
+
+	public void setText(Widget target, int value)
+	{
+		if (target == null)
+		{
+			return;
+		}
+
+		if (!Objects.equals(target.getText(), Integer.toString(value)))
+		{
+			target.setText(Integer.toString(value));
+		}
+	}
+
+	public void setColor(Widget target, int color)
+	{
+		if (target == null)
+		{
+			return;
+		}
+
+		if (target.getTextColor() != color)
+		{
+			target.setTextColor(color);
+		}
+	}
+
+	public void setHeight(Widget target, int height)
+	{
+		if (target == null)
+		{
+			return;
+		}
+
+		if (target.getOriginalHeight() != height)
+		{
+			target.setOriginalHeight(height);
+			target.revalidate();
+		}
+	}
+
+	public void setPosition(Widget widget, int x, int y)
+	{
+		if (widget != null)
+		{
+			if (widget.getOriginalX() != x || widget.getOriginalY() != y)
+			{
+				widget.setOriginalX(x);
+				widget.setOriginalY(y);
+				widget.revalidate();
+			}
 		}
 	}
 
@@ -559,6 +680,18 @@ public class WidgetManager
 		return w -> w.setName(name);
 	}
 
+	public static Consumer<Widget> text(String text, int fontId, boolean shadow, int x, int y)
+	{
+		return w ->
+		{
+			w.setText(text);
+			w.setFontId(fontId);
+			w.setTextShadowed(shadow);
+			w.setXTextAlignment(x);
+			w.setYTextAlignment(y);
+		};
+	}
+
 	public static Consumer<Widget> listener()
 	{
 		return w -> w.setHasListener(true);
@@ -660,6 +793,31 @@ public class WidgetManager
 	public Consumer<Widget> syncSprite(int componentId)
 	{
 		return w -> syncSprite(w, componentId);
+	}
+
+	public Consumer<Widget> syncHidden(int componentId)
+	{
+		return w -> syncHidden(w, componentId);
+	}
+
+	public Consumer<Widget> syncText(int componentId)
+	{
+		return w -> syncText(w, componentId);
+	}
+
+	public Consumer<Widget> syncColor(int componentId)
+	{
+		return w -> syncColor(w, componentId);
+	}
+
+	public Consumer<Widget> syncHeight(int componentId)
+	{
+		return w -> syncHeight(w, componentId);
+	}
+
+	public Consumer<Widget> syncName(int componentId)
+	{
+		return w -> syncName(w, componentId);
 	}
 
 	public Widget createToggleButton(

@@ -30,6 +30,7 @@ import java.util.Set;
 import net.runelite.api.ScriptID;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.SpriteID;
+import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.ui.JagexColors;
 
@@ -100,6 +101,12 @@ public class CompactOrbsConstants
 		}
 	}
 
+	public static final class Enum
+	{
+		//modern resizable?
+		public static final int TOPLEVEL_COMPONENTS = 1131;
+	}
+
 	public static final class Varbit
 	{
 		public static final int MINIMAP_TOGGLE = VarbitID.MINIMAP_TOGGLE;
@@ -108,6 +115,12 @@ public class CompactOrbsConstants
 		public static final int WIKI_ICON_TOGGLE = VarbitID.WIKI_ICON_DISABLED;
 		public static final int CUTSCENE_STATUS = VarbitID.CUTSCENE_STATUS;
 		public static final int XP_DROPS_TOGGLE = VarbitID.XPDROPS_ENABLED;
+	}
+
+	public static final class VarPlayer
+	{
+		//var trigger for the compass menu options
+		public static final int MAP_FLAGS_CACHED = VarPlayerID.MAP_FLAGS_CACHED;
 	}
 
 	public static final class VarbitValue

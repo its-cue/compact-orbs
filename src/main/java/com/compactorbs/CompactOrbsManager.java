@@ -25,21 +25,24 @@
 
 package com.compactorbs;
 
-import com.compactorbs.CompactOrbsConfig.OrbLayout;
 import com.compactorbs.CompactOrbsConfig.HorizontalPosition;
-import com.compactorbs.CompactOrbsConfig.VerticalPosition;
+import com.compactorbs.CompactOrbsConfig.OrbLayout;
 import com.compactorbs.CompactOrbsConfig.TogglePlacement;
+import com.compactorbs.CompactOrbsConfig.VerticalPosition;
 import com.compactorbs.CompactOrbsConstants.ConfigGroup;
 import com.compactorbs.CompactOrbsConstants.ConfigKeys;
+import com.compactorbs.CompactOrbsConstants.Enum;
 import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsConstants.Menu;
 import com.compactorbs.CompactOrbsConstants.Script;
 import com.compactorbs.CompactOrbsConstants.Sprite;
+import com.compactorbs.CompactOrbsConstants.VarPlayer;
 import com.compactorbs.CompactOrbsConstants.Varbit;
 import com.compactorbs.CompactOrbsConstants.VarbitValue;
+import com.compactorbs.CompactOrbsConstants.Widgets;
 import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
-import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
 import com.compactorbs.CompactOrbsConstants.Widgets.MinimapOverlay;
+import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
 import com.compactorbs.CompactOrbsConstants.Widgets.Orb;
 import com.compactorbs.widget.TargetWidget;
 import com.compactorbs.widget.WidgetManager;
@@ -52,6 +55,7 @@ import com.compactorbs.widget.slot.SlotConfig;
 import com.compactorbs.widget.slot.SlotManager;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -63,6 +67,7 @@ import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetPositionMode;
 import net.runelite.api.widgets.WidgetSizeMode;
+import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.util.ColorUtil;
 
@@ -72,6 +77,9 @@ public class CompactOrbsManager
 {
 	@Inject
 	private Client client;
+
+	@Inject
+	private ClientThread clientThread;
 
 	@Inject
 	private ConfigManager configManager;
@@ -126,11 +134,6 @@ public class CompactOrbsManager
 
 	public void init(int scriptId)
 	{
-		if (!isLoggedIn())
-		{
-			return;
-		}
-
 		updateWikiBanner(config.hideWiki());
 
 		updateOrbByScript(scriptId);
@@ -144,7 +147,7 @@ public class CompactOrbsManager
 				widgetManager.remapTarget(Orbs.WORLD_MAP_CONTAINER, false);
 
 				//always hide the minimap overlay in fixed mode
-				widgetManager.setHidden(CompactOrbsConstants.Widgets.MinimapOverlay.UNIVERSE, true);
+				widgetManager.setHidden(Widgets.MinimapOverlay.UNIVERSE, true);
 
 				//reset update flags
 				previousParentId = -1;
@@ -172,7 +175,7 @@ public class CompactOrbsManager
 			widgetManager.setTargetsHidden(isMinimapHidden(), Minimap.values());
 			widgetManager.setTargetsHidden((isMinimapHidden() && isCompassHidden()), Compass.values());
 			widgetManager.remapTargets(isMinimapHidden(), Script.FORCE_UPDATE, Compass.values());
-			widgetManager.remapTargets(isMinimapHidden(), Script.FORCE_UPDATE, Orbs.values());//?
+			widgetManager.remapTargets(isMinimapHidden(), Script.FORCE_UPDATE, Orbs.values());
 		}
 		else
 		{
@@ -234,13 +237,15 @@ public class CompactOrbsManager
 		boolean remapCondition = toggle && !isCompassHidden();
 		boolean hiddenCondition = toggle && isCompassHidden();
 		executeToggle(
-			config::hideMinimap, ConfigKeys.MINIMAP,
-			this::getLayoutOffsets,
-			() -> widgetManager.setTargetsHidden(toggle, Minimap.values()),
-			() -> widgetManager.remapTargets(remapCondition, Script.FORCE_UPDATE, Compass.values()),
-			() -> widgetManager.setTargetsHidden(hiddenCondition, Compass.values()),
-			() -> widgetManager.remapTargets(toggle, Script.FORCE_UPDATE, Orbs.values()),
-			() -> updateCustomChildren(true)
+			ConfigKeys.MINIMAP,
+			config::hideMinimap,
+			t ->
+			{
+				widgetManager.setTargetsHidden(toggle, Minimap.values());
+				widgetManager.remapTargets(remapCondition, Script.FORCE_UPDATE, Compass.values());
+				widgetManager.setTargetsHidden(hiddenCondition, Compass.values());
+				widgetManager.remapTargets(toggle, Script.FORCE_UPDATE, Orbs.values());
+			}
 		);
 	}
 
@@ -250,27 +255,31 @@ public class CompactOrbsManager
 		boolean toggle = !isCompassHidden();
 		boolean remapCondition = toggle || isMinimapHidden();
 		executeToggle(
-			config::hideCompass, ConfigKeys.COMPASS,
-			this::getLayoutOffsets,
-			() -> widgetManager.remapTargets(remapCondition, Script.FORCE_UPDATE, Compass.values()),
-			() -> widgetManager.setTargetsHidden(toggle, Compass.values()),
-			() -> updateCustomChildren(true)
+			ConfigKeys.COMPASS,
+			config::hideCompass,
+			t ->
+			{
+				widgetManager.remapTargets(remapCondition, Script.FORCE_UPDATE, Compass.values());
+				widgetManager.setTargetsHidden(toggle, Compass.values());
+			}
 		);
 	}
 
-	//flip the config (key) and execute the chain of actions when using the custom toggle buttons
-	private void executeToggle(Supplier<Boolean> getter, String key, Runnable... actions)
+	private void executeToggle(String key, Supplier<Boolean> getter, Consumer<Boolean> actions)
 	{
+		boolean toggle = !Boolean.TRUE.equals(getter.get());
+
 		suppressConfigChangedKey = key;
 
-		configManager.setConfiguration(ConfigGroup.GROUP_NAME, key, !Boolean.TRUE.equals(getter.get()));
+		configManager.setConfiguration(ConfigGroup.GROUP_NAME, key, toggle);
 
-		for (Runnable action : actions)
+		clientThread.invoke(() ->
 		{
-			action.run();
-		}
-
-		suppressConfigChangedKey = null;
+			getLayoutOffsets();
+			actions.accept(toggle);
+			updateCustomChildren(true);
+			suppressConfigChangedKey = null;
+		});
 	}
 
 	//create the compass frame and toggle buttons, clearing them if the parent id changed,
@@ -368,6 +377,11 @@ public class CompactOrbsManager
 
 	public void updateCompassFrameChild()
 	{
+		if (compassFrame == null)
+		{
+			return;
+		}
+
 		compassFrame.setHidden(hideCompassFrame());
 		widgetManager.updateValue(compassFrame::getOriginalX, compassFrame::setOriginalX, getCompassFrameX());
 		widgetManager.updateValue(compassFrame::getOriginalY, compassFrame::setOriginalY, getCompassFrameY());
@@ -376,6 +390,11 @@ public class CompactOrbsManager
 
 	public void updateMinimapToggleButton()
 	{
+		if (minimapButton == null)
+		{
+			return;
+		}
+
 		minimapButton.setSpriteId(getSpriteId(!isMinimapHidden()));
 		minimapButton.setHidden(hideCustomToggles() || config.hideMinimapToggle());
 		minimapButton.setAction(0, getButtonMenuOp(ConfigKeys.MINIMAP));
@@ -386,6 +405,11 @@ public class CompactOrbsManager
 
 	public void updateCompassToggleButton()
 	{
+		if (compassButton == null)
+		{
+			return;
+		}
+
 		compassButton.setSpriteId(getSpriteId(!isCompassHidden()));
 		compassButton.setHidden((hideCustomToggles() || config.hideCompassToggle()) || !isMinimapHidden());
 		compassButton.setAction(0, getButtonMenuOp(ConfigKeys.COMPASS));
@@ -420,7 +444,7 @@ public class CompactOrbsManager
 	//update visibility of the minimap overlay
 	public void updateMinimapOverlayVisibility()
 	{
-		widgetManager.setHidden(CompactOrbsConstants.Widgets.MinimapOverlay.UNIVERSE, hideMinimapOverlay());
+		widgetManager.setHidden(Widgets.MinimapOverlay.UNIVERSE, hideMinimapOverlay());
 	}
 
 	//set hooked layer back to default
@@ -434,7 +458,7 @@ public class CompactOrbsManager
 	//@enabled - for startup/shutdown behaviour
 	public void configureMinimapOverlayContainer(boolean enabled)
 	{
-		Widget parent = client.getWidget(CompactOrbsConstants.Widgets.MinimapOverlay.UNIVERSE);
+		Widget parent = client.getWidget(Widgets.MinimapOverlay.UNIVERSE);
 		if (parent == null)
 		{
 			return;
@@ -522,7 +546,7 @@ public class CompactOrbsManager
 			WidgetManager.listener(),
 			WidgetManager.onOp(Script.TOPLEVEL_COMPASS_OP, Script.OPINDEX0),
 			WidgetManager.onVarTransmit(Script.TOPLEVEL_COMPASS_SETOP, Script.COMPONENT0, Script.COMSUBID1),
-			WidgetManager.varTransmitTrigger(VarPlayerID.MAP_FLAGS_CACHED)
+			WidgetManager.varTransmitTrigger(VarPlayer.MAP_FLAGS_CACHED)
 		);
 
 		Widget minimap = widgetManager.createGraphic(
@@ -569,16 +593,7 @@ public class CompactOrbsManager
 			WidgetManager.listener(),
 			WidgetManager.onOp(
 				(JavaScriptCallback) event ->
-				{
-					switch (event.getOp())
-					{
-						case 2: //Floating World Map
-						case 3: //Fullscreen World Map
-						case 4: //Minimize World Map
-							widgetManager.invokeMenuOp(Orb.WORLDMAP, event.getOp());
-							break;
-					}
-				}
+					widgetManager.invokeMenuOp(Orb.WORLDMAP, event.getOp())
 			),
 			WidgetManager.onHover(
 				event ->
@@ -606,15 +621,7 @@ public class CompactOrbsManager
 			WidgetManager.listener(),
 			WidgetManager.onOp(
 				(JavaScriptCallback) event ->
-				{
-					switch (event.getOp())
-					{
-						case 1: //Hide/Show XP drops
-						case 2: //Setup XP drops
-							widgetManager.invokeMenuOp(Orb.XP_DROPS, event.getOp());
-							break;
-					}
-				}
+					widgetManager.invokeMenuOp(Orb.XP_DROPS, event.getOp())
 			),
 			widgetManager.onHoverWithVarTransmit(
 				(w, hovering) ->
@@ -637,16 +644,10 @@ public class CompactOrbsManager
 			WidgetManager.hidden(hideOverlayLogoutX()),
 			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_RIGHT, WidgetPositionMode.ABSOLUTE_TOP),
 			WidgetManager.listener(),
-			WidgetManager.onOp((JavaScriptCallback) event ->
-			{
-				switch (event.getOp())
-				{
-					case 1: //Logout
-					case 2: //World Switcher
-						widgetManager.invokeMenuOp(Modern.LOGOUT_X_STONE, event.getOp());
-						break;
-				}
-			}),
+			WidgetManager.onOp(
+				(JavaScriptCallback) event ->
+					widgetManager.invokeMenuOp(Modern.LOGOUT_X_STONE, event.getOp())
+			),
 			widgetManager.syncMenuOp(Modern.LOGOUT_X_STONE),
 			widgetManager.syncSprite(Modern.LOGOUT_X_STONE)
 		);
@@ -662,7 +663,7 @@ public class CompactOrbsManager
 		);
 	}
 
-	public void handleOverlayLogoutX()
+	public void updateOverlayLogoutX()
 	{
 		if (overlayLogoutXStone == null || overlayLogoutXIcon == null)
 		{
@@ -695,11 +696,6 @@ public class CompactOrbsManager
 	//vanilla = official wiki banner
 	public void updateWikiBanner(boolean hidden)
 	{
-		if (!isLoggedIn())
-		{
-			return;
-		}
-
 		boolean wikiPluginActive = Boolean.TRUE.equals(
 			configManager.getConfiguration(ConfigGroup.RuneLite.GROUP_NAME,
 				ConfigKeys.RuneLite.WIKI_PLUGIN, Boolean.class)
@@ -761,11 +757,6 @@ public class CompactOrbsManager
 
 	private void getLayoutOffsets()
 	{
-		if (!isLoggedIn())
-		{
-			return;
-		}
-
 		boolean isCompactLayout = (isResized() && isMinimapHidden());
 
 		//zero out
@@ -939,7 +930,7 @@ public class CompactOrbsManager
 		return (config.hideMinimapToggle() && config.hideCompassToggle()) || isMinimapMinimized();
 	}
 
-	public boolean hideMinimapOverlay()
+	private boolean hideMinimapOverlay()
 	{
 		return !(isMinimapOverlayEnabled() && isMinimapHidden() && !isMinimapMinimized()) || !isResized();
 	}
@@ -949,12 +940,12 @@ public class CompactOrbsManager
 		return config.showMinimapInCompactView();
 	}
 
-	private boolean hideOverlayWorldMap()
+	public boolean hideOverlayWorldMap()
 	{
 		return !config.showOverlayWorldMap();
 	}
 
-	private boolean hideOverlayXPDrop()
+	public boolean hideOverlayXPDrop()
 	{
 		return !config.showOverlayXPDrop();
 	}
@@ -967,6 +958,36 @@ public class CompactOrbsManager
 		}
 
 		return widgetManager.getCurrentParent().getId() != Modern.ORBS || !config.showOverlayLogoutX();
+	}
+
+	public boolean showOverlayLogoutX()
+	{
+		return config.showOverlayLogoutX();
+	}
+
+	public void handleLogoutXHiddenState(boolean configChanged)
+	{
+		if (!isResized() || isMinimapMinimized())
+		{
+			return;
+		}
+
+		if (configChanged)
+		{
+			widgetManager.remapTargets(isCompactLayout(), Script.FORCE_UPDATE, Orbs.LOGOUT_X_STONE, Orbs.LOGOUT_X_ICON);
+
+			//only reliable way i could come up with to prevent stale hidden state for each logout x
+			//could always just let the scripts handle the update, but it would need to be triggered
+			//which felt bad during a toggle event
+			client.runScript(Script.TOP_LEVEL_SIDE_CUSTOMIZE, Enum.TOPLEVEL_COMPONENTS);
+		}
+		else
+		{
+			if (hideLogoutX && (!showOverlayLogoutX() || !isMinimapOverlayEnabled()))
+			{
+				widgetManager.setTargetsHidden(true, Orbs.LOGOUT_X_STONE, Orbs.LOGOUT_X_ICON);
+			}
+		}
 	}
 
 	public boolean activityOrbSettingEnabled()
@@ -1205,7 +1226,7 @@ public class CompactOrbsManager
 		else if (key.equals(ConfigKeys.HIDE_LOGOUT_X))
 		{
 			hideLogoutX = config.hideLogout();
-			widgetManager.remapTargets(isCompactLayout(), Script.FORCE_UPDATE, Orbs.LOGOUT_X_STONE, Orbs.LOGOUT_X_ICON);
+			handleLogoutXHiddenState(true);
 		}
 		else
 		{

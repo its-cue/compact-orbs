@@ -581,7 +581,7 @@ public interface CompactOrbsConfig extends Config
 
 	@ConfigItem(
 		keyName = "",
-		name = "Minimap",
+		name = "Overlay:",
 		description = "Settings related to the minimap overlay (requires minimap overlay to be enabled) <br>"
 			+ "'Orb visibility' does NOT affect overlay orbs",
 		section = minimapOverlay,
@@ -594,7 +594,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.ENABLE_WORLD_MAP_OVERLAY,
 		name = "  Show World Map",
-		description = "Show the world map on the minimap overlay",
+		description = "Show a world map on the minimap overlay",
 		section = minimapOverlay,
 		position = 2
 	)
@@ -606,7 +606,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.ENABLE_XP_DROP_OVERLAY,
 		name = "  Show XP",
-		description = "Show the xp orb on the minimap overlay",
+		description = "Show an Xp orb on the minimap overlay",
 		section = minimapOverlay,
 		position = 3
 	)
@@ -618,7 +618,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.ENABLE_LOGOUT_X_OVERLAY,
 		name = "  Show Logout X",
-		description = "Show the logout X on the minimap overlay (only in modern-resizable)",
+		description = "Show a Logout X on the minimap overlay (only in modern-resizable)",
 		section = minimapOverlay,
 		position = 4
 	)
