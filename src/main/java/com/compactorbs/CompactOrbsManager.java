@@ -50,6 +50,9 @@ import com.compactorbs.widget.elements.Compass;
 import com.compactorbs.widget.elements.Minimap;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.offset.Offsets;
+import com.compactorbs.widget.overlay.orb.HPOverlayOrb;
+import com.compactorbs.widget.overlay.orb.OverlayOrb;
+import com.compactorbs.widget.overlay.orb.OverlayOrbs;
 import com.compactorbs.widget.slot.Slot;
 import com.compactorbs.widget.slot.SlotConfig;
 import com.compactorbs.widget.slot.SlotManager;
@@ -61,9 +64,12 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.EquipmentInventorySlot;
 import net.runelite.api.GameState;
-import net.runelite.api.gameval.VarPlayerID;
-import net.runelite.api.widgets.JavaScriptCallback;
+import net.runelite.api.Item;
+import net.runelite.api.ItemContainer;
+import net.runelite.api.Skill;
+import net.runelite.api.WorldType;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetPositionMode;
 import net.runelite.api.widgets.WidgetSizeMode;
@@ -93,6 +99,9 @@ public class CompactOrbsManager
 	@Inject
 	private SlotManager slotManager;
 
+	@Inject
+	private OverlayOrbs overlayOrbs;
+
 	//store the parent id from the previous widget (modern vs classic): -1 = no parent
 	private int previousParentId = -1;
 
@@ -118,14 +127,13 @@ public class CompactOrbsManager
 	private Widget minimapButton;
 	private Widget compassButton;
 
-	public Widget overlayWorldMapLayer;
-	public Widget overlayWorldMapBacking;
-	public Widget overlayWorldMapGlobe;
-
-	public Widget overlayXpOrb;
-
-	public Widget overlayLogoutXStone;
-	public Widget overlayLogoutXIcon;
+	private HPOverlayOrb overlayHpOrb;
+	private OverlayOrb overlayPrayerOrb;
+	private OverlayOrb overlayRunOrb;
+	private OverlayOrb overlaySpecOrb;
+	private OverlayOrb overlayLogoutX;
+	private OverlayOrb overlayWorldMap;
+	private OverlayOrb overlayXpOrb;
 
 	private final Map<String, Map.Entry<Supplier<Boolean>, TargetWidget[]>> hideByConfigMap = new HashMap<>();
 	private final Map<Integer, Map.Entry<Supplier<Boolean>, TargetWidget[]>> hideByScriptMap = new HashMap<>();
@@ -433,12 +441,26 @@ public class CompactOrbsManager
 
 	private void clearMinimapOverlayChildren()
 	{
-		overlayWorldMapLayer = null;
-		overlayWorldMapBacking = null;
-		overlayWorldMapGlobe = null;
+		if (overlayLogoutX == null)
+		{
+			return;
+		}
+
+		overlayLogoutX.clear();
+		overlayWorldMap.clear();
+		overlayXpOrb.clear();
+		overlayHpOrb.clear();
+		overlayPrayerOrb.clear();
+		overlayRunOrb.clear();
+		overlaySpecOrb.clear();
+
+		overlayLogoutX = null;
+		overlayWorldMap = null;
 		overlayXpOrb = null;
-		overlayLogoutXStone = null;
-		overlayLogoutXIcon = null;
+		overlayHpOrb = null;
+		overlayPrayerOrb = null;
+		overlayRunOrb = null;
+		overlaySpecOrb = null;
 	}
 
 	//update visibility of the minimap overlay
@@ -561,135 +583,219 @@ public class CompactOrbsManager
 		Widget minimapFrame = widgetManager.createGraphic(
 			parent,
 			WidgetManager.sprite(Sprite.MINIMAP_FRAME),
-			WidgetManager.size(Layout.MinimapOverlay.CONTAINER_WIDTH, Layout.MinimapOverlay.CONTAINER_HEIGHT),
+			WidgetManager.size(Layout.MinimapOverlay.MINIMAP_FRAME_WIDTH, Layout.MinimapOverlay.MINIMAP_FRAME_HEIGHT),
 			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_RIGHT, WidgetPositionMode.ABSOLUTE_TOP)
 		);
 
-		overlayWorldMapLayer = widgetManager.createLayer(
-			parent,
-			WidgetManager.pos(Layout.Original.WORLD_MAP_X, Layout.Original.WORLD_MAP_Y + 10),
-			WidgetManager.size(Layout.WORLD_MAP_SIZE, Layout.WORLD_MAP_SIZE),
-			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_RIGHT, WidgetPositionMode.ABSOLUTE_TOP),
-			WidgetManager.hidden(hideOverlayWorldMap()),
-			WidgetManager.listener()
-		);
-
-		overlayWorldMapBacking = widgetManager.createGraphic(
-			overlayWorldMapLayer,
-			WidgetManager.pos(0, 0),
-			WidgetManager.size(Layout.WORLD_MAP_SIZE, Layout.WORLD_MAP_SIZE),
-			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_CENTER, WidgetPositionMode.ABSOLUTE_CENTER),
-			WidgetManager.sprite(Sprite.WORLD_MAP_BACKING),
-			WidgetManager.noClickThrough(),
-			WidgetManager.listener()
-		);
-
-		overlayWorldMapGlobe = widgetManager.createGraphic(
-			overlayWorldMapLayer,
-			WidgetManager.pos(0, 0),
-			WidgetManager.size(Layout.WORLD_MAP_SIZE - 8, Layout.WORLD_MAP_SIZE - 8),
-			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_CENTER, WidgetPositionMode.ABSOLUTE_CENTER),
-			WidgetManager.sprite(Sprite.WORLD_MAP_GLOBE),
-			WidgetManager.listener(),
-			WidgetManager.onOp(
-				(JavaScriptCallback) event ->
-					widgetManager.invokeMenuOp(Orb.WORLDMAP, event.getOp())
-			),
-			WidgetManager.onHover(
-				event ->
-				{
-					overlayWorldMapGlobe.setSpriteId(Sprite.WORLD_MAP_GLOBE_HOVER);
-					overlayWorldMapGlobe.setOpacity(0);
-				},
-				event ->
-				{
-					overlayWorldMapGlobe.setSpriteId(Sprite.WORLD_MAP_GLOBE);
-					widgetManager.syncOpacity(overlayWorldMapGlobe, Orb.WORLDMAP);
-				}
-			),
-			widgetManager.syncMenuOp(Orb.WORLDMAP)
-		);
-
-		overlayXpOrb = widgetManager.createGraphic(
-			parent,
-			WidgetManager.pos(0, 45),
-			WidgetManager.size(Layout.XP_ORB_SIZE, Layout.XP_ORB_SIZE),
-			WidgetManager.sprite(!isXpDropsEnabled() ? Sprite.XP_DROP : Sprite.XP_DROP_CLICKED),
-			WidgetManager.hidden(hideOverlayXPDrop()),
-			WidgetManager.name(ColorUtil.wrapWithColorTag(Menu.SUFFIX_XP, Menu.COLOR)),
-			WidgetManager.noClickThrough(),
-			WidgetManager.listener(),
-			WidgetManager.onOp(
-				(JavaScriptCallback) event ->
-					widgetManager.invokeMenuOp(Orb.XP_DROPS, event.getOp())
-			),
-			widgetManager.onHoverWithVarTransmit(
-				(w, hovering) ->
-					w.setSpriteId(
-						WidgetManager.resolveSprite(
-							client.getVarbitValue(Varbit.XP_DROPS_TOGGLE), hovering,
-							Sprite.XP_DROP, Sprite.XP_DROP_HOVER,
-							Sprite.XP_DROP_CLICKED, Sprite.XP_DROP_HOVER_CLICKED
-						)
-					),
-				VarPlayerID.CHAT_FILTER_ASSIST
-			),
-			widgetManager.syncMenuOp(Orb.XP_DROPS)
-		);
-
-		overlayLogoutXStone = widgetManager.createGraphic(
-			parent,
-			WidgetManager.pos(Layout.Original.LOGOUT_X, Layout.Original.LOGOUT_Y),
-			WidgetManager.size(Layout.LOGOUT_X_WIDTH, Layout.LOGOUT_X_HEIGHT),
-			WidgetManager.hidden(hideOverlayLogoutX()),
-			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_RIGHT, WidgetPositionMode.ABSOLUTE_TOP),
-			WidgetManager.listener(),
-			WidgetManager.onOp(
-				(JavaScriptCallback) event ->
-					widgetManager.invokeMenuOp(Modern.LOGOUT_X_STONE, event.getOp())
-			),
-			widgetManager.syncMenuOp(Modern.LOGOUT_X_STONE),
-			widgetManager.syncSprite(Modern.LOGOUT_X_STONE)
-		);
-
-		overlayLogoutXIcon = widgetManager.createGraphic(
-			parent,
-			WidgetManager.pos(Layout.Original.LOGOUT_X, Layout.Original.LOGOUT_Y),
-			WidgetManager.size(Layout.LOGOUT_X_WIDTH, Layout.LOGOUT_X_HEIGHT),
-			WidgetManager.hidden(hideOverlayLogoutX()),
-			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_RIGHT, WidgetPositionMode.ABSOLUTE_TOP),
-			WidgetManager.sprite(Sprite.LOGOUT_X_BUTTON),
-			WidgetManager.opacity(100)
-		);
+		overlayLogoutX = overlayOrbs.createLogoutX(parent);
+		overlayXpOrb = overlayOrbs.createXP(parent);
+		overlayWorldMap = overlayOrbs.createWorldMap(parent);
+		overlayHpOrb = overlayOrbs.createHpOrb(parent);
+		overlayPrayerOrb = overlayOrbs.createPrayerOrb(parent);
+		overlayRunOrb = overlayOrbs.createRunOrb(parent);
+		overlaySpecOrb = overlayOrbs.createSpecOrb(parent);
 	}
 
-	public void updateOverlayLogoutX()
+	public void updateOverlayWorldMap()
 	{
-		if (overlayLogoutXStone == null || overlayLogoutXIcon == null)
+		if (overlayWorldMap == null)
 		{
 			return;
 		}
 
-		widgetManager.syncSprite(overlayLogoutXStone, Modern.LOGOUT_X_STONE);
-		widgetManager.syncMenuOp(overlayLogoutXStone, Modern.LOGOUT_X_STONE);
-
-		if (!hideOverlayLogoutX())
+		if (!config.showOverlayWorldMap())
 		{
-			widgetManager.syncHidden(overlayLogoutXStone, Modern.LOGOUT_X_STONE);
-			widgetManager.syncHidden(overlayLogoutXIcon, Modern.LOGOUT_X_ICON);
+			overlayWorldMap.hideContainer(true);
+			return;
 		}
-		else
+
+		if (overlayWorldMap.isHidden())
 		{
-			if (!overlayLogoutXStone.isHidden())
+			overlayWorldMap.hideContainer(false);
+		}
+
+		if (hideOverlayOrb())
+		{
+			return;
+		}
+
+		overlayWorldMap.syncWorldMap(widgetManager, client);
+	}
+
+	public void updateOverlayXP()
+	{
+		if (overlayXpOrb == null)
+		{
+			return;
+		}
+
+		if (!config.showOverlayXPDrop())
+		{
+			overlayXpOrb.hideButton(true);
+			return;
+		}
+
+		if (overlayXpOrb.isHidden())
+		{
+			overlayXpOrb.hideButton(false);
+		}
+
+		if (hideOverlayOrb())
+		{
+			return;
+		}
+
+		overlayXpOrb.syncXp(widgetManager, isOverlayHpHidden());
+	}
+
+	public void updateOverlayLogoutX()
+	{
+		if (overlayLogoutX == null)
+		{
+			return;
+		}
+
+		overlayLogoutX.syncLogoutX(widgetManager, hideOverlayLogoutX());
+	}
+
+	public void updateOverlayHpOrb(boolean update)
+	{
+		int currentLevel = client.getBoostedSkillLevel(Skill.HITPOINTS);
+		int skillLevel = client.getRealSkillLevel(Skill.HITPOINTS);
+		updateOverlayOrb(overlayHpOrb, config.showOverlayHp(), config.hideHp(), update,
+			currentLevel, currentLevel, skillLevel
+		);
+	}
+
+	public void updateOverlayPrayerOrb(boolean update)
+	{
+		int currentLevel = client.getBoostedSkillLevel(Skill.PRAYER);
+		int skillLevel = client.getRealSkillLevel(Skill.PRAYER);
+		updateOverlayOrb(overlayPrayerOrb, config.showOverlayPray(), config.hidePray(), update,
+			currentLevel, currentLevel, skillLevel
+		);
+	}
+
+	public void updateOverlayRunOrb(boolean update)
+	{
+		int energy = client.getEnergy();
+		int maxEnergy = 10000;
+		int currentEnergy = energy / 100;
+
+		updateOverlayOrb(overlayRunOrb, config.showOverlayRun(), config.hideRun(), update,
+			currentEnergy, energy, maxEnergy
+		);
+	}
+
+	public void updateOverlaySpecOrb(boolean update)
+	{
+		int energy = client.getVarpValue(VarPlayer.CURRENT_SPEC_ENERGY);
+		int maxEnergy = 1000;
+		int currentEnergy = energy / 10;
+
+		updateOverlayOrb(overlaySpecOrb, config.showOverlaySpec(), config.hideSpec(), update,
+			currentEnergy, energy, maxEnergy
+		);
+		updateOverlaySpecButtonState();
+	}
+
+	private void updateOverlayOrb(
+		OverlayOrb orb,
+		boolean overlayOrbHidden,
+		boolean isOriginalHidden,
+		boolean update,
+		int data, int current, int max)
+	{
+		if (orb == null)
+		{
+			return;
+		}
+
+		if (!overlayOrbHidden)
+		{
+			if (orb.isHidden())
 			{
-				overlayLogoutXStone.setHidden(true);
+				return;
 			}
 
-			if (!overlayLogoutXIcon.isHidden())
-			{
-				overlayLogoutXIcon.setHidden(true);
-			}
+			orb.hideContainer(true);
+			return;
 		}
+
+		if (orb.isHidden())
+		{
+			orb.hideContainer(false);
+		}
+
+		if (hideOverlayOrb())
+		{
+			return;
+		}
+
+		//sync original to overlay if a script fired an update
+		if (update)
+		{
+			//make sure everything synced (icon, filler, etc)
+			orb.syncDataOrb(widgetManager);
+
+			//sync data for the orb state if it's not hidden in the config
+			//otherwise, update the display to prevent stale state
+			if (!isOriginalHidden)
+			{
+				orb.syncOrbDisplay(widgetManager);
+			}
+			else
+			{
+				orb.updateOrbDisplay(widgetManager, data, current, max);
+			}
+			return;
+		}
+
+		if (!isOriginalHidden)
+		{
+			return;
+		}
+
+		//special handling for the run orb, since the script to update it doesn't fire if
+		//the original orb is hidden
+		if (orb == overlayRunOrb)
+		{
+			orb.updateOrbDisplay(widgetManager, data, current, max);
+		}
+	}
+
+	//uses logic from: [proc,orbs_spec_draw_button] //2792
+	public boolean hasSpecAttack()
+	{
+		ItemContainer worn = client.getItemContainer(CompactOrbsConstants.InventoryId.WORN);
+		if (worn == null)
+		{
+			return false;
+		}
+
+		Item weapon = worn.getItem(EquipmentInventorySlot.WEAPON.getSlotIdx());
+		if (weapon == null)
+		{
+			return false;
+		}
+
+		int wornWeaponSpecCost = client.getEnum(Enum.SPECIAL_ATTACK_COST).getIntValue(weapon.getId());
+
+		boolean isMembers = client.getWorldType().contains(WorldType.MEMBERS);
+		boolean isInBR = client.getVarpValue(Varbit.BR_INGAME) != VarbitValue.BR_NOT_INGAME;
+
+		return (isMembers || isInBR) && wornWeaponSpecCost > 0;
+	}
+
+	//uses logic from: [proc,orbs_spec_draw_button] //2792
+	public void updateOverlaySpecButtonState()
+	{
+		if (overlaySpecOrb == null)
+		{
+			return;
+		}
+
+		overlaySpecOrb.handleSpecOrbState(hasSpecAttack(), client.getVarpValue(VarPlayer.USE_SPECIAL_ATTACK) > 0);
 	}
 
 	//show or hide the wiki banner (vanilla or plugin) based on which exists
@@ -950,6 +1056,11 @@ public class CompactOrbsManager
 		return !config.showOverlayXPDrop();
 	}
 
+	public boolean isOverlayHpHidden()
+	{
+		return !config.showOverlayHp();
+	}
+
 	public boolean hideOverlayLogoutX()
 	{
 		if (widgetManager.getCurrentParent() == null)
@@ -990,6 +1101,11 @@ public class CompactOrbsManager
 		}
 	}
 
+	private boolean hideOverlayOrb()
+	{
+		return !isCompactLayout() || isMinimapMinimized() || !isMinimapOverlayEnabled();
+	}
+
 	public boolean activityOrbSettingEnabled()
 	{
 		return client.getVarbitValue(Varbit.ACTIVITY_ORB_TOGGLE) == VarbitValue.ACTIVITY_ORB_VISIBLE;
@@ -1018,6 +1134,11 @@ public class CompactOrbsManager
 	public boolean isXpDropsEnabled()
 	{
 		return client.getVarbitValue(Varbit.XP_DROPS_TOGGLE) == VarbitValue.XP_DROPS_ENABLED;
+	}
+
+	public int xpDropButtonState()
+	{
+		return client.getVarbitValue(Varbit.XP_DROPS_TOGGLE);
 	}
 
 	//custom children offset handling~ similar to OffsetTarget interface

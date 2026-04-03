@@ -27,11 +27,14 @@ package com.compactorbs;
 
 import java.awt.Color;
 import java.util.Set;
+import net.runelite.api.FontID;
 import net.runelite.api.ScriptID;
 import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.SpriteID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
+import net.runelite.api.widgets.WidgetTextAlignment;
 import net.runelite.client.ui.JagexColors;
 
 public class CompactOrbsConstants
@@ -89,6 +92,10 @@ public class CompactOrbsConstants
 		public static final String ENABLE_WORLD_MAP_OVERLAY = "enableWorldMapOverlay";
 		public static final String ENABLE_XP_DROP_OVERLAY = "enableXPDropOverlay";
 		public static final String ENABLE_LOGOUT_X_OVERLAY = "enableLogoutXOverlay";
+		public static final String ENABLE_HP_OVERLAY = "enableHpOverlay";
+		public static final String ENABLE_PRAY_OVERLAY = "enablePrayOverlay";
+		public static final String ENABLE_RUN_OVERLAY = "enableRunOverlay";
+		public static final String ENABLE_SPEC_OVERLAY = "enableSpecOverlay";
 
 		public static final class Wiki
 		{
@@ -103,6 +110,8 @@ public class CompactOrbsConstants
 
 	public static final class Enum
 	{
+		public static final int SPECIAL_ATTACK_COST = 906;
+
 		//modern resizable?
 		public static final int TOPLEVEL_COMPONENTS = 1131;
 	}
@@ -115,12 +124,45 @@ public class CompactOrbsConstants
 		public static final int WIKI_ICON_TOGGLE = VarbitID.WIKI_ICON_DISABLED;
 		public static final int CUTSCENE_STATUS = VarbitID.CUTSCENE_STATUS;
 		public static final int XP_DROPS_TOGGLE = VarbitID.XPDROPS_ENABLED;
+
+		//overlay spec orb conditional
+		public static final int BR_INGAME = VarbitID.BR_INGAME;
 	}
 
 	public static final class VarPlayer
 	{
+		//var triggers for the HP orb
+		public static final int POISON = VarPlayerID.POISON;
+		public static final int DISEASE = VarPlayerID.DISEASE;
+		public static final int NIGHTMARE_TEMP = VarPlayerID.NIGHTMARE_TEMP;
+		public static final int WORN_ITEM_BONUS2 = VarPlayerID.WORN_ITEM_BONUS2;
+
+		//var triggers for the PRAYER orb
+		public static final int ARMOURHITSOUND = VarPlayerID.ARMOURHITSOUND;
+		public static final int CORRUPTION = VarPlayerID.CORRUPTION;
+
+		//var triggers for the RUN orb
+		public static final int OPTION_RUN = VarPlayerID.OPTION_RUN;
+		public static final int INFERNO_TEMP_NOPROTECT_TRANSMIT = VarPlayerID.INFERNO_TEMP_NOPROTECT_TRANSMIT;
+		public static final int TUTORIAL = VarPlayerID.TUTORIAL;
+		public static final int TUTORIAL_2 = VarPlayerID.TUTORIAL_2;
+
+		//var triggers for the SPEC Orb
+		public static final int USE_SPECIAL_ATTACK = VarPlayerID.SA_ATTACK;
+		public static final int CURRENT_SPEC_ENERGY = VarPlayerID.SA_ENERGY;
+		public static final int SOULREAPER_STACKS = VarPlayerID.SOULREAPER_STACKS;
+		public static final int WEAPON_OF_SOL_STACKS = VarPlayerID.WEAPON_OF_SOL_STACKS;
+		public static final int DUEL2ACCEPT = VarPlayerID.DUEL2ACCEPT;
+		public static final int LOC4 = VarPlayerID.LOC4;
+
+		//shared var trigger across HP/PRAYER/SPEC orb logic (BattleRoyale -> LMS?)
+		public static final int BR_TEMP_1 = VarPlayerID.BR_TEMP_1;
+
 		//var trigger for the compass menu options
 		public static final int MAP_FLAGS_CACHED = VarPlayerID.MAP_FLAGS_CACHED;
+
+		//var trigger when the XP orb is hovered
+		public static final int XP_ORB_HOVERED = VarPlayerID.CHAT_FILTER_ASSIST;
 	}
 
 	public static final class VarbitValue
@@ -138,6 +180,14 @@ public class CompactOrbsConstants
 
 		//xp orb enabled
 		public static final int XP_DROPS_ENABLED = 1;
+
+		//spec orb varbit check
+		public static final int BR_NOT_INGAME = 0;
+	}
+
+	public static final class InventoryId
+	{
+		public static final int WORN = InventoryID.WORN;
 	}
 
 	public static final class Script
@@ -147,8 +197,20 @@ public class CompactOrbsConstants
 
 		//logout X redraw when opening tabs/using hotkey
 		public static final int TOP_LEVEL_REDRAW = ScriptID.TOPLEVEL_REDRAW;
-		public static final int TOP_LEVEL_SUBCHANGE = 903;
+		public static final int TOP_LEVEL_SUBCHANGE = 908;
 		public static final int TOP_LEVEL_SIDE_CUSTOMIZE = 919;
+
+		//(overlay) orb content update scripts
+		public static final int ORBS_UPDATE_HEALTH = 446;
+
+		public static final int ORBS_UPDATE_PRAYER = 82;
+		public static final int ORBS_TOGGLE_PRAYER = 455;
+
+		public static final int ORBS_UPDATE_RUNENERGY = ScriptID.ORBS_UPDATE_RUNENERGY;
+		public static final int ORBS_TOGGLE_RUNMODE = 457;
+
+		public static final int ORBS_UPDATE_SPECENERGY = 2069;
+		public static final int ORBS_TOGGLE_SPEC_OP = 2793;
 
 		//buff bar widget, used for the minimap overlay
 		public static final int BUFF_BAR_CONTENT_UPDATE = 4730;
@@ -328,8 +390,8 @@ public class CompactOrbsConstants
 
 		public static final class MinimapOverlay
 		{
-			public static final int CONTAINER_WIDTH = 182;
-			public static final int CONTAINER_HEIGHT = 166;
+			public static final int CONTAINER_WIDTH = 211;
+			public static final int CONTAINER_HEIGHT = 207;
 
 			public static final int[] NO_CLICK_Y =
 				{
@@ -346,8 +408,14 @@ public class CompactOrbsConstants
 					40, 56, 25, 15, 15, 11
 				};
 
+			public static final int MINIMAP_FRAME_WIDTH = 182;
+			public static final int MINIMAP_FRAME_HEIGHT = 166;
+
 			public static final int MINIMAP_CONTENT = 1338;
 			public static final int COMPASS_CONTENT = 1339;
+
+			public static final int XP_DROPS_X = 30;
+			public static final int XP_DROPS_Y = 35;
 		}
 
 		//world map x and y when in fixed mode
@@ -393,7 +461,8 @@ public class CompactOrbsConstants
 
 		//misc widget dimensions
 		public static final int COMPASS_SIZE = 36;
-		public static final int WORLD_MAP_SIZE = 30;
+		public static final int WORLD_MAP_FRAME_SIZE = 30;
+		public static final int WORLD_MAP_GLOBE_SIZE = WORLD_MAP_FRAME_SIZE - 8;
 		public static final int XP_ORB_SIZE = 27;
 		public static final int LOGOUT_X_WIDTH = 26;
 		public static final int LOGOUT_X_HEIGHT = 23;
@@ -422,10 +491,18 @@ public class CompactOrbsConstants
 
 	public static final class Sprite
 	{
-		//minimap clone sprites
+		//minimap overlay sprites
 		public static final int COMPASS_MASK = SpriteID.RESIZE_COMPASS_MASK;
 		public static final int MINIMAP_MASK = SpriteID.RESIZE_MAP_MASK;
 		public static final int MINIMAP_FRAME = SpriteID.OSRS_STRETCH_MAPSURROUND;
+
+		//overlay orb sprites
+		public static final int ORB_FRAME = SpriteID.OrbFrame.FRAME;
+		public static final int ORB_FRAME_HOVERED = SpriteID.OrbFrame.FRAME_HOVERED;
+
+		public static final int SPECIAL_ORB_FILL = SpriteID.OrbFiller.SPECIAL;
+		public static final int SPECIAL_ORB_FILL_ACTIVATED = SpriteID.OrbFiller.SPECIAL_ACTIVATED;
+		public static final int SPECIAL_ORB_FILL_DISABLED = SpriteID.OrbFiller.RUN;
 
 		//world map overlay sprites
 		public static final int WORLD_MAP_BACKING = SpriteID.RING_30;
@@ -460,6 +537,83 @@ public class CompactOrbsConstants
 			//can instead use StatBoostsHud (seems to be mobile/steam only)
 			//script can stay the same as entry since it fires frequently
 			public static final int UNIVERSE = InterfaceID.StatBoostsHud.UNIVERSE;//InterfaceID.BuffBar.UNIVERSE;
+
+			public static final class WorldMap
+			{
+				public static final int WORLDMAP = InterfaceID.Orbs.WORLDMAP;
+			}
+
+			public static final class HpOrb
+			{
+				public static final int HEALTH_BACKING = InterfaceID.Orbs.HEALTH_BACKING;
+				public static final int HEALTHBUTTON = InterfaceID.Orbs.HEALTHBUTTON;
+				public static final int HEALTH_TEXT = InterfaceID.Orbs.HEALTH_TEXT;
+				public static final int HEALTH_INDICATOR = InterfaceID.Orbs.HEALTH_INDICATOR;
+				public static final int HEALTH_EXTRAPOISONHALF = InterfaceID.Orbs.HEALTH_EXTRAPOISONHALF;
+				public static final int HEALTH_EXTRAPOISONHALF_CONTENTS = InterfaceID.Orbs.HEALTH_EXTRAPOISONHALF_CONTENTS;
+				public static final int ORB_HEALTH_EMPTY = InterfaceID.Orbs.ORB_HEALTH_EMPTY;
+				public static final int ORB_HEALTH_EMPTY_GRAPHIC0 = InterfaceID.Orbs.HEALTH_EMPTY_CONTENTS;
+				public static final int ORB_HEALTH_HEART_ICON = InterfaceID.Orbs.ORB_HEALTH_HEART_ICON;
+			}
+
+			public static final class PrayOrb
+			{
+				public static final int PRAYER_BACKING = InterfaceID.Orbs.PRAYER_BACKING;
+				public static final int PRAYERBUTTON = InterfaceID.Orbs.PRAYERBUTTON;
+				public static final int PRAYER_TEXT = InterfaceID.Orbs.PRAYER_TEXT;
+				public static final int PRAYER_INDICATOR = InterfaceID.Orbs.PRAYER_INDICATOR;
+				public static final int ORB_PRAYER_EMPTY = InterfaceID.Orbs.ORB_PRAYER_EMPTY;
+				public static final int ORB_PRAYER_EMPTY_GRAPHIC0 = InterfaceID.Orbs.ORB_PRAYER_EMPTY_GRAPHIC0;
+				public static final int PRAYER_ICON = InterfaceID.Orbs.PRAYER_ICON;
+			}
+
+			public static final class RunOrb
+			{
+				public static final int RUNENERGY_BACKING = InterfaceID.Orbs.RUNENERGY_BACKING;
+				public static final int RUNBUTTON = InterfaceID.Orbs.RUNBUTTON;
+				public static final int RUNENERGY_TEXT = InterfaceID.Orbs.RUNENERGY_TEXT;
+				public static final int RUNENERGY_INDICATOR = InterfaceID.Orbs.RUNENERGY_INDICATOR;
+				public static final int ORB_RUNENERGY_EMPTY = InterfaceID.Orbs.ORB_RUNENERGY_EMPTY;
+				public static final int ORB_RUNENERGY_EMPTY_GRAPHIC0 = InterfaceID.Orbs.ORB_RUNENERGY_EMPTY_GRAPHIC0;
+				public static final int RUNENERGY_ICON = InterfaceID.Orbs.RUNENERGY_ICON;
+			}
+
+			public static final class SpecOrb
+			{
+				public static final int SPECENERGY_BACKING = InterfaceID.Orbs.SPECENERGY_BACKING;
+				public static final int SPECBUTTON = InterfaceID.Orbs.SPECBUTTON;
+				public static final int SPECENERGY_TEXT = InterfaceID.Orbs.SPECENERGY_TEXT;
+				public static final int SPECENERGY_INDICATOR = InterfaceID.Orbs.SPECENERGY_INDICATOR;
+				public static final int ORB_SPECENERGY_EMPTY = InterfaceID.Orbs.ORB_SPECENERGY_EMPTY;
+				public static final int ORB_SPECENERGY_EMPTY_GRAPHIC0 = InterfaceID.Orbs.ORB_SPECENERGY_EMPTY_GRAPHIC0;
+				public static final int SPECENERGY_ICON = InterfaceID.Orbs.SPECENERGY_ICON;
+			}
+
+			public static final class OrbConfig
+			{
+				public static final int LAYER_WIDTH = 57;
+				public static final int LAYER_HEIGHT = 34;
+
+				public static final int BUTTON_X = 3;
+				public static final int BUTTON_Y = 5;
+				public static final int BUTTON_WIDTH = 50;
+				public static final int BUTTON_HEIGHT = 26;
+
+				public static final int TEXT_X = 4;
+				public static final int TEXT_Y = 16;
+				public static final int TEXT_WIDTH = 23;
+				public static final int TEXT_HEIGHT = 13;
+				public static final int TEXT_FONT_ID = FontID.PLAIN_11;
+				public static final int TEXT_X_ALIGNMENT = WidgetTextAlignment.CENTER;
+				public static final int TEXT_Y_ALIGNMENT = WidgetTextAlignment.CENTER;
+
+				public static final int EMPTY_X = 27;
+				public static final int EMPTY_Y = 4;
+				public static final int EMPTY_SIZE = 26;
+
+				//ORBS_UNIVERSE Y is offset by 10 from the minimap container
+				public static final int Y_OFFSET = 10;
+			}
 		}
 
 		public static final class Orb
@@ -479,9 +633,6 @@ public class CompactOrbsConstants
 			public static final int WIKI_CONTAINER_VANILLA = InterfaceID.Orbs.WIKI_ICON;
 			public static final int WIKI_ICON_VANILLA = InterfaceID.Orbs.WIKI_ICON_GRAPHIC;
 			public static final int WORLD_MAP = InterfaceID.Orbs.ORB_WORLDMAP;
-
-			//overlay worldmap globe
-			public static final int WORLDMAP = InterfaceID.Orbs.WORLDMAP;
 		}
 
 		//classic-resizable widgets

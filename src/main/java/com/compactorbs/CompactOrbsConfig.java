@@ -582,8 +582,9 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = "",
 		name = "Overlay:",
-		description = "Settings related to the minimap overlay (requires minimap overlay to be enabled) <br>"
-			+ "'Orb visibility' does NOT affect overlay orbs",
+		description = "Requires 'Show minimap in compact view' <br> <br>"
+			+ "NOTE: orbs are Vanilla - plugins that show regen, info tooltips, etc. are unsupported! <br>"
+			+ "NOTE: 'Orb Visibility' configs do NOT affect overlay orbs",
 		section = minimapOverlay,
 		position = 1
 	)
@@ -623,6 +624,55 @@ public interface CompactOrbsConfig extends Config
 		position = 4
 	)
 	default boolean showOverlayLogoutX()
+	{
+		return false;
+	}
+
+
+	@ConfigItem(
+		keyName = ConfigKeys.ENABLE_HP_OVERLAY,
+		name = "  Show HP",
+		description = "Show an Hp orb on the minimap overlay",
+		section = minimapOverlay,
+		position = 5
+	)
+	default boolean showOverlayHp()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.ENABLE_PRAY_OVERLAY,
+		name = "  Show Prayer",
+		description = "Show a Prayer orb on the minimap overlay",
+		section = minimapOverlay,
+		position = 6
+	)
+	default boolean showOverlayPray()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.ENABLE_RUN_OVERLAY,
+		name = "  Show Run",
+		description = "Show a Run orb on the minimap overlay",
+		section = minimapOverlay,
+		position = 7
+	)
+	default boolean showOverlayRun()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.ENABLE_SPEC_OVERLAY,
+		name = "  Show Spec",
+		description = "Show a Spec orb on the minimap overlay",
+		section = minimapOverlay,
+		position = 8
+	)
+	default boolean showOverlaySpec()
 	{
 		return false;
 	}

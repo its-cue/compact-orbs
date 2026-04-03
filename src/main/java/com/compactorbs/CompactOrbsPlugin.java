@@ -43,10 +43,14 @@ import com.google.inject.Provides;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.Skill;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.ScriptPostFired;
+import net.runelite.api.events.StatChanged;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.WidgetLoaded;
+import net.runelite.api.gameval.InventoryID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -146,6 +150,30 @@ public class CompactOrbsPlugin extends Plugin
 	}
 
 	@Subscribe
+	public void onItemContainerChanged(ItemContainerChanged event)
+	{
+		if (event.getContainerId() == InventoryID.WORN)
+		{
+			manager.updateOverlaySpecOrb(true);
+		}
+	}
+
+	@Subscribe
+	public void onStatChanged(StatChanged event)
+	{
+		if (event.getSkill() == Skill.HITPOINTS)
+		{
+			manager.updateOverlayHpOrb(true);
+			manager.updateOverlaySpecOrb(true);
+		}
+
+		if (event.getSkill() == Skill.PRAYER)
+		{
+			manager.updateOverlayPrayerOrb(true);
+		}
+	}
+
+	@Subscribe
 	public void onScriptPostFired(ScriptPostFired event)
 	{
 		int scriptId = event.getScriptId();
@@ -169,33 +197,45 @@ public class CompactOrbsPlugin extends Plugin
 		{
 			if (minimapOverlay.hasUpdatedBounds() && manager.pendingMinimapOverlayChildren)
 			{
-				log.debug("buff bar is ready for children");
+				log.debug("[stat boosts hud] is ready for overlay children");
 
 				manager.pendingMinimapOverlayChildren = false;
 				clientThread.invokeLater(manager::createMinimapOverlayChildren);
 			}
 		}
 
+		if (scriptId == Script.ORBS_UPDATE_HEALTH)
+		{
+			manager.updateOverlayHpOrb(true);
+		}
+
+		if (scriptId == Script.ORBS_UPDATE_PRAYER
+			|| scriptId == Script.ORBS_TOGGLE_PRAYER)
+		{
+			manager.updateOverlayPrayerOrb(true);
+		}
+
+		if (scriptId == Script.ORBS_UPDATE_RUNENERGY
+			|| scriptId == Script.ORBS_TOGGLE_RUNMODE
+			|| scriptId == Script.BUFF_BAR_CONTENT_UPDATE)
+		{
+			boolean updateByScript = scriptId != Script.BUFF_BAR_CONTENT_UPDATE;
+			manager.updateOverlayRunOrb(updateByScript);
+		}
+
+		if (scriptId == Script.ORBS_UPDATE_SPECENERGY
+			|| scriptId == Script.ORBS_TOGGLE_SPEC_OP)
+		{manager.updateOverlaySpecOrb(true);
+		}
+
 		if (scriptId == Script.ORBS_WORLDMAP_INIT || scriptId == Script.WORLD_MAP_UPDATE)
 		{
-			if (manager.overlayWorldMapGlobe != null)
-			{
-				widgetManager.syncMenuOp(manager.overlayWorldMapGlobe, Orb.WORLDMAP);
-
-				boolean hovering = manager.overlayWorldMapGlobe.contains(client.getMouseCanvasPosition());
-				if (!hovering)
-				{
-					widgetManager.syncOpacity(manager.overlayWorldMapGlobe, Orb.WORLDMAP);
-				}
-			}
+			manager.updateOverlayWorldMap();
 		}
 
 		if (scriptId == Script.ORBS_XPDROPS_INIT || scriptId == Script.ORBS_XPDROPS_UPDATE)
 		{
-			if (manager.overlayXpOrb != null)
-			{
-				widgetManager.syncMenuOp(manager.overlayXpOrb, Orb.XP_DROPS);
-			}
+			manager.updateOverlayXP();
 		}
 
 		//don't make changes unless a script updates the minimap widgets,
@@ -321,19 +361,47 @@ public class CompactOrbsPlugin extends Plugin
 				break;
 
 			case ConfigKeys.ENABLE_MINIMAP_OVERLAY:
-				clientThread.invokeLater(() -> manager.updateMinimapOverlayVisibility());
+				clientThread.invokeLater(() ->
+				{
+					manager.updateMinimapOverlayVisibility();
+
+					//make sure orbs that could be changed are updated
+					manager.updateOverlayHpOrb(true);
+					manager.updateOverlayPrayerOrb(true);
+					manager.updateOverlayRunOrb(true);
+					manager.updateOverlaySpecOrb(true);
+					manager.updateOverlayXP();
+					manager.updateOverlayLogoutX();
+				});
 				break;
 
 			case ConfigKeys.ENABLE_WORLD_MAP_OVERLAY:
-				clientThread.invokeLater(() ->
-					manager.overlayWorldMapLayer.setHidden(!config.showOverlayWorldMap())
-				);
+				clientThread.invokeLater(manager::updateOverlayWorldMap);
 				break;
 
 			case ConfigKeys.ENABLE_XP_DROP_OVERLAY:
+			case ConfigKeys.ENABLE_HP_OVERLAY:
 				clientThread.invokeLater(() ->
-					manager.overlayXpOrb.setHidden(!config.showOverlayXPDrop())
-				);
+				{
+					if (key.equals(ConfigKeys.ENABLE_HP_OVERLAY))
+					{
+						manager.updateOverlayHpOrb(true);
+					}
+
+					manager.updateOverlayXP();
+				});
+				break;
+
+			case ConfigKeys.ENABLE_PRAY_OVERLAY:
+				clientThread.invokeLater(() -> manager.updateOverlayPrayerOrb(true));
+				break;
+
+			case ConfigKeys.ENABLE_RUN_OVERLAY:
+				clientThread.invokeLater(() -> manager.updateOverlayRunOrb(true));
+				break;
+
+			case ConfigKeys.ENABLE_SPEC_OVERLAY:
+				clientThread.invokeLater(() -> manager.updateOverlaySpecOrb(true));
 				break;
 
 			case ConfigKeys.ENABLE_LOGOUT_X_OVERLAY:

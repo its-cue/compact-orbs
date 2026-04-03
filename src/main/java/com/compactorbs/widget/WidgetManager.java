@@ -32,6 +32,7 @@ import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.util.SetValue;
 import com.compactorbs.util.ValueKey;
+import com.compactorbs.widget.elements.Compass;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.offset.OffsetManager;
 import com.compactorbs.widget.slot.Slot;
@@ -227,18 +228,21 @@ public class WidgetManager
 
 		widget.setHidden(hidden);
 
-		//specifically for compass menu options (could be others?)
-		if (widget.getChildren() != null)
+		//limit to only compass menu options
+		if (widget.getId() == Compass.CLASSIC_COMPASS_OPTIONS.getComponentId()
+			|| widget.getId() == Compass.MODERN_COMPASS_OPTIONS.getComponentId())
 		{
-			for (Widget child : widget.getChildren())
+			if (widget.getChildren() != null)
 			{
-				if (child != null)
+				for (Widget child : widget.getChildren())
 				{
-					child.setHidden(hidden);
+					if (child != null)
+					{
+						child.setHidden(hidden);
+					}
 				}
 			}
 		}
-
 	}
 
 	public void setHidden(int componentId, boolean hidden)
@@ -250,19 +254,6 @@ public class WidgetManager
 		}
 
 		widget.setHidden(hidden);
-	}
-
-	public void revalidate(TargetWidget... widgets)
-	{
-		for (TargetWidget target : widgets)
-		{
-			Widget widget = client.getWidget(target.getComponentId());
-			if (widget == null)
-			{
-				continue;
-			}
-			widget.revalidate();
-		}
 	}
 
 	//get the widget for the given TargetWidget
@@ -501,16 +492,16 @@ public class WidgetManager
 		}
 	}
 
-	public void setText(Widget target, int value)
+	public void setText(Widget target, String text)
 	{
 		if (target == null)
 		{
 			return;
 		}
 
-		if (!Objects.equals(target.getText(), Integer.toString(value)))
+		if (!Objects.equals(target.getText(), text))
 		{
-			target.setText(Integer.toString(value));
+			target.setText(text);
 		}
 	}
 
