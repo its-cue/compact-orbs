@@ -142,7 +142,6 @@ public class OverlayOrb
 	public void syncDataOrb(WidgetManager widgetManager)
 	{
 		widgetManager.syncHidden(button, buttonId);
-		widgetManager.syncMenuOp(button, buttonId);
 		widgetManager.syncName(button, buttonId);
 		widgetManager.syncOpacity(fill, fillId);
 		widgetManager.syncSprite(fill, fillId);

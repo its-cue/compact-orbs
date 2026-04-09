@@ -284,11 +284,7 @@ public class OverlayOrbBuilder
 			WidgetManager.pos(OrbConfig.BUTTON_X, OrbConfig.BUTTON_Y),
 			WidgetManager.size(OrbConfig.BUTTON_WIDTH, OrbConfig.BUTTON_HEIGHT),
 			WidgetManager.listener(),
-			WidgetManager.onOp((JavaScriptCallback) event ->
-				widgetManager.invokeMenuOp(buttonId, event.getOp())
-			),
 			widgetManager.syncHidden(buttonId),
-			widgetManager.syncMenuOp(buttonId),
 			widgetManager.syncName(buttonId),
 			WidgetManager.onHover(
 				mouseOver ->
