@@ -62,8 +62,6 @@ import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
-import net.runelite.api.gameval.VarPlayerID;
-import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetPositionMode;
 import net.runelite.api.widgets.WidgetSizeMode;
@@ -118,14 +116,8 @@ public class CompactOrbsManager
 	private Widget minimapButton;
 	private Widget compassButton;
 
-	public Widget overlayWorldMapLayer;
-	public Widget overlayWorldMapBacking;
-	public Widget overlayWorldMapGlobe;
-
-	public Widget overlayXpOrb;
-
-	public Widget overlayLogoutXStone;
-	public Widget overlayLogoutXIcon;
+	private Widget overlayLogoutXStone;
+	private Widget overlayLogoutXIcon;
 
 	private final Map<String, Map.Entry<Supplier<Boolean>, TargetWidget[]>> hideByConfigMap = new HashMap<>();
 	private final Map<Integer, Map.Entry<Supplier<Boolean>, TargetWidget[]>> hideByScriptMap = new HashMap<>();
@@ -433,10 +425,6 @@ public class CompactOrbsManager
 
 	private void clearMinimapOverlayChildren()
 	{
-		overlayWorldMapLayer = null;
-		overlayWorldMapBacking = null;
-		overlayWorldMapGlobe = null;
-		overlayXpOrb = null;
 		overlayLogoutXStone = null;
 		overlayLogoutXIcon = null;
 	}
@@ -565,78 +553,6 @@ public class CompactOrbsManager
 			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_RIGHT, WidgetPositionMode.ABSOLUTE_TOP)
 		);
 
-		overlayWorldMapLayer = widgetManager.createLayer(
-			parent,
-			WidgetManager.pos(Layout.Original.WORLD_MAP_X, Layout.Original.WORLD_MAP_Y + 10),
-			WidgetManager.size(Layout.WORLD_MAP_SIZE, Layout.WORLD_MAP_SIZE),
-			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_RIGHT, WidgetPositionMode.ABSOLUTE_TOP),
-			WidgetManager.hidden(hideOverlayWorldMap()),
-			WidgetManager.listener()
-		);
-
-		overlayWorldMapBacking = widgetManager.createGraphic(
-			overlayWorldMapLayer,
-			WidgetManager.pos(0, 0),
-			WidgetManager.size(Layout.WORLD_MAP_SIZE, Layout.WORLD_MAP_SIZE),
-			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_CENTER, WidgetPositionMode.ABSOLUTE_CENTER),
-			WidgetManager.sprite(Sprite.WORLD_MAP_BACKING),
-			WidgetManager.noClickThrough(),
-			WidgetManager.listener()
-		);
-
-		overlayWorldMapGlobe = widgetManager.createGraphic(
-			overlayWorldMapLayer,
-			WidgetManager.pos(0, 0),
-			WidgetManager.size(Layout.WORLD_MAP_SIZE - 8, Layout.WORLD_MAP_SIZE - 8),
-			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_CENTER, WidgetPositionMode.ABSOLUTE_CENTER),
-			WidgetManager.sprite(Sprite.WORLD_MAP_GLOBE),
-			WidgetManager.listener(),
-			WidgetManager.onOp(
-				(JavaScriptCallback) event ->
-					widgetManager.invokeMenuOp(Orb.WORLDMAP, event.getOp())
-			),
-			WidgetManager.onHover(
-				event ->
-				{
-					overlayWorldMapGlobe.setSpriteId(Sprite.WORLD_MAP_GLOBE_HOVER);
-					overlayWorldMapGlobe.setOpacity(0);
-				},
-				event ->
-				{
-					overlayWorldMapGlobe.setSpriteId(Sprite.WORLD_MAP_GLOBE);
-					widgetManager.syncOpacity(overlayWorldMapGlobe, Orb.WORLDMAP);
-				}
-			),
-			widgetManager.syncMenuOp(Orb.WORLDMAP)
-		);
-
-		overlayXpOrb = widgetManager.createGraphic(
-			parent,
-			WidgetManager.pos(0, 45),
-			WidgetManager.size(Layout.XP_ORB_SIZE, Layout.XP_ORB_SIZE),
-			WidgetManager.sprite(!isXpDropsEnabled() ? Sprite.XP_DROP : Sprite.XP_DROP_CLICKED),
-			WidgetManager.hidden(hideOverlayXPDrop()),
-			WidgetManager.name(ColorUtil.wrapWithColorTag(Menu.SUFFIX_XP, Menu.COLOR)),
-			WidgetManager.noClickThrough(),
-			WidgetManager.listener(),
-			WidgetManager.onOp(
-				(JavaScriptCallback) event ->
-					widgetManager.invokeMenuOp(Orb.XP_DROPS, event.getOp())
-			),
-			widgetManager.onHoverWithVarTransmit(
-				(w, hovering) ->
-					w.setSpriteId(
-						WidgetManager.resolveSprite(
-							client.getVarbitValue(Varbit.XP_DROPS_TOGGLE), hovering,
-							Sprite.XP_DROP, Sprite.XP_DROP_HOVER,
-							Sprite.XP_DROP_CLICKED, Sprite.XP_DROP_HOVER_CLICKED
-						)
-					),
-				VarPlayerID.CHAT_FILTER_ASSIST
-			),
-			widgetManager.syncMenuOp(Orb.XP_DROPS)
-		);
-
 		overlayLogoutXStone = widgetManager.createGraphic(
 			parent,
 			WidgetManager.pos(Layout.Original.LOGOUT_X, Layout.Original.LOGOUT_Y),
@@ -644,10 +560,7 @@ public class CompactOrbsManager
 			WidgetManager.hidden(hideOverlayLogoutX()),
 			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_RIGHT, WidgetPositionMode.ABSOLUTE_TOP),
 			WidgetManager.listener(),
-			WidgetManager.onOp(
-				(JavaScriptCallback) event ->
-					widgetManager.invokeMenuOp(Modern.LOGOUT_X_STONE, event.getOp())
-			),
+			WidgetManager.onOp(Script.TOPLEVEL_SIDEBUTTON_OP, Script.OPINDEX0, Enum.TOPLEVEL_COMPONENTS, 10),
 			widgetManager.syncMenuOp(Modern.LOGOUT_X_STONE),
 			widgetManager.syncSprite(Modern.LOGOUT_X_STONE)
 		);
@@ -938,16 +851,6 @@ public class CompactOrbsManager
 	public boolean isMinimapOverlayEnabled()
 	{
 		return config.showMinimapInCompactView();
-	}
-
-	public boolean hideOverlayWorldMap()
-	{
-		return !config.showOverlayWorldMap();
-	}
-
-	public boolean hideOverlayXPDrop()
-	{
-		return !config.showOverlayXPDrop();
 	}
 
 	public boolean hideOverlayLogoutX()

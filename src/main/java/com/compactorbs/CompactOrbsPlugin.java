@@ -176,28 +176,6 @@ public class CompactOrbsPlugin extends Plugin
 			}
 		}
 
-		if (scriptId == Script.ORBS_WORLDMAP_INIT || scriptId == Script.WORLD_MAP_UPDATE)
-		{
-			if (manager.overlayWorldMapGlobe != null)
-			{
-				widgetManager.syncMenuOp(manager.overlayWorldMapGlobe, Orb.WORLDMAP);
-
-				boolean hovering = manager.overlayWorldMapGlobe.contains(client.getMouseCanvasPosition());
-				if (!hovering)
-				{
-					widgetManager.syncOpacity(manager.overlayWorldMapGlobe, Orb.WORLDMAP);
-				}
-			}
-		}
-
-		if (scriptId == Script.ORBS_XPDROPS_INIT || scriptId == Script.ORBS_XPDROPS_UPDATE)
-		{
-			if (manager.overlayXpOrb != null)
-			{
-				widgetManager.syncMenuOp(manager.overlayXpOrb, Orb.XP_DROPS);
-			}
-		}
-
 		//don't make changes unless a script updates the minimap widgets,
 		// or if the minimap is natively minimized
 		if (!Script.MINIMAP_UPDATE_SCRIPTS.contains(scriptId) || manager.isMinimapMinimized())
@@ -322,18 +300,6 @@ public class CompactOrbsPlugin extends Plugin
 
 			case ConfigKeys.ENABLE_MINIMAP_OVERLAY:
 				clientThread.invokeLater(() -> manager.updateMinimapOverlayVisibility());
-				break;
-
-			case ConfigKeys.ENABLE_WORLD_MAP_OVERLAY:
-				clientThread.invokeLater(() ->
-					manager.overlayWorldMapLayer.setHidden(!config.showOverlayWorldMap())
-				);
-				break;
-
-			case ConfigKeys.ENABLE_XP_DROP_OVERLAY:
-				clientThread.invokeLater(() ->
-					manager.overlayXpOrb.setHidden(!config.showOverlayXPDrop())
-				);
 				break;
 
 			case ConfigKeys.ENABLE_LOGOUT_X_OVERLAY:

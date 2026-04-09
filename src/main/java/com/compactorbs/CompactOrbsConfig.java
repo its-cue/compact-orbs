@@ -569,8 +569,8 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.ENABLE_MINIMAP_OVERLAY,
 		name = "Show minimap in compact view",
-		description = "Show a separate minimap overlay, only during compact view <br>" +
-			"NOTE: overlay functions identically to the Vanilla minimap (will NOT show overlays, marked tiles, names, etc.)",
+		description = "Display a separate minimap overlay, only during compact view <br>"
+			+ "NOTE: overlay functions identically to the Vanilla minimap (will NOT show overlays, marked tiles, names, etc.)",
 		section = minimapOverlay,
 		position = 0
 	)
@@ -580,47 +580,12 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "",
-		name = "Overlay:",
-		description = "Settings related to the minimap overlay (requires minimap overlay to be enabled) <br>"
-			+ "'Orb visibility' does NOT affect overlay orbs",
+		keyName = ConfigKeys.ENABLE_LOGOUT_X_OVERLAY,
+		name = "- Show Logout X",
+		description = "Display a Logout X on the minimap overlay (only in modern-resizable)<br>"
+			+ "Requires: 'Show minimap in compact view'",
 		section = minimapOverlay,
 		position = 1
-	)
-	default void minimapHeader()
-	{
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.ENABLE_WORLD_MAP_OVERLAY,
-		name = "  Show World Map",
-		description = "Show a world map on the minimap overlay",
-		section = minimapOverlay,
-		position = 2
-	)
-	default boolean showOverlayWorldMap()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.ENABLE_XP_DROP_OVERLAY,
-		name = "  Show XP",
-		description = "Show an Xp orb on the minimap overlay",
-		section = minimapOverlay,
-		position = 3
-	)
-	default boolean showOverlayXPDrop()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.ENABLE_LOGOUT_X_OVERLAY,
-		name = "  Show Logout X",
-		description = "Show a Logout X on the minimap overlay (only in modern-resizable)",
-		section = minimapOverlay,
-		position = 4
 	)
 	default boolean showOverlayLogoutX()
 	{

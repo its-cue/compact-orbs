@@ -86,8 +86,6 @@ public class CompactOrbsConstants
 		public static final String HIDE_LOGOUT_X = "hideLogoutX";
 		public static final String HIDE_GRID = "hideGrid";
 		public static final String ENABLE_MINIMAP_OVERLAY = "enableMinimapOverlay";
-		public static final String ENABLE_WORLD_MAP_OVERLAY = "enableWorldMapOverlay";
-		public static final String ENABLE_XP_DROP_OVERLAY = "enableXPDropOverlay";
 		public static final String ENABLE_LOGOUT_X_OVERLAY = "enableLogoutXOverlay";
 
 		public static final class Wiki
@@ -148,6 +146,7 @@ public class CompactOrbsConstants
 		//logout X redraw when opening tabs/using hotkey
 		public static final int TOP_LEVEL_REDRAW = ScriptID.TOPLEVEL_REDRAW;
 		public static final int TOP_LEVEL_SUBCHANGE = 903;
+		public static final int TOPLEVEL_SIDEBUTTON_OP = 914;
 		public static final int TOP_LEVEL_SIDE_CUSTOMIZE = 919;
 
 		//buff bar widget, used for the minimap overlay
@@ -393,8 +392,6 @@ public class CompactOrbsConstants
 
 		//misc widget dimensions
 		public static final int COMPASS_SIZE = 36;
-		public static final int WORLD_MAP_SIZE = 30;
-		public static final int XP_ORB_SIZE = 27;
 		public static final int LOGOUT_X_WIDTH = 26;
 		public static final int LOGOUT_X_HEIGHT = 23;
 
@@ -426,17 +423,6 @@ public class CompactOrbsConstants
 		public static final int COMPASS_MASK = SpriteID.RESIZE_COMPASS_MASK;
 		public static final int MINIMAP_MASK = SpriteID.RESIZE_MAP_MASK;
 		public static final int MINIMAP_FRAME = SpriteID.OSRS_STRETCH_MAPSURROUND;
-
-		//world map overlay sprites
-		public static final int WORLD_MAP_BACKING = SpriteID.RING_30;
-		public static final int WORLD_MAP_GLOBE = SpriteID.WorldmapIcon._0;
-		public static final int WORLD_MAP_GLOBE_HOVER = SpriteID.WorldmapIcon._1;
-
-		//xp drop overlay sprites
-		public static final int XP_DROP = SpriteID.OrbXp._0;
-		public static final int XP_DROP_CLICKED = SpriteID.OrbXp._1;
-		public static final int XP_DROP_HOVER = SpriteID.OrbXp._2;
-		public static final int XP_DROP_HOVER_CLICKED = SpriteID.OrbXp._3;
 
 		//logout x overlay sprite
 		public static final int LOGOUT_X_BUTTON = SpriteID.CloseButtons._7;

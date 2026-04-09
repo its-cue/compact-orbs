@@ -37,7 +37,6 @@ import com.compactorbs.widget.offset.OffsetManager;
 import com.compactorbs.widget.slot.Slot;
 import com.compactorbs.widget.slot.SlotManager;
 import java.util.Objects;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
@@ -45,7 +44,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
-import net.runelite.api.MenuAction;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetType;
@@ -252,19 +250,6 @@ public class WidgetManager
 		widget.setHidden(hidden);
 	}
 
-	public void revalidate(TargetWidget... widgets)
-	{
-		for (TargetWidget target : widgets)
-		{
-			Widget widget = client.getWidget(target.getComponentId());
-			if (widget == null)
-			{
-				continue;
-			}
-			widget.revalidate();
-		}
-	}
-
 	//get the widget for the given TargetWidget
 	public Widget getTargetWidget(TargetWidget target)
 	{
@@ -317,11 +302,6 @@ public class WidgetManager
 				widget.deleteAllChildren();
 			}
 		}
-	}
-
-	public void invokeMenuOp(int componentId, int id)
-	{
-		client.menuAction(-1, componentId, MenuAction.CC_OP, id, -1, "", "");
 	}
 
 	public void syncMenuOp(Widget target, int componentId)
@@ -380,26 +360,6 @@ public class WidgetManager
 		}
 	}
 
-	public void syncOpacity(Widget target, int componentId)
-	{
-		if (target == null)
-		{
-			return;
-		}
-
-		Widget widget = client.getWidget(componentId);
-		if (widget == null)
-		{
-			return;
-		}
-
-		int opacity = widget.getOpacity();
-		if (target.getOpacity() != opacity)
-		{
-			target.setOpacity(opacity);
-		}
-	}
-
 	public void syncHidden(Widget target, int componentId)
 	{
 		if (target == null)
@@ -417,140 +377,6 @@ public class WidgetManager
 		if (target.isHidden() != hidden)
 		{
 			target.setHidden(hidden);
-		}
-	}
-
-	public void syncText(Widget target, int componentId)
-	{
-		if (target == null)
-		{
-			return;
-		}
-
-		Widget widget = client.getWidget(componentId);
-		if (widget == null)
-		{
-			return;
-		}
-
-		String text = widget.getText();
-		if (!Objects.equals(target.getText(), text))
-		{
-			target.setText(text);
-		}
-	}
-
-	public void syncColor(Widget target, int componentId)
-	{
-		if (target == null)
-		{
-			return;
-		}
-
-		Widget widget = client.getWidget(componentId);
-		if (widget == null)
-		{
-			return;
-		}
-
-		int color = widget.getTextColor();
-		if (target.getTextColor() != color)
-		{
-			target.setTextColor(color);
-		}
-	}
-
-	public void syncHeight(Widget target, int componentId)
-	{
-		if (target == null)
-		{
-			return;
-		}
-
-		Widget widget = client.getWidget(componentId);
-		if (widget == null)
-		{
-			return;
-		}
-
-		int height = widget.getOriginalHeight();
-		if (target.getOriginalHeight() != height)
-		{
-			target.setOriginalHeight(height);
-			target.revalidate();
-		}
-	}
-
-	public void syncName(Widget target, int componentId)
-	{
-		if (target == null)
-		{
-			return;
-		}
-
-		Widget widget = client.getWidget(componentId);
-		if (widget == null)
-		{
-			return;
-		}
-
-		String name = widget.getName();
-		if (!Objects.equals(target.getName(), name))
-		{
-			target.setName(name);
-		}
-	}
-
-	public void setText(Widget target, int value)
-	{
-		if (target == null)
-		{
-			return;
-		}
-
-		if (!Objects.equals(target.getText(), Integer.toString(value)))
-		{
-			target.setText(Integer.toString(value));
-		}
-	}
-
-	public void setColor(Widget target, int color)
-	{
-		if (target == null)
-		{
-			return;
-		}
-
-		if (target.getTextColor() != color)
-		{
-			target.setTextColor(color);
-		}
-	}
-
-	public void setHeight(Widget target, int height)
-	{
-		if (target == null)
-		{
-			return;
-		}
-
-		if (target.getOriginalHeight() != height)
-		{
-			target.setOriginalHeight(height);
-			target.revalidate();
-		}
-	}
-
-	public void setPosition(Widget widget, int x, int y)
-	{
-		if (widget != null)
-		{
-			if (widget.getOriginalX() != x || widget.getOriginalY() != y)
-			{
-				widget.setOriginalX(x);
-				widget.setOriginalY(y);
-				widget.revalidate();
-			}
 		}
 	}
 
@@ -576,16 +402,6 @@ public class WidgetManager
 	public static int getChildId(int componentId)
 	{
 		return componentId & 0xff;
-	}
-
-	public static int resolveSprite(
-		int state, boolean hover,
-		int spriteA, int hoverA,
-		int spriteB, int hoverB)
-	{
-		return state == 0
-			? (hover ? hoverA : spriteA)
-			: (hover ? hoverB : spriteB);
 	}
 
 	private Widget createWidget(
@@ -675,23 +491,6 @@ public class WidgetManager
 		return w -> w.setSpriteId(spriteId);
 	}
 
-	public static Consumer<Widget> name(String name)
-	{
-		return w -> w.setName(name);
-	}
-
-	public static Consumer<Widget> text(String text, int fontId, boolean shadow, int x, int y)
-	{
-		return w ->
-		{
-			w.setText(text);
-			w.setFontId(fontId);
-			w.setTextShadowed(shadow);
-			w.setXTextAlignment(x);
-			w.setYTextAlignment(y);
-		};
-	}
-
 	public static Consumer<Widget> listener()
 	{
 		return w -> w.setHasListener(true);
@@ -746,29 +545,6 @@ public class WidgetManager
 		};
 	}
 
-	public Consumer<Widget> onHoverWithVarTransmit(BiConsumer<Widget, Boolean> change, int... trigger)
-	{
-		return w ->
-		{
-			w.setOnMouseOverListener((JavaScriptCallback) e ->
-				change.accept(w, true)
-			);
-
-			w.setOnMouseLeaveListener((JavaScriptCallback) e ->
-				change.accept(w, false)
-			);
-
-			w.setOnVarTransmitListener((JavaScriptCallback) e ->
-			{
-				boolean hovering = w.contains(client.getMouseCanvasPosition());
-
-				change.accept(w, hovering);
-			});
-
-			w.setVarTransmitTrigger(trigger);
-		};
-	}
-
 	public static Consumer<Widget> action(int index, String action)
 	{
 		return w ->
@@ -785,39 +561,9 @@ public class WidgetManager
 		return w -> syncMenuOp(w, componentId);
 	}
 
-	public Consumer<Widget> syncOpacity(int componentId)
-	{
-		return w -> syncOpacity(w, componentId);
-	}
-
 	public Consumer<Widget> syncSprite(int componentId)
 	{
 		return w -> syncSprite(w, componentId);
-	}
-
-	public Consumer<Widget> syncHidden(int componentId)
-	{
-		return w -> syncHidden(w, componentId);
-	}
-
-	public Consumer<Widget> syncText(int componentId)
-	{
-		return w -> syncText(w, componentId);
-	}
-
-	public Consumer<Widget> syncColor(int componentId)
-	{
-		return w -> syncColor(w, componentId);
-	}
-
-	public Consumer<Widget> syncHeight(int componentId)
-	{
-		return w -> syncHeight(w, componentId);
-	}
-
-	public Consumer<Widget> syncName(int componentId)
-	{
-		return w -> syncName(w, componentId);
 	}
 
 	public Widget createToggleButton(
