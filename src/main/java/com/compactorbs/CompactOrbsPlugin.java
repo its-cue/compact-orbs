@@ -25,6 +25,7 @@
 
 package com.compactorbs;
 
+import com.compactorbs.CompactOrbsConstants.ConfigGroup;
 import static com.compactorbs.CompactOrbsConstants.ConfigGroup.GROUP_NAME;
 import com.compactorbs.CompactOrbsConstants.ConfigKeys;
 import com.compactorbs.CompactOrbsConstants.Script;
@@ -48,9 +49,11 @@ import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.client.callback.ClientThread;
+import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.events.PluginChanged;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -61,7 +64,7 @@ import net.runelite.client.util.HotkeyListener;
 @PluginDescriptor(
 	name = "Compact Orbs",
 	description = "Collapse the minimap orbs into a compact view.",
-	tags = {"compact", "orbs", "layout", "hide", "minimap", "resizable", "classic", "modern", "world", "map", "wiki", "swap"},
+	tags = {"compact", "orbs", "layout", "hide", "minimap", "resizable", "classic", "modern", "world", "map", "wiki", "swap", "overlay"},
 	conflicts = {"Fixed Resizable Hybrid", "Orb Hider", "Minimap Hider"}
 )
 public class CompactOrbsPlugin extends Plugin
@@ -100,13 +103,11 @@ public class CompactOrbsPlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		overlayManager.add(minimapOverlay);
-
 		keyManager.registerKeyListener(hotkeyListener);
-
 		registerOrbToggleEntries();
 
 		manager.pendingChildrenUpdate = false;
-
+		slotManager.allowFixedModeUpdate = true;
 		manager.hideWorldMap = config.hideWorld();
 		manager.hideLogoutX = config.hideLogout();
 
@@ -122,6 +123,8 @@ public class CompactOrbsPlugin extends Plugin
 				manager.configureMinimapOverlayContainer(true);
 			}
 		});
+
+		manager.resolveWikiBannerConflict(ConfigGroup.Wiki.GROUP_NAME, ConfigKeys.Wiki.SHOW_WIKI_MINIMAP_BUTTON);
 	}
 
 	@Override
@@ -145,85 +148,76 @@ public class CompactOrbsPlugin extends Plugin
 		}
 	}
 
-	@Subscribe
+	@Subscribe(priority = -1.0f)
 	public void onScriptPostFired(ScriptPostFired event)
 	{
 		int scriptId = event.getScriptId();
 
-		if (scriptId == Script.TOP_LEVEL_REDRAW
-			|| scriptId == Script.TOP_LEVEL_SUBCHANGE
-			|| scriptId == Script.TOP_LEVEL_SIDE_CUSTOMIZE)
+		switch (scriptId)
 		{
-			manager.handleLogoutXHiddenState(false);
-			manager.updateOverlayLogoutX();
+			case Script.TOPLEVEL_REDRAW:
+				//check for an active cutscene
+				manager.pendingChildrenUpdate = manager.isCutsceneActive();
 
-			//flag updates for custom widgets when a cutscene is active
-			if (scriptId == Script.TOP_LEVEL_REDRAW)
-			{
-				manager.pendingChildrenUpdate = manager.isCutSceneActive();
-			}
+			case Script.TOPLEVEL_SUBCHANGE:
+			case Script.TOPLEVEL_SIDE_CUSTOMIZE:
+				manager.handleLogoutXHiddenState(false);
+				manager.updateOverlayLogoutX();
+				break;
+
+			case Script.BUFF_BAR_CONTENT_UPDATE:
+				if (minimapOverlay.hasUpdatedBounds() && manager.pendingMinimapOverlayChildren)
+				{
+					log.debug("[StatBoostsHud] is ready for the minimap overlay children");
+
+					manager.pendingMinimapOverlayChildren = false;
+					clientThread.invokeLater(manager::createMinimapOverlayChildren);
+				}
+				break;
+
+			case Script.WIKI_ICON_INIT:
+				if (manager.isWikiBannerDisabled())
+				{
+					manager.updateWikiBannerVisibility(config.hideWiki());
+				}
+				break;
+
+			case Script.WORLD_MAP_UPDATE:
+				if (manager.hideWorldMap)
+				{
+					widgetManager.remapTarget(Orbs.WORLD_MAP_CONTAINER, config.hideMinimap() && manager.isResized());
+					return;
+				}
+			case Script.STORE_ORB_UPDATE:
+			case Script.ACTIVITY_ORB_UPDATE:
+			case Script.WIKI_ICON_UPDATE:
+			case Script.GRID_MASTER_ORB_UPDATE:
+				if (!manager.isMinimapMinimized())
+				{
+					manager.init(scriptId);
+				}
+				break;
 		}
-
-		//buff bar content script, fires frequently (lazy reset)
-		if (scriptId == Script.BUFF_BAR_CONTENT_UPDATE)
-		{
-			if (minimapOverlay.hasUpdatedBounds() && manager.pendingMinimapOverlayChildren)
-			{
-				log.debug("buff bar is ready for children");
-
-				manager.pendingMinimapOverlayChildren = false;
-				clientThread.invokeLater(manager::createMinimapOverlayChildren);
-			}
-		}
-
-		//don't make changes unless a script updates the minimap widgets,
-		// or if the minimap is natively minimized
-		if (!Script.MINIMAP_UPDATE_SCRIPTS.contains(scriptId) || manager.isMinimapMinimized())
-		{
-			return;
-		}
-
-		//override the in-game settings if enabled
-		if (scriptId == Script.ACTIVITY_ORB_UPDATE &&
-			manager.activityOrbSettingEnabled() &&
-			config.hideActivity())
-		{
-			widgetManager.setHidden(Orbs.ACTIVITY_ORB_CONTAINER, config.hideActivity());
-			return;
-		}
-
-		//override the in-game settings if enabled
-		if (scriptId == Script.STORE_ORB_UPDATE &&
-			manager.storeOrbSettingEnabled() &&
-			config.hideStore())
-		{
-			widgetManager.setHidden(Orbs.STORE_ORB_CONTAINER, config.hideStore());
-			return;
-		}
-
-		//identify the current wiki banner (vanilla vs plugin) and update accordingly
-		if (scriptId == Script.WIKI_ICON_UPDATE)
-		{
-			manager.updateWikiBanner(config.hideWiki());
-		}
-
-		if (scriptId == Script.WORLD_MAP_UPDATE && manager.hideWorldMap)
-		{
-			widgetManager.remapTarget(Orbs.WORLD_MAP_CONTAINER, manager.isMinimapHidden() && manager.isResized());
-			return;
-		}
-
-		manager.init(scriptId);
 	}
 
 	@Subscribe
 	public void onVarbitChanged(VarbitChanged event)
 	{
-		int id = event.getVarbitId();
+		int varbitId = event.getVarbitId();
 
-		if (id == Varbit.MINIMAP_TOGGLE)
+		switch (varbitId)
 		{
-			manager.updateCustomChildren(true);
+			case Varbit.MINIMAP_TOGGLE:
+				manager.updateCustomChildren(true);
+				break;
+
+			case Varbit.STORE_ORB_TOGGLE:
+			case Varbit.ACTIVITY_ORB_TOGGLE:
+				if (!config.disableReordering())
+				{
+					widgetManager.remapTargets(config.hideMinimap(), Script.FORCE_UPDATE, Orbs.values());
+				}
+				break;
 		}
 	}
 
@@ -231,21 +225,36 @@ public class CompactOrbsPlugin extends Plugin
 	public void onWidgetLoaded(WidgetLoaded event)
 	{
 		int id = event.getGroupId();
-
-		if (id == WidgetManager.getInterfaceId(Orb.UNIVERSE) ||
-			id == WidgetManager.getInterfaceId(Classic.ORBS) ||
-			id == WidgetManager.getInterfaceId(Modern.ORBS))
+		switch (id)
 		{
-			manager.init(Script.FORCE_UPDATE);
-			manager.configureMinimapOverlayContainer(true);
+			case Orb.UNIVERSE >> 16:
+			case Classic.ORBS >> 16:
+			case Modern.ORBS >> 16:
+				manager.init(Script.FORCE_UPDATE);
+				manager.configureMinimapOverlayContainer(true);
+				break;
 		}
 	}
 
-	@Subscribe
+	@Subscribe(priority = -1.0f)
 	public void onConfigChanged(ConfigChanged event)
 	{
 		String group = event.getGroup();
 		String key = event.getKey();
+
+		if (group.equals(ConfigGroup.Wiki.GROUP_NAME))
+		{
+			if (key.equals(ConfigKeys.Wiki.SHOW_WIKI_MINIMAP_BUTTON))
+			{
+				manager.resolveWikiBannerConflict(GROUP_NAME, ConfigKeys.HIDE_WIKI);
+
+				clientThread.invokeLater(() ->
+				{
+					widgetManager.remapTarget(Orbs.WIKI_ICON_CONTAINER, manager.isCompactLayout());
+					manager.updateWikiBannerVisibility(config.hideWiki());
+				});
+			}
+		}
 
 		if (!group.equals(GROUP_NAME))
 		{
@@ -272,6 +281,7 @@ public class CompactOrbsPlugin extends Plugin
 				//rebuild to prevent stale layout when config is set to defaults
 				clientThread.invokeLater(() -> manager.init(Script.FORCE_UPDATE));
 				break;
+
 			case ConfigKeys.COMPASS:
 			case ConfigKeys.HOTKEY_TOGGLE:
 			case ConfigKeys.HOTKEY_MINIMAP:
@@ -305,7 +315,7 @@ public class CompactOrbsPlugin extends Plugin
 			case ConfigKeys.ENABLE_LOGOUT_X_OVERLAY:
 				clientThread.invokeLater(() ->
 				{
-					if (!manager.isMinimapOverlayEnabled())
+					if (!config.showMinimapInCompactView())
 					{
 						return;
 					}
@@ -335,6 +345,22 @@ public class CompactOrbsPlugin extends Plugin
 				});
 				break;
 		}
+	}
+
+	@Subscribe
+	public void onPluginChanged(PluginChanged event)
+	{
+		String plugin = event.getPlugin().getName();
+
+		if (!plugin.equalsIgnoreCase(ConfigGroup.Wiki.GROUP_NAME))
+		{
+			return;
+		}
+
+		manager.resolveWikiBannerConflict(GROUP_NAME, ConfigKeys.HIDE_WIKI);
+
+		//rebuild layout if the wiki plugin is turned on or off
+		clientThread.invokeLater(() -> manager.init(Script.FORCE_UPDATE));
 	}
 
 	//register all orb hiding toggles on startup

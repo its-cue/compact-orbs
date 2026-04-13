@@ -25,7 +25,6 @@
 
 package com.compactorbs.widget.offset.impl;
 
-import com.compactorbs.CompactOrbsConstants;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.offset.OffsetTarget;
@@ -38,59 +37,42 @@ public class WorldMapOffset implements OffsetTarget
 	@Override
 	public int xOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		int x = CompactOrbsConstants.Layout.FIXED_WORLD_MAP_X;
-		int v = value;
-
-		if (!compactLayout)
-		{
-			v = (manager.updateWorldMap()
-				? manager.getWorldMapOffset() : !manager.isResized()
-				? x : v
-			);
-
-			return v;
-		}
+		int x = value + manager.verticalOffset;
 
 		if (manager.hideWorldMap)
 		{
 			return manager.getWorldMapOffset();
 		}
 
-		v = v + manager.verticalOffset;
+		if (!compactLayout)
+		{
+			return !manager.isResized() ? 10 : value;
+		}
 
 		if (manager.isHorizontalLayout()
 			&& manager.isVerticalLeft())
 		{
 			int hiddenWidth = slotManager.getHorizontalHiddenWidth();
-			v += hiddenWidth;
+			x += hiddenWidth;
 		}
 
-		return v + manager.getWorldMapOffset();
+		return x + manager.getWorldMapOffset();
 	}
 
 	@Override
 	public int yOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		int y = CompactOrbsConstants.Layout.FIXED_WORLD_MAP_Y;
-
-		int v = value;
-
-		if (!compactLayout)
-		{
-			v = (manager.updateWorldMap()
-				? manager.getWorldMapOffset() : !manager.isResized()
-				? y : v
-			);
-
-			return v;
-		}
+		int y = value + manager.horizontalOffset;
 
 		if (manager.hideWorldMap)
 		{
 			return manager.getWorldMapOffset();
 		}
 
-		y = v + manager.horizontalOffset;
+		if (!compactLayout)
+		{
+			return !manager.isResized() ? y : value;
+		}
 
 		if (manager.isVerticalLayout())
 		{

@@ -26,7 +26,6 @@
 package com.compactorbs;
 
 import java.awt.Color;
-import java.util.Set;
 import net.runelite.api.ScriptID;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.SpriteID;
@@ -101,18 +100,19 @@ public class CompactOrbsConstants
 
 	public static final class Enum
 	{
-		//modern resizable?
+		//contains the toplevel component ids (key: widget, value: widget)
 		public static final int TOPLEVEL_COMPONENTS = 1131;
 	}
 
 	public static final class Varbit
 	{
+		public static final int CUTSCENE_STATUS = VarbitID.CUTSCENE_STATUS;
 		public static final int MINIMAP_TOGGLE = VarbitID.MINIMAP_TOGGLE;
+
+		//orb in-game settings
 		public static final int ACTIVITY_ORB_TOGGLE = VarbitID.OPTION_CONTENT_RECOMMENDER_HIDE;
 		public static final int STORE_ORB_TOGGLE = VarbitID.TLI_STOREBUTTON_TOGGLE_DESKTOP;
 		public static final int WIKI_ICON_TOGGLE = VarbitID.WIKI_ICON_DISABLED;
-		public static final int CUTSCENE_STATUS = VarbitID.CUTSCENE_STATUS;
-		public static final int XP_DROPS_TOGGLE = VarbitID.XPDROPS_ENABLED;
 	}
 
 	public static final class VarPlayer
@@ -123,59 +123,34 @@ public class CompactOrbsConstants
 
 	public static final class VarbitValue
 	{
-		//native minimap hiding
+		public static final int CUTSCENE_ACTIVE = 1;
 		public static final int MINIMAP_MINIMIZED = 1;
 
-		//in-game setting for each orb
+		//orb in-game settings
 		public static final int ACTIVITY_ORB_VISIBLE = 0;
 		public static final int STORE_ORB_VISIBLE = 1;
 		public static final int WIKI_ICON_VISIBLE = 0;
-
-		//cutscene
-		public static final int CUTSCENE_ACTIVE = 1;
-
-		//xp orb enabled
-		public static final int XP_DROPS_ENABLED = 1;
 	}
 
 	public static final class Script
 	{
-		//custom flag, used to trigger remapping without scriptId matching
+		//trigger remapping without the need for a valid scriptId
 		public static final int FORCE_UPDATE = -1;
 
-		//logout X redraw when opening tabs/using hotkey
-		public static final int TOP_LEVEL_REDRAW = ScriptID.TOPLEVEL_REDRAW;
-		public static final int TOP_LEVEL_SUBCHANGE = 903;
-		public static final int TOPLEVEL_SIDEBUTTON_OP = 914;
-		public static final int TOP_LEVEL_SIDE_CUSTOMIZE = 919;
-
-		//buff bar widget, used for the minimap overlay
+		//minimap overlay script for initial setup
 		public static final int BUFF_BAR_CONTENT_UPDATE = 4730;
 
-		//minimap overlay, custom world map button
-		public static final int ORBS_WORLDMAP_INIT = 1492;
-
-		//minimap overlay, custom xp drops button
-		public static final int ORBS_XPDROPS_INIT = 1039;
-		public static final int ORBS_XPDROPS_UPDATE = 1041;
-
-		//relevant update scripts for the target orbs
+		//relevant orb update scripts
+		public static final int TOPLEVEL_REDRAW = ScriptID.TOPLEVEL_REDRAW;
+		public static final int TOPLEVEL_SUBCHANGE = 908;
+		public static final int TOPLEVEL_SIDEBUTTON_OP = 914;
+		public static final int TOPLEVEL_SIDE_CUSTOMIZE = 919;
 		public static final int WORLD_MAP_UPDATE = 1700;
 		public static final int STORE_ORB_UPDATE = 2396;
 		public static final int ACTIVITY_ORB_UPDATE = 2480;
+		public static final int WIKI_ICON_INIT = 3304;
 		public static final int WIKI_ICON_UPDATE = ScriptID.WIKI_ICON_UPDATE;
 		public static final int GRID_MASTER_ORB_UPDATE = 8222;
-
-		public static final Set<Integer> MINIMAP_UPDATE_SCRIPTS =
-			Set.of(
-				//orbs
-				WORLD_MAP_UPDATE,
-				STORE_ORB_UPDATE,
-				ACTIVITY_ORB_UPDATE,
-				WIKI_ICON_UPDATE,
-				GRID_MASTER_ORB_UPDATE
-			);
-
 		public static final int TOPLEVEL_COMPASS_OP = 1050;
 		public static final int TOPLEVEL_COMPASS_SETOP = 7044;
 
@@ -185,16 +160,12 @@ public class CompactOrbsConstants
 		public static final int COMPONENT0 = -2147483645;
 	}
 
-	/* Layout positions, dimensions, and other style changes */
 	public static final class Layout
 	{
-		/* Original positions for orb/compass widgets */
 		public static final class Original
 		{
-			//containers
 			public static final int MAP_CONTAINER_WIDTH = 211;
 
-			//layout
 			public static final int XP_DROPS_X = 0;
 			public static final int XP_DROPS_Y = 17;
 
@@ -237,7 +208,6 @@ public class CompactOrbsConstants
 			public static final int MINIMAP_DIMENSION = 152;
 		}
 
-		/* Vertical positions for orb/compass widgets */
 		public static final class Vertical
 		{
 			public static final int XP_DROPS_X = 68;
@@ -281,7 +251,6 @@ public class CompactOrbsConstants
 			public static final int RIGHT_OFFSET = 0;
 		}
 
-		/* Horizontal positions for orb/compass widgets */
 		public static final class Horizontal
 		{
 			public static final int XP_DROPS_X = 179;
@@ -329,29 +298,13 @@ public class CompactOrbsConstants
 		{
 			public static final int CONTAINER_WIDTH = 182;
 			public static final int CONTAINER_HEIGHT = 166;
-
-			public static final int[] NO_CLICK_Y =
-				{
-					4, 44, 100, 125, 140, 155
-				};
-
-			public static final int[] NO_CLICK_WIDTH =
-				{
-					178, 166, 161, 151, 141, 121
-				};
-
-			public static final int[] NO_CLICK_HEIGHT =
-				{
-					40, 56, 25, 15, 15, 11
-				};
+			public static final int[] NO_CLICK_Y = {4, 44, 100, 125, 140, 155};
+			public static final int[] NO_CLICK_WIDTH = {178, 166, 161, 151, 141, 121};
+			public static final int[] NO_CLICK_HEIGHT = {40, 56, 25, 15, 15, 11};
 
 			public static final int MINIMAP_CONTENT = 1338;
 			public static final int COMPASS_CONTENT = 1339;
 		}
-
-		//world map x and y when in fixed mode
-		public static final int FIXED_WORLD_MAP_X = 10;
-		public static final int FIXED_WORLD_MAP_Y = 115;
 
 		//used when hiding the world map orb, to calc the offset so the hotkey still works
 		public static final int WORLD_MAP_CONTAINER_WIDTH = 30;
@@ -412,29 +365,21 @@ public class CompactOrbsConstants
 
 		//suffix menu color for the toggle buttons
 		public static final Color COLOR = JagexColors.MENU_TARGET;
-
-		//overlay xp drops 'target' string
-		public static final String SUFFIX_XP = "XP drops";
 	}
 
 	public static final class Sprite
 	{
-		//minimap clone sprites
+		//minimap overlay sprites
 		public static final int COMPASS_MASK = SpriteID.RESIZE_COMPASS_MASK;
 		public static final int MINIMAP_MASK = SpriteID.RESIZE_MAP_MASK;
 		public static final int MINIMAP_FRAME = SpriteID.OSRS_STRETCH_MAPSURROUND;
-
-		//logout x overlay sprite
 		public static final int LOGOUT_X_BUTTON = SpriteID.CloseButtons._7;
-
-		//border frame for the compass when the minimap is hidden
 		public static final int COMPASS_FRAME = SpriteID.COMPASS_OUTLINE;
 
 		//toggle button sprites
 		public static final int HIDDEN = SpriteID.GroundItemsVisibility._1;
 		public static final int VISIBLE = SpriteID.GroundItemsVisibility._0;
 
-		//widget inspector sprite
 		public static final int WIDGET_INSPECTOR = SpriteID.OptionsIcons._50;
 	}
 
@@ -448,12 +393,10 @@ public class CompactOrbsConstants
 			public static final int UNIVERSE = InterfaceID.StatBoostsHud.UNIVERSE;//InterfaceID.BuffBar.UNIVERSE;
 		}
 
+		//orb widget ids
 		public static final class Orb
 		{
-			//orbs container interface
 			public static final int UNIVERSE = InterfaceID.Orbs.UNIVERSE;
-
-			//orb containers
 			public static final int XP_DROPS = InterfaceID.Orbs.XP_DROPS;
 			public static final int HP_ORB = InterfaceID.Orbs.ORB_HEALTH;
 			public static final int PRAY_ORB = InterfaceID.Orbs.ORB_PRAYER;
@@ -465,52 +408,40 @@ public class CompactOrbsConstants
 			public static final int WIKI_CONTAINER_VANILLA = InterfaceID.Orbs.WIKI_ICON;
 			public static final int WIKI_ICON_VANILLA = InterfaceID.Orbs.WIKI_ICON_GRAPHIC;
 			public static final int WORLD_MAP = InterfaceID.Orbs.ORB_WORLDMAP;
-
-			//overlay worldmap globe
-			public static final int WORLDMAP = InterfaceID.Orbs.WORLDMAP;
 		}
 
-		//classic-resizable widgets
+		//classic-resizable widget ids
 		public static final class Classic
 		{
 			public static final int ORBS = InterfaceID.ToplevelOsrsStretch.ORBS;
-
 			public static final int MAP_NOCLICK_0 = InterfaceID.ToplevelOsrsStretch.MAP_NOCLICK_0;
 			public static final int MAP_NOCLICK_1 = InterfaceID.ToplevelOsrsStretch.MAP_NOCLICK_1;
 			public static final int MAP_NOCLICK_2 = InterfaceID.ToplevelOsrsStretch.MAP_NOCLICK_2;
 			public static final int MAP_NOCLICK_3 = InterfaceID.ToplevelOsrsStretch.MAP_NOCLICK_3;
 			public static final int MAP_NOCLICK_4 = InterfaceID.ToplevelOsrsStretch.MAP_NOCLICK_4;
 			public static final int MAP_NOCLICK_5 = InterfaceID.ToplevelOsrsStretch.MAP_NOCLICK_5;
-
 			public static final int MINIMAP_MASK = InterfaceID.ToplevelOsrsStretch.MINIMAP;
 			public static final int MINIMAP = InterfaceID.ToplevelOsrsStretch.MAP_MINIMAP_GRAPHIC9;
-
 			public static final int COMPASS = InterfaceID.ToplevelOsrsStretch.MAP_MINIMAP_GRAPHIC6;
 			public static final int COMPASS_OPTIONS = InterfaceID.ToplevelOsrsStretch.COMPASSCLICK;
-
 			public static final int COMPASS_PARENT = InterfaceID.ToplevelOsrsStretch.MAP_MINIMAP;
 		}
 
-		//modern-resizable widgets
+		//modern-resizable widget ids
 		public static final class Modern
 		{
 			public static final int ORBS = InterfaceID.ToplevelPreEoc.ORBS;
-
 			public static final int MAP_NOCLICK_0 = InterfaceID.ToplevelPreEoc.MAP_NOCLICK_0;
 			public static final int MAP_NOCLICK_1 = InterfaceID.ToplevelPreEoc.MAP_NOCLICK_1;
 			public static final int MAP_NOCLICK_2 = InterfaceID.ToplevelPreEoc.MAP_NOCLICK_2;
 			public static final int MAP_NOCLICK_3 = InterfaceID.ToplevelPreEoc.MAP_NOCLICK_3;
 			public static final int MAP_NOCLICK_4 = InterfaceID.ToplevelPreEoc.MAP_NOCLICK_4;
 			public static final int MAP_NOCLICK_5 = InterfaceID.ToplevelPreEoc.MAP_NOCLICK_5;
-
 			public static final int MINIMAP_MASK = InterfaceID.ToplevelPreEoc.MINIMAP;
 			public static final int MINIMAP = InterfaceID.ToplevelPreEoc.MAP_MINIMAP_GRAPHIC9;
-
 			public static final int COMPASS = InterfaceID.ToplevelPreEoc.MAP_MINIMAP_GRAPHIC6;
 			public static final int COMPASS_OPTIONS = InterfaceID.ToplevelPreEoc.COMPASSCLICK;
-
 			public static final int COMPASS_PARENT = InterfaceID.ToplevelPreEoc.MAP_MINIMAP;
-
 			public static final int LOGOUT_X_ICON = InterfaceID.ToplevelPreEoc.ICON10;
 			public static final int LOGOUT_X_STONE = InterfaceID.ToplevelPreEoc.STONE10;
 		}

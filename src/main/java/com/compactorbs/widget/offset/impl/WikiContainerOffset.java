@@ -42,7 +42,7 @@ public class WikiContainerOffset implements OffsetTarget
 
 		if (!compactLayout)
 		{
-			return value;
+			return !manager.isResized() ? 8 : value;
 		}
 
 		if (manager.isHorizontalLayout()
@@ -62,7 +62,7 @@ public class WikiContainerOffset implements OffsetTarget
 
 		if (!compactLayout)
 		{
-			return value;
+			return !manager.isResized() ? 135 : value;
 		}
 
 		if (manager.isVerticalLayout())

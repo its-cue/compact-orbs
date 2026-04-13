@@ -351,17 +351,6 @@ public enum Orbs implements TargetWidget
 		this(componentId, -1, -1, valueMap);
 	}
 
-	//only includes widgets that require updating
-	public static final Set<Orbs> FIXED = EnumSet.of(
-		HP_ORB_CONTAINER,
-		PRAYER_ORB_CONTAINER,
-		RUN_ORB_CONTAINER,
-		SPEC_ORB_CONTAINER,
-		XP_DROPS_CONTAINER,
-		WIKI_VANILLA_CONTAINER,
-		WIKI_VANILLA_GRAPHIC
-	);
-
 	public static final Set<Orbs> SWAPPABLE_ORBS = EnumSet.of(
 		HP_ORB_CONTAINER,
 		PRAYER_ORB_CONTAINER,

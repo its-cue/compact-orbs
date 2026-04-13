@@ -363,6 +363,12 @@ public class SlotManager
 			return false;
 		}
 
+		if (target == Orbs.ACTIVITY_ORB_CONTAINER && manager.isActivityOrbDisabled() ||
+			target == Orbs.STORE_ORB_CONTAINER && manager.isStoreOrbDisabled())
+		{
+			return true;
+		}
+
 		Supplier<Boolean> entry = manager.orbToToggle.get(target);
 		return entry != null && entry.get();
 	}

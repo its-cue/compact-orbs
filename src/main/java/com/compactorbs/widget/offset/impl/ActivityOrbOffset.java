@@ -41,7 +41,7 @@ public class ActivityOrbOffset implements OffsetTarget
 
 		if (!compactLayout)
 		{
-			return value;
+			return !manager.isResized() ? 0 : value;
 		}
 
 		if (manager.isHorizontalLayout())
@@ -59,7 +59,7 @@ public class ActivityOrbOffset implements OffsetTarget
 
 		if (!compactLayout)
 		{
-			return value;
+			return !manager.isResized() ? 50 : value;
 		}
 
 		if (manager.isVerticalLayout())

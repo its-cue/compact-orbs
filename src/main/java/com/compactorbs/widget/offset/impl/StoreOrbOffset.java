@@ -41,7 +41,7 @@ public class StoreOrbOffset implements OffsetTarget
 
 		if (!compactLayout)
 		{
-			return value;
+			return !manager.isResized() ? 0 : value;
 		}
 
 		if (manager.isHorizontalLayout())
@@ -58,7 +58,7 @@ public class StoreOrbOffset implements OffsetTarget
 
 		if (!compactLayout)
 		{
-			return value;
+			return !manager.isResized() ? 83 : value;
 		}
 
 		if (manager.isVerticalLayout())

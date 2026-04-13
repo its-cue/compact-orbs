@@ -46,6 +46,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.WidgetPositionMode;
 import net.runelite.api.widgets.WidgetType;
 
 @Slf4j
@@ -101,6 +102,11 @@ public class WidgetManager
 		getTarget(target).getValueMap().forEach((key, value) ->
 			setValue(widget, key, value, compactLayout)
 		);
+
+		if (!manager.isResized())
+		{
+			applyFixedModeValues(widget, target);
+		}
 
 		if (targetRemapped)
 		{
@@ -191,6 +197,14 @@ public class WidgetManager
 		{
 			setter.accept(value);
 			targetRemapped = true;
+		}
+	}
+
+	private void applyFixedModeValues(Widget widget, TargetWidget target)
+	{
+		if (target == Orbs.STORE_ORB_CONTAINER || target == Orbs.ACTIVITY_ORB_CONTAINER)
+		{
+			widget.setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT);
 		}
 	}
 
@@ -390,18 +404,6 @@ public class WidgetManager
 	public boolean isMissing(Widget child, Widget parent)
 	{
 		return child == null || child.getParentId() != parent.getId();
-	}
-
-	//return the interface id from the component id
-	public static int getInterfaceId(int componentId)
-	{
-		return componentId >> 16;
-	}
-
-	//return the child id from the component id
-	public static int getChildId(int componentId)
-	{
-		return componentId & 0xff;
 	}
 
 	private Widget createWidget(
