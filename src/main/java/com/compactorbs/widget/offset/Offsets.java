@@ -44,10 +44,8 @@ import com.compactorbs.widget.offset.impl.XPOrbOffset;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.widgets.Widget;
 
-@Slf4j
 @Getter
 public enum Offsets
 {
@@ -96,11 +94,6 @@ public enum Offsets
 	private final int[] parent;
 	private final Integer[] id;
 
-	public OffsetTarget offsetTarget()
-	{
-		return offset;
-	}
-
 	Offsets(OffsetTarget offsetTarget, int[] parent, Integer... id)
 	{
 		this.offset = offsetTarget;
@@ -120,38 +113,23 @@ public enum Offsets
 	{
 		for (Offsets key : values())
 		{
-			if (key.parent != null)
+			for (int parentId : key.parent)
 			{
-				for (int parentId : key.parent)
+				if (parentId != -1)
 				{
-					if (parentId != -1)
-					{
-						BY_PARENT_ID.put(parentId, key);
-					}
+					BY_PARENT_ID.put(parentId, key);
 				}
 			}
 
-			if (key.id != null)
+			for (Integer widgetId : key.id)
 			{
-				for (Integer widgetId : key.id)
-				{
-					if (widgetId != null)
-					{
-						BY_WIDGET_ID.put(widgetId, key);
-					}
-				}
+				BY_WIDGET_ID.put(widgetId, key);
 			}
 		}
 	}
 
 	public static Offsets fromWidget(Widget widget)
 	{
-		if (widget == null)
-		{
-			log.debug("Offsets widget is null");
-			return null;
-		}
-
 		Offsets key = BY_PARENT_ID.get(widget.getParentId());
 		if (key != null)
 		{

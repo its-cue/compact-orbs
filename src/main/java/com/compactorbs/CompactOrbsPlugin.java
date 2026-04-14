@@ -49,7 +49,6 @@ import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.client.callback.ClientThread;
-import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -215,7 +214,7 @@ public class CompactOrbsPlugin extends Plugin
 			case Varbit.ACTIVITY_ORB_TOGGLE:
 				if (!config.disableReordering())
 				{
-					widgetManager.remapTargets(config.hideMinimap(), Script.FORCE_UPDATE, Orbs.values());
+					widgetManager.remapTargets(manager.isCompactLayout(), Script.FORCE_UPDATE, Orbs.values());
 				}
 				break;
 		}
@@ -295,6 +294,13 @@ public class CompactOrbsPlugin extends Plugin
 			case ConfigKeys.MINIMAP_TOGGLE_BUTTON:
 			case ConfigKeys.COMPASS_TOGGLE_BUTTON:
 				clientThread.invokeLater(() -> manager.updateCustomChildren(true));
+				break;
+
+			case ConfigKeys.ENABLE_NO_CLICKTHROUGH:
+				clientThread.invokeLater(() ->
+					widgetManager.setTargetsNoClickthrough(config.enableNoClickthrough() && manager.isCompactLayout(),
+						Orbs.HP_ORB_CONTAINER, Orbs.PRAYER_ORB_CONTAINER, Orbs.RUN_ORB_CONTAINER, Orbs.SPEC_ORB_CONTAINER)
+				);
 				break;
 
 			//update all slots

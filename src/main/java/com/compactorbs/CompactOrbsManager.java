@@ -63,9 +63,12 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetPositionMode;
 import net.runelite.api.widgets.WidgetSizeMode;
+import net.runelite.api.widgets.WidgetType;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatColorType;
 import net.runelite.client.chat.ChatMessageBuilder;
@@ -182,6 +185,9 @@ public class CompactOrbsManager
 		}
 
 		updateCustomChildren(pendingChildrenUpdate || scriptId == Script.FORCE_UPDATE);
+
+		widgetManager.setTargetsNoClickthrough(config.enableNoClickthrough() && isCompactLayout(),
+			Orbs.HP_ORB_CONTAINER, Orbs.PRAYER_ORB_CONTAINER, Orbs.RUN_ORB_CONTAINER, Orbs.SPEC_ORB_CONTAINER);
 	}
 
 	public void reset()
@@ -225,6 +231,9 @@ public class CompactOrbsManager
 		resetMinimapOverlayContainer();
 
 		widgetManager.remapTargets(false, Script.FORCE_UPDATE, Orbs.values());
+
+		widgetManager.setTargetsNoClickthrough(false,
+			Orbs.HP_ORB_CONTAINER, Orbs.PRAYER_ORB_CONTAINER, Orbs.RUN_ORB_CONTAINER, Orbs.SPEC_ORB_CONTAINER);
 	}
 
 	//toggle the minimap visibility, and update related widgets when using the custom toggle button
@@ -295,47 +304,64 @@ public class CompactOrbsManager
 			}
 		}
 
-		if (widgetManager.isMissing(compassFrame, parent))
+		if (!widgetManager.isMissing(compassFrame, parent))
 		{
-			compassFrame = widgetManager.createGraphic(
-				parent,
-				WidgetManager.size(Layout.COMPASS_FRAME_SIZE, Layout.COMPASS_FRAME_SIZE),
-				WidgetManager.sprite(Sprite.COMPASS_FRAME),
-				WidgetManager.opacity(Layout.OPACITY),
-				WidgetManager.hidden(false)
-			);
+			return;
 		}
 
-		if (widgetManager.isMissing(minimapButton, parent))
-		{
-			minimapButton = widgetManager.createToggleButton(
-				parent,
-				Layout.TOGGLE_BUTTON_SIZE, Layout.TOGGLE_BUTTON_SIZE,
-				Layout.OPACITY,
-				getSpriteId(isMinimapHidden()),
-				getButtonMenuOp(ConfigKeys.MINIMAP),
-				event -> onMinimapToggle(),
-				event -> minimapButton.setOpacity(Layout.OPACITY_HOVER),
-				event -> minimapButton.setOpacity(Layout.OPACITY)
-			);
-		}
+		compassFrame = parent.createChild(-1, WidgetType.GRAPHIC);
+		compassFrame.setOriginalWidth(Layout.COMPASS_FRAME_SIZE);
+		compassFrame.setOriginalHeight(Layout.COMPASS_FRAME_SIZE);
+		compassFrame.setSpriteId(Sprite.COMPASS_FRAME);
+		compassFrame.setOpacity(Layout.OPACITY);
+		compassFrame.setHidden(false);
 
-		if (widgetManager.isMissing(compassButton, parent))
-		{
-			compassButton = widgetManager.createToggleButton(
-				parent,
-				Layout.TOGGLE_BUTTON_SIZE, Layout.TOGGLE_BUTTON_SIZE,
-				Layout.OPACITY,
-				getSpriteId(isCompassHidden()),
-				getButtonMenuOp(ConfigKeys.COMPASS),
-				event -> onCompassToggle(),
-				event -> compassButton.setOpacity(Layout.OPACITY_HOVER),
-				event -> compassButton.setOpacity(Layout.OPACITY)
-			);
+		minimapButton = parent.createChild(-1, WidgetType.GRAPHIC);
+		minimapButton.setOriginalWidth(Layout.TOGGLE_BUTTON_SIZE);
+		minimapButton.setOriginalHeight(Layout.TOGGLE_BUTTON_SIZE);
+		minimapButton.setSpriteId(getSpriteId(config.hideMinimap()));
+		minimapButton.setOpacity(Layout.OPACITY);
+		minimapButton.setHidden(false);
+		minimapButton.setHasListener(true);
+		minimapButton.setNoClickThrough(true);
+		minimapButton.setAction(0, getButtonMenuOp(ConfigKeys.MINIMAP));
+		minimapButton.setOnOpListener(
+			(JavaScriptCallback) e ->
+				onMinimapToggle()
+		);
+		minimapButton.setOnMouseOverListener(
+			(JavaScriptCallback) e ->
+				minimapButton.setOpacity(Layout.OPACITY_HOVER)
+		);
+		minimapButton.setOnMouseLeaveListener(
+			(JavaScriptCallback) e ->
+				minimapButton.setOpacity(Layout.OPACITY)
+		);
 
-			//prevent de-sync
-			pendingChildrenUpdate = true;
-		}
+		compassButton = parent.createChild(-1, WidgetType.GRAPHIC);
+		compassButton.setOriginalWidth(Layout.TOGGLE_BUTTON_SIZE);
+		compassButton.setOriginalHeight(Layout.TOGGLE_BUTTON_SIZE);
+		compassButton.setSpriteId(getSpriteId(config.hideCompass()));
+		compassButton.setOpacity(Layout.OPACITY);
+		compassButton.setHidden(false);
+		compassButton.setHasListener(true);
+		compassButton.setNoClickThrough(true);
+		compassButton.setAction(0, getButtonMenuOp(ConfigKeys.COMPASS));
+		compassButton.setOnOpListener(
+			(JavaScriptCallback) e ->
+				onCompassToggle()
+		);
+		compassButton.setOnMouseOverListener(
+			(JavaScriptCallback) e ->
+				compassButton.setOpacity(Layout.OPACITY_HOVER)
+		);
+		compassButton.setOnMouseLeaveListener(
+			(JavaScriptCallback) e ->
+				compassButton.setOpacity(Layout.OPACITY)
+		);
+
+		//prevent de-sync
+		pendingChildrenUpdate = true;
 	}
 
 	//handle dynamic widget changes for visibility, positions, sprites, and menu actions for the
@@ -470,15 +496,12 @@ public class CompactOrbsManager
 		}
 
 		//set layer to be used for the minimap overlay
-		parent.
-			setOriginalWidth(enabled ? Layout.MinimapOverlay.CONTAINER_WIDTH : 0).
-			setOriginalHeight(enabled ? Layout.MinimapOverlay.CONTAINER_HEIGHT : 0).
-			setWidthMode(enabled ? WidgetSizeMode.ABSOLUTE : WidgetSizeMode.MINUS).
-			setHeightMode(enabled ? WidgetSizeMode.ABSOLUTE : WidgetSizeMode.MINUS).
-			setXPositionMode(enabled ? WidgetPositionMode.ABSOLUTE_RIGHT : WidgetPositionMode.ABSOLUTE_CENTER).
-			setYPositionMode(enabled ? WidgetPositionMode.ABSOLUTE_TOP : WidgetPositionMode.ABSOLUTE_CENTER);
-
-		//update changes
+		parent.setOriginalWidth(enabled ? Layout.MinimapOverlay.CONTAINER_WIDTH : 0);
+		parent.setOriginalHeight(enabled ? Layout.MinimapOverlay.CONTAINER_HEIGHT : 0);
+		parent.setWidthMode(enabled ? WidgetSizeMode.ABSOLUTE : WidgetSizeMode.MINUS);
+		parent.setHeightMode(enabled ? WidgetSizeMode.ABSOLUTE : WidgetSizeMode.MINUS);
+		parent.setXPositionMode(enabled ? WidgetPositionMode.ABSOLUTE_RIGHT : WidgetPositionMode.ABSOLUTE_CENTER);
+		parent.setYPositionMode(enabled ? WidgetPositionMode.ABSOLUTE_TOP : WidgetPositionMode.ABSOLUTE_CENTER);
 		parent.revalidate();
 
 		//flagged as ready for children
@@ -496,89 +519,121 @@ public class CompactOrbsManager
 
 		for (int index = 0; index < Layout.MinimapOverlay.NO_CLICK_Y.length; index++)
 		{
-			Widget minimapNoClick = widgetManager.createLayer(
-				parent,
-				WidgetManager.pos(0, Layout.MinimapOverlay.NO_CLICK_Y[index]),
-				WidgetManager.size(Layout.MinimapOverlay.NO_CLICK_WIDTH[index], Layout.MinimapOverlay.NO_CLICK_HEIGHT[index]),
-				WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_RIGHT, WidgetPositionMode.ABSOLUTE_TOP),
-				WidgetManager.noClickThrough()
-			);
+			Widget minimapNoClick = parent.createChild(-1, WidgetType.LAYER);
+			minimapNoClick.setOriginalX(0);
+			minimapNoClick.setOriginalY(Layout.MinimapOverlay.NO_CLICK_Y[index]);
+			minimapNoClick.setOriginalWidth(Layout.MinimapOverlay.NO_CLICK_WIDTH[index]);
+			minimapNoClick.setOriginalHeight(Layout.MinimapOverlay.NO_CLICK_HEIGHT[index]);
+			minimapNoClick.setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT);
+			minimapNoClick.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP);
+			minimapNoClick.setNoClickThrough(true);
+			minimapNoClick.revalidate();
 		}
 
 		int compassX = Layout.Original.COMPASS_X - (Layout.Original.MAP_CONTAINER_WIDTH - Layout.MinimapOverlay.CONTAINER_WIDTH);
 
-		Widget compass = widgetManager.createGraphic(
-			parent,
-			WidgetManager.contentType(Layout.MinimapOverlay.COMPASS_CONTENT),
-			WidgetManager.sprite(Sprite.COMPASS_MASK),
-			WidgetManager.pos(compassX, Layout.Original.COMPASS_Y),
-			WidgetManager.size(Layout.Original.COMPASS_DIMENSION, Layout.Original.COMPASS_DIMENSION),
-			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_LEFT, WidgetPositionMode.ABSOLUTE_TOP)
+		Widget compass = parent.createChild(-1, WidgetType.GRAPHIC);
+		compass.setContentType(Layout.MinimapOverlay.COMPASS_CONTENT);
+		compass.setSpriteId(Sprite.COMPASS_MASK);
+		compass.setOriginalX(compassX);
+		compass.setOriginalY(Layout.Original.COMPASS_Y);
+		compass.setOriginalWidth(Layout.Original.COMPASS_DIMENSION);
+		compass.setOriginalHeight(Layout.Original.COMPASS_DIMENSION);
+		compass.setXPositionMode(WidgetPositionMode.ABSOLUTE_LEFT);
+		compass.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP);
+		compass.revalidate();
 
+		Widget compassLayer = parent.createChild(-1, WidgetType.LAYER);
+		compassLayer.setOriginalX(compassX);
+		compassLayer.setOriginalY(Layout.Original.COMPASS_Y);
+		compassLayer.setOriginalWidth(Layout.COMPASS_SIZE);
+		compassLayer.setOriginalHeight(Layout.COMPASS_SIZE);
+		compassLayer.revalidate();
+
+		Widget compassNoClick = compassLayer.createChild(-1, WidgetType.TEXT);
+		compassNoClick.setXPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
+		compassNoClick.setYPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
+		compassNoClick.setWidthMode(WidgetSizeMode.MINUS);
+		compassNoClick.setHeightMode(WidgetSizeMode.MINUS);
+		compassNoClick.setHasListener(true);
+		compassNoClick.setNoClickThrough(true);
+		compassNoClick.revalidate();
+
+		Widget compassMenuOp = compassLayer.createChild(-1, WidgetType.TEXT);
+		compassMenuOp.setXPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
+		compassMenuOp.setYPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
+		compassMenuOp.setWidthMode(WidgetSizeMode.MINUS);
+		compassMenuOp.setHeightMode(WidgetSizeMode.MINUS);
+		compassMenuOp.setHasListener(true);
+		compassMenuOp.setOnOpListener(Script.TOPLEVEL_COMPASS_OP, Script.OPINDEX0);
+		compassMenuOp.setOnVarTransmitListener(Script.TOPLEVEL_COMPASS_SETOP, Script.COMPONENT0, Script.COMSUBID1);
+		compassMenuOp.setVarTransmitTrigger(VarPlayer.MAP_FLAGS_CACHED);
+		compassMenuOp.revalidate();
+
+		Widget minimap = parent.createChild(-1, WidgetType.GRAPHIC);
+		minimap.setContentType(Layout.MinimapOverlay.MINIMAP_CONTENT);
+		minimap.setSpriteId(Sprite.MINIMAP_MASK);
+		minimap.setOriginalX(Layout.Original.MINIMAP_X);
+		minimap.setOriginalY(Layout.Original.MINIMAP_Y);
+		minimap.setOriginalWidth(Layout.Original.MINIMAP_DIMENSION);
+		minimap.setOriginalHeight(Layout.Original.MINIMAP_DIMENSION);
+		minimap.setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT);
+		minimap.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP);
+		minimap.revalidate();
+
+		Widget minimapFrame = parent.createChild(-1, WidgetType.GRAPHIC);
+		minimapFrame.setSpriteId(Sprite.MINIMAP_FRAME);
+		minimapFrame.setOriginalWidth(Layout.MinimapOverlay.CONTAINER_WIDTH);
+		minimapFrame.setOriginalHeight(Layout.MinimapOverlay.CONTAINER_HEIGHT);
+		minimapFrame.setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT);
+		minimapFrame.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP);
+		minimapFrame.revalidate();
+
+		overlayLogoutXStone = parent.createChild(-1, WidgetType.GRAPHIC);
+		overlayLogoutXStone.setOriginalX(Layout.Original.LOGOUT_X);
+		overlayLogoutXStone.setOriginalY(Layout.Original.LOGOUT_Y);
+		overlayLogoutXStone.setOriginalWidth(Layout.LOGOUT_X_WIDTH);
+		overlayLogoutXStone.setOriginalHeight(Layout.LOGOUT_X_HEIGHT);
+		overlayLogoutXStone.setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT);
+		overlayLogoutXStone.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP);
+		overlayLogoutXStone.setHidden(hideOverlayLogoutX());
+		overlayLogoutXStone.setHasListener(true);
+		overlayLogoutXStone.setOnOpListener(
+			(JavaScriptCallback) e ->
+			{
+				switch (e.getOp())
+				{
+					case 1: //Logout
+						int SIDE_PANEL_LOGOUT = 10;
+						client.runScript(Script.TOPLEVEL_SIDEBUTTON_OP, e.getOp(), Enum.TOPLEVEL_COMPONENTS, SIDE_PANEL_LOGOUT);
+						break;
+
+					case 2: //World switcher
+						Widget w = client.getWidget(InterfaceID.Worldswitcher.BUTTONS);
+						if (w == null)
+						{
+							client.openWorldHopper();
+						}
+						break;
+				}
+			}
+			//Script.TOPLEVEL_SIDEBUTTON_OP, Script.OPINDEX0, Enum.TOPLEVEL_COMPONENTS, 10
 		);
+		widgetManager.syncMenuOp(overlayLogoutXStone, Modern.LOGOUT_X_STONE);
+		widgetManager.syncSprite(overlayLogoutXStone, Modern.LOGOUT_X_STONE);
+		overlayLogoutXStone.revalidate();
 
-		Widget compassLayer = widgetManager.createLayer(
-			parent,
-			WidgetManager.pos(compassX, Layout.Original.COMPASS_Y),
-			WidgetManager.size(Layout.COMPASS_SIZE, Layout.COMPASS_SIZE)
-		);
-
-		Widget compassNoClick = widgetManager.createText(
-			compassLayer,
-			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_CENTER, WidgetPositionMode.ABSOLUTE_CENTER),
-			WidgetManager.sizeMode(WidgetSizeMode.MINUS, WidgetSizeMode.MINUS),
-			WidgetManager.listener(),
-			WidgetManager.noClickThrough()
-
-		);
-
-		Widget compassMenuOp = widgetManager.createText(
-			compassLayer,
-			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_CENTER, WidgetPositionMode.ABSOLUTE_CENTER),
-			WidgetManager.sizeMode(WidgetSizeMode.MINUS, WidgetSizeMode.MINUS),
-			WidgetManager.listener(),
-			WidgetManager.onOp(Script.TOPLEVEL_COMPASS_OP, Script.OPINDEX0),
-			WidgetManager.onVarTransmit(Script.TOPLEVEL_COMPASS_SETOP, Script.COMPONENT0, Script.COMSUBID1),
-			WidgetManager.varTransmitTrigger(VarPlayer.MAP_FLAGS_CACHED)
-		);
-
-		Widget minimap = widgetManager.createGraphic(
-			parent,
-			WidgetManager.contentType(Layout.MinimapOverlay.MINIMAP_CONTENT),
-			WidgetManager.sprite(Sprite.MINIMAP_MASK),
-			WidgetManager.pos(Layout.Original.MINIMAP_X, Layout.Original.MINIMAP_Y),
-			WidgetManager.size(Layout.Original.MINIMAP_DIMENSION, Layout.Original.MINIMAP_DIMENSION),
-			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_RIGHT, WidgetPositionMode.ABSOLUTE_TOP)
-		);
-
-		Widget minimapFrame = widgetManager.createGraphic(
-			parent,
-			WidgetManager.sprite(Sprite.MINIMAP_FRAME),
-			WidgetManager.size(Layout.MinimapOverlay.CONTAINER_WIDTH, Layout.MinimapOverlay.CONTAINER_HEIGHT),
-			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_RIGHT, WidgetPositionMode.ABSOLUTE_TOP)
-		);
-
-		overlayLogoutXStone = widgetManager.createGraphic(
-			parent,
-			WidgetManager.pos(Layout.Original.LOGOUT_X, Layout.Original.LOGOUT_Y),
-			WidgetManager.size(Layout.LOGOUT_X_WIDTH, Layout.LOGOUT_X_HEIGHT),
-			WidgetManager.hidden(hideOverlayLogoutX()),
-			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_RIGHT, WidgetPositionMode.ABSOLUTE_TOP),
-			WidgetManager.listener(),
-			WidgetManager.onOp(Script.TOPLEVEL_SIDEBUTTON_OP, Script.OPINDEX0, Enum.TOPLEVEL_COMPONENTS, 10),
-			widgetManager.syncMenuOp(Modern.LOGOUT_X_STONE),
-			widgetManager.syncSprite(Modern.LOGOUT_X_STONE)
-		);
-
-		overlayLogoutXIcon = widgetManager.createGraphic(
-			parent,
-			WidgetManager.pos(Layout.Original.LOGOUT_X, Layout.Original.LOGOUT_Y),
-			WidgetManager.size(Layout.LOGOUT_X_WIDTH, Layout.LOGOUT_X_HEIGHT),
-			WidgetManager.hidden(hideOverlayLogoutX()),
-			WidgetManager.posMode(WidgetPositionMode.ABSOLUTE_RIGHT, WidgetPositionMode.ABSOLUTE_TOP),
-			WidgetManager.sprite(Sprite.LOGOUT_X_BUTTON),
-			WidgetManager.opacity(100)
-		);
+		overlayLogoutXIcon = parent.createChild(-1, WidgetType.GRAPHIC);
+		overlayLogoutXIcon.setOriginalX(Layout.Original.LOGOUT_X);
+		overlayLogoutXIcon.setOriginalY(Layout.Original.LOGOUT_Y);
+		overlayLogoutXIcon.setOriginalWidth(Layout.LOGOUT_X_WIDTH);
+		overlayLogoutXIcon.setOriginalHeight(Layout.LOGOUT_X_HEIGHT);
+		overlayLogoutXIcon.setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT);
+		overlayLogoutXIcon.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP);
+		overlayLogoutXIcon.setSpriteId(Sprite.LOGOUT_X_BUTTON);
+		overlayLogoutXIcon.setHidden(hideOverlayLogoutX());
+		overlayLogoutXIcon.setOpacity(100);
+		overlayLogoutXIcon.revalidate();
 	}
 
 	public void updateOverlayLogoutX()
@@ -930,12 +985,12 @@ public class CompactOrbsManager
 	//custom children offset handling~ similar to OffsetTarget interface
 	private int getCompassFrameX()
 	{
-		return Offsets.COMPASS.offsetTarget().getOffsetX() - Layout.FRAME_X_OFFSET;
+		return Offsets.COMPASS.getOffset().getOffsetX() - Layout.FRAME_X_OFFSET;
 	}
 
 	private int getCompassFrameY()
 	{
-		return Offsets.COMPASS.offsetTarget().getOffsetY() - Layout.FRAME_Y_OFFSET;
+		return Offsets.COMPASS.getOffset().getOffsetY() - Layout.FRAME_Y_OFFSET;
 	}
 
 	private int getMinimapButtonX()
@@ -1041,7 +1096,7 @@ public class CompactOrbsManager
 
 	private int getCompassButtonX()
 	{
-		int x = Offsets.COMPASS.offsetTarget().getOffsetX()
+		int x = Offsets.COMPASS.getOffset().getOffsetX()
 			+ Layout.COMPASS_BUTTON_X_OFFSET;
 
 		if (isHorizontalLayout())
@@ -1053,7 +1108,7 @@ public class CompactOrbsManager
 
 	private int getCompassButtonY()
 	{
-		int y = Offsets.COMPASS.offsetTarget().getOffsetY()
+		int y = Offsets.COMPASS.getOffset().getOffsetY()
 			+ Layout.COMPASS_BUTTON_Y_OFFSET;
 
 		if (isHorizontalLayout())

@@ -230,6 +230,19 @@ public interface CompactOrbsConfig extends Config
 		return false;
 	}
 
+	@ConfigItem(
+		keyName = ConfigKeys.ENABLE_NO_CLICKTHROUGH,
+		name = "Prevent orb clickthrough",
+		description = "Prevent clicking through the Hp, Prayer, Run, and Special orbs<br>"
+			+ "NOTE: Will slightly increase the bounds of the non-clickable space around the orb",
+		section = compact,
+		position = 9
+	)
+	default boolean enableNoClickthrough()
+	{
+		return false;
+	}
+
 	@ConfigSection(
 		name = "Hotkey",
 		description = "Hotkey settings",
@@ -287,7 +300,7 @@ public interface CompactOrbsConfig extends Config
 		keyName = "",
 		name = "Compact slots:",
 		description = "Slot order when in compact-view <br>" +
-			"Note: each slot must contain a unique orb (otherwise slots will reset to defaults)",
+			"Note: each slot must contain a unique orb (otherwise slots will be reset)",
 		section = swapping,
 		position = 1
 	)
@@ -358,7 +371,7 @@ public interface CompactOrbsConfig extends Config
 		keyName = "",
 		name = "Vanilla slots:",
 		description = "Slot order when not in compact-view <br>" +
-			"Note: each slot must contain a unique orb (otherwise slots will reset to defaults)",
+			"Note: each slot must contain a unique orb (otherwise slots will be reset)",
 		section = swapping,
 		position = 7
 	)
@@ -498,8 +511,8 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.HIDE_STORE,
 		name = "Hide Store",
-		description = "Toggle the visibility of the Store orb <br>"
-			+ "In-game setting must be be enabled",
+		description = "Toggle the visibility of the Store orb<br>" +
+			"Note: the in-game setting must be enabled",
 		section = visibility,
 		position = 6
 	)
@@ -511,8 +524,8 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.HIDE_ACTIVITY,
 		name = "Hide Activity Advisor",
-		description = "Toggle the visibility of the Activity Advisor orb <br>"
-			+ "In-game setting must be be enabled",
+		description = "Toggle the visibility of the Activity Advisor orb<br>" +
+			"Note: the in-game setting must be enabled",
 		section = visibility,
 		position = 7
 	)
@@ -524,8 +537,8 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.HIDE_WIKI,
 		name = "Hide Wiki banner",
-		description = "Toggle the visibility of the Wiki banner <br>"
-			+ "In-game setting must be be enabled",
+		description = "Toggle the visibility of the Wiki banner<br>" +
+			"Note: won't work if the `Wiki` plugin is enabled with `Show wiki button under minimap`",
 		section = visibility,
 		position = 8
 	)

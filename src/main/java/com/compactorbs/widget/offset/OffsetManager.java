@@ -32,36 +32,25 @@ import net.runelite.api.widgets.Widget;
 
 public class OffsetManager
 {
-	public static int getTargetOffset(Widget widget, ValueKey valueKey, int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	public static int getTargetOffset(Widget widget, ValueKey key, int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		OffsetTarget offsetTarget = getTarget(widget);
-		if (offsetTarget == null)
-		{
-			return getDefault(valueKey, value, compactLayout, manager.verticalOffset, manager.horizontalOffset);
-		}
-
-		return getOffset(offsetTarget, valueKey, value, compactLayout, manager, slotManager);
-	}
-
-	private static OffsetTarget getTarget(Widget widget)
-	{
-		Offsets offsets = Offsets.fromWidget(widget);
-		return offsets != null ? offsets.offsetTarget() : null;
-	}
-
-	private static int getDefault(ValueKey valueKey, int value, boolean compactLayout, int xOffset, int yOffset)
-	{
-		if (!compactLayout)
-		{
-			return value;
-		}
-		return value + (valueKey == ValueKey.X ? xOffset : yOffset);
+		return getOffset(Offsets.fromWidget(widget).getOffset(), key, value, compactLayout, manager, slotManager);
 	}
 
 	private static int getOffset(OffsetTarget target, ValueKey key, int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		return key == ValueKey.X
-			? target.xOffset(value, compactLayout, manager, slotManager)
-			: target.yOffset(value, compactLayout, manager, slotManager);
+		switch (key)
+		{
+			case X:
+				value = target.xOffset(value, compactLayout, manager, slotManager);
+				break;
+			case Y:
+				value = target.yOffset(value, compactLayout, manager, slotManager);
+				break;
+
+			//TODO: add WIDTH/HEIGHT
+		}
+
+		return value;
 	}
 }

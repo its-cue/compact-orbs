@@ -30,33 +30,28 @@ import lombok.Getter;
 @Getter
 public class SetValue
 {
-	private final Integer original;
-	private final Integer[] modified;
+	private final int original;
+	private final int[] modified;
 
-	public SetValue(Integer original, Integer... modified)
+	public SetValue(int original, int... modified)
 	{
 		this.original = original;
 		this.modified = modified;
 	}
 
-	//same function as before, but should allow for multiple 'modified sets' (original, mod_vertical, mod_horizontal, etc) instead of just 1
-	public Integer get(boolean compactLayout, int index)
+	public int get(int index, boolean compactLayout)
 	{
-		if (!compactLayout || original == null)
+		if (!compactLayout)
 		{
 			return original;
 		}
 
-		if (modified != null && modified.length > 0)
+		if (index >= 0 && index < modified.length)
 		{
-			if (index >= 0 && index < modified.length && modified[index] != null)
-			{
-				return modified[index];
-			}
-			return modified[0];
+			return modified[index];
 		}
 
-		return original;
+		throw new IllegalArgumentException("Layout index out of bounds: " + index);
 	}
 
 }

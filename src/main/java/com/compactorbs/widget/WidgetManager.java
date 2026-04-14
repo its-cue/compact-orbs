@@ -37,17 +37,14 @@ import com.compactorbs.widget.offset.OffsetManager;
 import com.compactorbs.widget.slot.Slot;
 import com.compactorbs.widget.slot.SlotManager;
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
-import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetPositionMode;
-import net.runelite.api.widgets.WidgetType;
 
 @Slf4j
 @Singleton
@@ -150,11 +147,7 @@ public class WidgetManager
 			return;
 		}
 
-		Integer v = value.get(compactLayout, manager.getLayout());
-		if (v == null)
-		{
-			return;
-		}
+		int v = value.get(manager.getLayout(), compactLayout);
 
 		switch (key)
 		{
@@ -262,6 +255,28 @@ public class WidgetManager
 		}
 
 		widget.setHidden(hidden);
+	}
+
+	public void setTargetsNoClickthrough(boolean noClickthrough, TargetWidget... targets)
+	{
+		for (TargetWidget target : targets)
+		{
+			setNoClickThrough(target, noClickthrough);
+		}
+	}
+
+	public void setNoClickThrough(TargetWidget target, boolean noClickThrough)
+	{
+		Widget widget = getTargetWidget(target);
+		if (widget == null)
+		{
+			return;
+		}
+
+		if (widget.getNoClickThrough() != noClickThrough)
+		{
+			widget.setNoClickThrough(noClickThrough);
+		}
 	}
 
 	//get the widget for the given TargetWidget
@@ -404,194 +419,5 @@ public class WidgetManager
 	public boolean isMissing(Widget child, Widget parent)
 	{
 		return child == null || child.getParentId() != parent.getId();
-	}
-
-	private Widget createWidget(
-		Widget parent,
-		int type,
-		Consumer<Widget> config)
-	{
-		if (parent == null)
-		{
-			return null;
-		}
-
-		Widget widget = parent.createChild(-1, type);
-		config.accept(widget);
-		widget.revalidate();
-		return widget;
-	}
-
-	@SafeVarargs
-	public final Widget createLayer(Widget parent, Consumer<Widget>... configs)
-	{
-		return createWidget(parent, WidgetType.LAYER, config(configs));
-	}
-
-
-	@SafeVarargs
-	public final Widget createText(Widget parent, Consumer<Widget>... configs)
-	{
-		return createWidget(parent, WidgetType.TEXT, config(configs));
-	}
-
-	@SafeVarargs
-	public final Widget createGraphic(Widget parent, Consumer<Widget>... configs)
-	{
-		return createWidget(parent, WidgetType.GRAPHIC, config(configs));
-	}
-
-	@SafeVarargs
-	public static Consumer<Widget> config(Consumer<Widget>... configs)
-	{
-		return w ->
-		{
-			for (Consumer<Widget> config : configs)
-			{
-				config.accept(w);
-			}
-		};
-	}
-
-	public static Consumer<Widget> contentType(int type)
-	{
-		return w -> w.setContentType(type);
-	}
-
-	public static Consumer<Widget> pos(int x, int y)
-	{
-		return w -> w.setOriginalX(x).setOriginalY(y);
-	}
-
-	public static Consumer<Widget> size(int width, int height)
-	{
-		return w -> w.setOriginalWidth(width).setOriginalHeight(height);
-	}
-
-	public static Consumer<Widget> posMode(int xMode, int yMode)
-	{
-		return w -> w.setXPositionMode(xMode).setYPositionMode(yMode);
-	}
-
-	public static Consumer<Widget> sizeMode(int widthMode, int heightMode)
-	{
-		return w -> w.setWidthMode(widthMode).setHeightMode(heightMode);
-	}
-
-	public static Consumer<Widget> opacity(int opacity)
-	{
-		return w -> w.setOpacity(opacity);
-	}
-
-	public static Consumer<Widget> hidden(boolean hidden)
-	{
-		return w -> w.setHidden(hidden);
-	}
-
-	public static Consumer<Widget> sprite(int spriteId)
-	{
-		return w -> w.setSpriteId(spriteId);
-	}
-
-	public static Consumer<Widget> listener()
-	{
-		return w -> w.setHasListener(true);
-	}
-
-	public static Consumer<Widget> noClickThrough()
-	{
-		return w -> w.setNoClickThrough(true);
-	}
-
-	public static Consumer<Widget> onOp(Object... objects)
-	{
-		return w ->
-		{
-			if (objects != null)
-			{
-				w.setOnOpListener(objects);
-			}
-		};
-	}
-
-	public static Consumer<Widget> onVarTransmit(Object... objects)
-	{
-		return w ->
-		{
-			if (objects != null)
-			{
-				w.setOnVarTransmitListener(objects);
-			}
-		};
-	}
-
-	public static Consumer<Widget> varTransmitTrigger(int... trigger)
-	{
-		return w -> w.setVarTransmitTrigger(trigger);
-	}
-
-	public static Consumer<Widget> onHover(JavaScriptCallback mouseOver, JavaScriptCallback mouseLeave)
-	{
-
-		return w ->
-		{
-			if (mouseOver != null)
-			{
-				w.setOnMouseOverListener(mouseOver);
-			}
-
-			if (mouseLeave != null)
-			{
-				w.setOnMouseLeaveListener(mouseLeave);
-			}
-		};
-	}
-
-	public static Consumer<Widget> action(int index, String action)
-	{
-		return w ->
-		{
-			if (action != null)
-			{
-				w.setAction(index, action);
-			}
-		};
-	}
-
-	public Consumer<Widget> syncMenuOp(int componentId)
-	{
-		return w -> syncMenuOp(w, componentId);
-	}
-
-	public Consumer<Widget> syncSprite(int componentId)
-	{
-		return w -> syncSprite(w, componentId);
-	}
-
-	public Widget createToggleButton(
-		Widget parent,
-		int width, int height,
-		int opacity,
-		int spriteId,
-		String menuOp,
-		JavaScriptCallback opListener,
-		JavaScriptCallback mouseOver,
-		JavaScriptCallback mouseLeave)
-	{
-		return createGraphic(
-			parent,
-			size(width, height),
-			opacity(opacity),
-			sprite(spriteId),
-			hidden(false),
-			action(0, menuOp),
-			listener(),
-			noClickThrough(),
-			onOp(opListener),
-			onHover(
-				mouseOver,
-				mouseLeave
-			)
-		);
 	}
 }
