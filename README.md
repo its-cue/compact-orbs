@@ -3,33 +3,33 @@
 
 <table>
   <tr>
-    <td colspan="2" style="text-align: center;">
+    <td colspan="2" align="center">
       <img src="https://imgur.com/fvzsaOP.gif" alt="preview"/>
     </td>
   </tr>
 
   <tr>
-    <td style="text-align: center;"><b><a href="#layout">Layout</a></b></td>
+    <td align="center"><b><a href="#layout">Layout</a></b></td>
     <td>Select & modify a compact layout: <code>Vertical</code>/<code>Horizontal</code></td>
   </tr>
 
   <tr>
-    <td style="text-align: center;"><b>Hotkey</b></td>
+    <td align="center"><b>Hotkey</b></td>
     <td>Use/set a hotkey to show/hide the <code>Minimap</code> & <code>Compass</code> toggle buttons,<br/> or reconfigure it to show/hide the <code>Minimap</code> (<i>hotkey</i>: <code>ctrl + insert</code>)</td>
   </tr>
 
   <tr>
-    <td style="text-align: center;"><b><a href="#swapping">Orb Swapping</a></b></td>
+    <td align="center"><b><a href="#swapping">Orb Swapping</a></b></td>
     <td>Switch an <code>Orb</code> with another  </td>
   </tr>
 
   <tr>
-    <td style="text-align: center;"><b><a href="#visibility">Orb Visibility</a></b></td>
+    <td align="center"><b><a href="#visibility">Orb Visibility</a></b></td>
     <td>Hide any <code>Orb</code>, including the <code>Logout-X</code>, <code>Worldmap</code>, &amp; <code>Xp</code></td>
   </tr>
 
   <tr>
-    <td style="text-align: center;"><b><a href="#overlay">Minimap Overlay</a></b></td>
+    <td align="center"><b><a href="#overlay">Minimap Overlay</a></b></td>
     <td>Display a <code>Vanilla</code> minimap while in compact view</td>
   </tr>
 </table>
@@ -81,8 +81,8 @@
 
 <table>
   <tr>
-    <td colspan="2" style="text-align: center;">
-      Example configuration keeping <code>reordering</code> & enabling <code>leave-empty-space</code>>
+    <td colspan="2" align="center">
+      Example configuration keeping <code>reordering</code> & enabling <code>leave-empty-space</code>
     </td>
   </tr>
 
