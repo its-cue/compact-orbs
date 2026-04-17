@@ -363,10 +363,21 @@ public class SlotManager
 			return false;
 		}
 
-		if (target == Orbs.ACTIVITY_ORB_CONTAINER && manager.isActivityOrbDisabled() ||
-			target == Orbs.STORE_ORB_CONTAINER && manager.isStoreOrbDisabled())
+		if (target == Orbs.ACTIVITY_ORB_CONTAINER && manager.isActivityOrbDisabled())
 		{
-			return true;
+			//don't count as hidden unless the config to hide is enabled (requested)
+			if (config.hideActivity() && !config.disableReordering())
+			{
+				return true;
+			}
+		}
+
+		if (target == Orbs.STORE_ORB_CONTAINER && manager.isStoreOrbDisabled())
+		{
+			if (config.hideStore() && !config.disableReordering())
+			{
+				return true;
+			}
 		}
 
 		Supplier<Boolean> entry = manager.orbToToggle.get(target);

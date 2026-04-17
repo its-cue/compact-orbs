@@ -64,6 +64,7 @@ public class CompactOrbsConstants
 		public static final String VERTICAL = "verticalPosition";
 		public static final String DISABLE_REORDERING = "disableReordering";
 		public static final String LEAVE_EMPTY_SPACE = "leaveEmptySpace";
+		public static final String ENABLE_VERTICAL_HEIGHT_OFFSET = "enableVerticalHeightOffset";
 		public static final String ENABLE_NO_CLICKTHROUGH = "enableNoClickthrough";
 		public static final String ENABLE_ORB_SWAPPING = "enableOrbSwapping";
 		public static final String HP_ORB_SLOT = "hpOrbSlot";

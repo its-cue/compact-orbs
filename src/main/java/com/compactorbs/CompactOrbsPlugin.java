@@ -298,9 +298,12 @@ public class CompactOrbsPlugin extends Plugin
 
 			case ConfigKeys.ENABLE_NO_CLICKTHROUGH:
 				clientThread.invokeLater(() ->
+				{
 					widgetManager.setTargetsNoClickthrough(config.enableNoClickthrough() && manager.isCompactLayout(),
-						Orbs.HP_ORB_CONTAINER, Orbs.PRAYER_ORB_CONTAINER, Orbs.RUN_ORB_CONTAINER, Orbs.SPEC_ORB_CONTAINER)
-				);
+						Orbs.HP_ORB_CONTAINER, Orbs.PRAYER_ORB_CONTAINER, Orbs.RUN_ORB_CONTAINER, Orbs.SPEC_ORB_CONTAINER);
+
+					manager.updateCompassToggleButton();
+				});
 				break;
 
 			//update all slots
@@ -330,10 +333,16 @@ public class CompactOrbsPlugin extends Plugin
 				});
 				break;
 
+			case ConfigKeys.ENABLE_VERTICAL_HEIGHT_OFFSET:
 			default:
 				clientThread.invokeLater(() ->
 				{
-					manager.updateOrbByConfig(event.getKey());
+					manager.getLayoutOffsets();
+
+					if (!key.equals(ConfigKeys.ENABLE_VERTICAL_HEIGHT_OFFSET))
+					{
+						manager.updateOrbByConfig(event.getKey());
+					}
 
 					if (manager.isCompactLayout() && widgetManager.getCurrentParent() != null)
 					{

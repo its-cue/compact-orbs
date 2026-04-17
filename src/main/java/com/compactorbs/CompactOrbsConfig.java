@@ -231,12 +231,24 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = ConfigKeys.ENABLE_VERTICAL_HEIGHT_OFFSET,
+		name = "Enable Vertical height offset",
+		description = "Adjusts the Vertical layouts height when the compass is hidden (requires Logout X to be hidden when in modern-resizable)",
+		section = compact,
+		position = 9
+	)
+	default boolean enableVerticalHeightOffset()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = ConfigKeys.ENABLE_NO_CLICKTHROUGH,
 		name = "Prevent orb clickthrough",
 		description = "Prevent clicking through the Hp, Prayer, Run, and Special orbs<br>"
 			+ "NOTE: Will slightly increase the bounds of the non-clickable space around the orb",
 		section = compact,
-		position = 9
+		position = 10
 	)
 	default boolean enableNoClickthrough()
 	{

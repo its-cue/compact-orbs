@@ -240,7 +240,6 @@ public class CompactOrbsManager
 	public void onMinimapToggle()
 	{
 		boolean toggle = !isMinimapHidden();
-		boolean remapCondition = toggle && !isCompassHidden();
 		boolean hiddenCondition = toggle && isCompassHidden();
 		executeToggle(
 			ConfigKeys.MINIMAP,
@@ -248,7 +247,8 @@ public class CompactOrbsManager
 			t ->
 			{
 				widgetManager.setTargetsHidden(toggle, Minimap.values());
-				widgetManager.remapTargets(remapCondition, Script.FORCE_UPDATE, Compass.values());
+				widgetManager.remapTargets(toggle, Script.FORCE_UPDATE, Compass.values());
+
 				widgetManager.setTargetsHidden(hiddenCondition, Compass.values());
 				widgetManager.remapTargets(toggle, Script.FORCE_UPDATE, Orbs.values());
 			}
@@ -266,6 +266,15 @@ public class CompactOrbsManager
 			t ->
 			{
 				widgetManager.remapTargets(remapCondition, Script.FORCE_UPDATE, Compass.values());
+
+				if (isVerticalLayout())
+				{
+					if (config.hideLogout() || widgetManager.getCurrentParent().getId() != Modern.ORBS)
+					{
+						widgetManager.remapTargets(remapCondition, Script.FORCE_UPDATE, Orbs.values());
+					}
+				}
+
 				widgetManager.setTargetsHidden(toggle, Compass.values());
 			}
 		);
@@ -732,12 +741,13 @@ public class CompactOrbsManager
 		return (container.getDynamicChildren() != null && container.getDynamicChildren().length > 0);
 	}
 
-	private void getLayoutOffsets()
+	void getLayoutOffsets()
 	{
 		boolean isCompactLayout = (isResized() && isMinimapHidden());
 
 		//zero out
 		verticalOffset = 0;
+		horizontalOffset = 0;
 
 		if (isVerticalLayout())
 		{
@@ -752,10 +762,18 @@ public class CompactOrbsManager
 					verticalOffset = Layout.Vertical.RIGHT_OFFSET;
 				}
 			}
-		}
 
-		//zero out
-		horizontalOffset = 0;
+			if (config.hideCompass())
+			{
+				if (config.hideLogout() || widgetManager.getCurrentParent().getId() != Modern.ORBS)
+				{
+					if (config.enableVerticalHeightOffset() && !config.disableReordering())
+					{
+						horizontalOffset -= 26;
+					}
+				}
+			}
+		}
 
 		if (isHorizontalLayout())
 		{
@@ -1103,6 +1121,15 @@ public class CompactOrbsManager
 		{
 			x += Layout.COMPASS_BUTTON_HORIZONTAL_X_OFFSET;
 		}
+
+		if (isVerticalLayout())
+		{
+			if (config.enableNoClickthrough())
+			{
+				x += 3;
+			}
+		}
+
 		return x;
 	}
 
@@ -1114,6 +1141,14 @@ public class CompactOrbsManager
 		if (isHorizontalLayout())
 		{
 			y -= Layout.COMPASS_BUTTON_HORIZONTAL_Y_OFFSET;
+		}
+
+		if (isVerticalLayout())
+		{
+			if (config.enableNoClickthrough())
+			{
+				y -= 4;
+			}
 		}
 
 		return y;
