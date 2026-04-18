@@ -33,7 +33,9 @@
     <td>Display a <code>Vanilla</code> minimap while in compact view</td>
   </tr>
 </table>
-
+  
+<br/>
+  
 <details id="layout">
 <summary>⚙️ Layout</summary>
 
@@ -47,7 +49,12 @@
       ![](https://imgur.com/nDjUhTQ.png)
 
 ## Hide toggle buttons
-- selectively hide the `Minimap` or `Compass` toggle buttons (eyes)
+- selectively hide the `Minimap` or `Compass` toggle buttons
+
+## Right click toggle buttons
+- switches the menu priority for the toggle buttons, when enabled it will show below `Walk here` - requiring a right click to `Show`/`Hide`
+
+  ![](https://imgur.com/YreA3qN.png)
 
 ## Layout
 - select the desired compact layout
@@ -102,11 +109,17 @@
   </tr>
 </table>
 
+## Vertical height offset
+- apply an adjustment to the `Vertical` layouts height when the compass (and `Logout-X` in modern-resizable) is hidden
+
+  ![](https://i.imgur.com/loObB29.gif)
 
 ## Clickthrough
 - Prevents clicking through the `Hp`, `Prayer`, `Run`, &`Spec` orbs while in compact view
 - removes the `Walk here` menu option
 - slightly increases the non-clickable area around each orb (does **_not_** increase the size of the clickable button)
+
+<br/>
 
 </details>
 
@@ -136,13 +149,18 @@
       ![](https://imgur.com/RPYnWuj.gif)
 
 ## In-game settings
-- to hide/show the `Store`/`Wiki`/`Activity` the below settings must be `enabled` ✔️
-
+- to hide/show the `Store`/`Wiki`/`Activity` the settings below should be `enabled` ✔️
   ![](https://imgur.com/XwpxyQz.png)
+
+- if kept disabled, the orb will not be considered hidden<br/>ex: the orb to the left of `HP` is `Store`, which is disabled in-game and not hidden in the config
+
+  ![](https://imgur.com/1vOaOBC.gif)
 
 _Note_: in the Wiki plugin, the config `Show wiki button under minimap` cannot be enabled at the same time as `Hide Wiki banner`, enabling either will disable the other if also enabled
 
 ![](https://imgur.com/Dm8HVb8.png)
+
+<br/>
 
 </details>
 
@@ -168,6 +186,9 @@ _Note_: in the Wiki plugin, the config `Show wiki button under minimap` cannot b
         - etc.
 
 > Disclaimer: this feature is experimental, and could be subject to change/removal depending on the host interface (StatBoostsHud) staying official client only
+
+<br/>
+
 </details>
 
 <details id="faq">
@@ -185,7 +206,7 @@ _Note_: in the Wiki plugin, the config `Show wiki button under minimap` cannot b
 - A: yep, swapping works as well
 
 ### Q: Can you add [orb] to the detached minimap?
-- A: there are no plans to include any functional versions of the following orbs: [`Xp`, `Worldmap`, `Hp`, `Prayer`, `Run`, `Spec`, `Wiki`, `Store`, `Activity`]
+- A: there are no plans to include any functional versions of the following orbs:<br/> [`Xp`, `Worldmap`, `Hp`, `Prayer`, `Run`, `Spec`, `Wiki`, `Store`, `Activity`]
 
 ## Conflicts
 Since this modifies the minimap visibility, there are a few plugins that have been flagged as conflicts (enabling any will disable this plugin & vice versa)
