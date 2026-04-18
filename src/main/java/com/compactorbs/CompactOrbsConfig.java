@@ -164,11 +164,23 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = ConfigKeys.RIGHT_CLICK_TOGGLE_BUTTONS,
+		name = "Right click toggle buttons",
+		description = "Makes the toggle buttons right click, rather than left click (requires menu click)",
+		section = compact,
+		position = 4
+	)
+	default boolean rightClickToggleButtons()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = ConfigKeys.ORB_LAYOUT,
 		name = "Layout",
 		description = "Switch between a compact vertical or horizontal layout",
 		section = compact,
-		position = 4
+		position = 5
 	)
 	default OrbLayout layout()
 	{
@@ -181,7 +193,7 @@ public interface CompactOrbsConfig extends Config
 		description = "Shift orbs from top-down, or bottom-up <br>"
 			+ "Also dictates layouts position in the minimap container",
 		section = compact,
-		position = 5
+		position = 6
 	)
 	default HorizontalPosition horizontalPosition()
 	{
@@ -195,7 +207,7 @@ public interface CompactOrbsConfig extends Config
 		description = "Shift orbs from left, or right <br>"
 			+ "Also dictates layouts position in the minimap container",
 		section = compact,
-		position = 6
+		position = 7
 	)
 	default VerticalPosition verticalPosition()
 	{
@@ -211,7 +223,7 @@ public interface CompactOrbsConfig extends Config
 			+ "Horizontal-TOP: will reorder orbs from top to bottom <br>"
 			+ "Horizontal-BOTTOM: will reorder orbs from bottom to top <br>",
 		section = compact,
-		position = 7
+		position = 8
 	)
 	default boolean disableReordering()
 	{
@@ -223,7 +235,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Leave empty space",
 		description = "Preserves the empty space between reordered orbs, and non-reordered UI elements, for a `floating` effect",
 		section = compact,
-		position = 8
+		position = 9
 	)
 	default boolean leaveEmptySpace()
 	{
@@ -235,7 +247,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Enable Vertical height offset",
 		description = "Adjusts the Vertical layouts height when the compass is hidden (requires Logout X to be hidden when in modern-resizable)",
 		section = compact,
-		position = 9
+		position = 10
 	)
 	default boolean enableVerticalHeightOffset()
 	{
@@ -248,7 +260,7 @@ public interface CompactOrbsConfig extends Config
 		description = "Prevent clicking through the Hp, Prayer, Run, and Special orbs<br>"
 			+ "NOTE: Will slightly increase the bounds of the non-clickable space around the orb",
 		section = compact,
-		position = 10
+		position = 11
 	)
 	default boolean enableNoClickthrough()
 	{

@@ -332,7 +332,6 @@ public class CompactOrbsManager
 		minimapButton.setOpacity(Layout.OPACITY);
 		minimapButton.setHidden(false);
 		minimapButton.setHasListener(true);
-		minimapButton.setNoClickThrough(true);
 		minimapButton.setAction(0, getButtonMenuOp(ConfigKeys.MINIMAP));
 		minimapButton.setOnOpListener(
 			(JavaScriptCallback) e ->
@@ -340,7 +339,14 @@ public class CompactOrbsManager
 		);
 		minimapButton.setOnMouseOverListener(
 			(JavaScriptCallback) e ->
-				minimapButton.setOpacity(Layout.OPACITY_HOVER)
+			{
+				if (config.rightClickToggleButtons())
+				{
+					//dont show on hover to distinguish between left / right click
+					return;
+				}
+				minimapButton.setOpacity(Layout.OPACITY_HOVER);
+			}
 		);
 		minimapButton.setOnMouseLeaveListener(
 			(JavaScriptCallback) e ->
@@ -354,7 +360,6 @@ public class CompactOrbsManager
 		compassButton.setOpacity(Layout.OPACITY);
 		compassButton.setHidden(false);
 		compassButton.setHasListener(true);
-		compassButton.setNoClickThrough(true);
 		compassButton.setAction(0, getButtonMenuOp(ConfigKeys.COMPASS));
 		compassButton.setOnOpListener(
 			(JavaScriptCallback) e ->
@@ -362,7 +367,13 @@ public class CompactOrbsManager
 		);
 		compassButton.setOnMouseOverListener(
 			(JavaScriptCallback) e ->
-				compassButton.setOpacity(Layout.OPACITY_HOVER)
+			{
+				if (config.rightClickToggleButtons())
+				{
+					return;
+				}
+				compassButton.setOpacity(Layout.OPACITY_HOVER);
+			}
 		);
 		compassButton.setOnMouseLeaveListener(
 			(JavaScriptCallback) e ->
@@ -429,7 +440,19 @@ public class CompactOrbsManager
 
 		minimapButton.setSpriteId(getSpriteId(!isMinimapHidden()));
 		minimapButton.setHidden(hideCustomToggles() || config.hideMinimapToggle());
-		minimapButton.setAction(0, getButtonMenuOp(ConfigKeys.MINIMAP));
+
+		if (!config.hideMinimapToggle())
+		{
+			int index = 0;
+			if (config.rightClickToggleButtons())
+			{
+				index = 5;
+			}
+			minimapButton.setAction(index == 0 ? 5 : 0, "");
+			minimapButton.setAction(index, getButtonMenuOp(ConfigKeys.MINIMAP));
+		}
+
+		minimapButton.setNoClickThrough(!config.rightClickToggleButtons());
 		widgetManager.updateValue(minimapButton::getOriginalX, minimapButton::setOriginalX, getMinimapButtonX());
 		widgetManager.updateValue(minimapButton::getOriginalY, minimapButton::setOriginalY, getMinimapButtonY());
 		minimapButton.revalidate();
@@ -444,7 +467,19 @@ public class CompactOrbsManager
 
 		compassButton.setSpriteId(getSpriteId(!isCompassHidden()));
 		compassButton.setHidden((hideCustomToggles() || config.hideCompassToggle()) || !isMinimapHidden());
-		compassButton.setAction(0, getButtonMenuOp(ConfigKeys.COMPASS));
+
+		if (!config.hideCompassToggle())
+		{
+			int index = 0;
+			if (config.rightClickToggleButtons())
+			{
+				index = 5;//below 'walk here'
+			}
+			compassButton.setAction(index == 0 ? 5 : 0, "");
+			compassButton.setAction(index, getButtonMenuOp(ConfigKeys.COMPASS));
+		}
+
+		minimapButton.setNoClickThrough(!config.rightClickToggleButtons());
 		widgetManager.updateValue(compassButton::getOriginalX, compassButton::setOriginalX, getCompassButtonX());
 		widgetManager.updateValue(compassButton::getOriginalY, compassButton::setOriginalY, getCompassButtonY());
 		compassButton.revalidate();

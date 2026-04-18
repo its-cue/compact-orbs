@@ -58,6 +58,7 @@ public class CompactOrbsConstants
 		public static final String HOTKEY_MINIMAP = "hotkeyMinimap";
 		public static final String MINIMAP_TOGGLE_BUTTON = "hideMinimapButton";
 		public static final String COMPASS_TOGGLE_BUTTON = "hideCompassButton";
+		public static final String RIGHT_CLICK_TOGGLE_BUTTONS = "rightClickToggleButtons";
 		public static final String MINIMAP_BUTTON_PLACEMENT = "minimapButtonPlacement";
 		public static final String ORB_LAYOUT = "orbLayout";
 		public static final String HORIZONTAL = "horizontalPosition";

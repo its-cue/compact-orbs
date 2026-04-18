@@ -293,6 +293,7 @@ public class CompactOrbsPlugin extends Plugin
 
 			case ConfigKeys.MINIMAP_TOGGLE_BUTTON:
 			case ConfigKeys.COMPASS_TOGGLE_BUTTON:
+			case ConfigKeys.RIGHT_CLICK_TOGGLE_BUTTONS:
 				clientThread.invokeLater(() -> manager.updateCustomChildren(true));
 				break;
 
