@@ -43,7 +43,6 @@ import com.compactorbs.CompactOrbsConstants.Widgets;
 import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
 import com.compactorbs.CompactOrbsConstants.Widgets.MinimapOverlay;
 import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
-import com.compactorbs.CompactOrbsConstants.Widgets.Orb;
 import com.compactorbs.widget.TargetWidget;
 import com.compactorbs.widget.WidgetManager;
 import com.compactorbs.widget.elements.Compass;
@@ -112,6 +111,9 @@ public class CompactOrbsManager
 	//reset shutdown flag for the world map orb
 	public boolean hideWorldMap;
 	public boolean hideLogoutX;
+
+	//flag for the first "logged in" game state
+	public boolean initialLoginPending;
 
 	//update flag for the custom widgets
 	public boolean pendingChildrenUpdate;
@@ -207,7 +209,7 @@ public class CompactOrbsManager
 		//set all orbs to visible
 		widgetManager.setTargetsHidden(false, Orbs.values());
 
-		updateWikiBannerVisibility(isWikiBannerDisabled());
+		updateWikiBannerVisibility(false);
 
 		slotManager.reset();
 
@@ -711,31 +713,16 @@ public class CompactOrbsManager
 
 	public void updateWikiBannerVisibility(boolean hidden)
 	{
-		boolean wikiPluginActive = Boolean.TRUE.equals(
-			configManager.getConfiguration(ConfigGroup.RuneLite.GROUP_NAME, ConfigKeys.RuneLite.WIKI_PLUGIN, Boolean.class)
-		);
-
-		boolean showWikiMinimapButton = Boolean.TRUE.equals(
-			configManager.getConfiguration(ConfigGroup.Wiki.GROUP_NAME, ConfigKeys.Wiki.SHOW_WIKI_MINIMAP_BUTTON, Boolean.class)
-		);
-
-		boolean vanilla = true;
-
 		Widget container = widgetManager.getTargetWidget(Orbs.WIKI_ICON_CONTAINER);
 		if (container == null)
 		{
 			return;
 		}
 
-		Widget banner;
+		Widget banner = widgetManager.getTargetWidget(Orbs.WIKI_VANILLA_CONTAINER);
 		if (customWikiBanner(container))
 		{
 			banner = container.getChild(0);
-			vanilla = false;
-		}
-		else
-		{
-			banner = widgetManager.getTargetWidget(Orbs.WIKI_VANILLA_CONTAINER);
 		}
 
 		if (banner == null)
@@ -743,28 +730,13 @@ public class CompactOrbsManager
 			return;
 		}
 
-		if (wikiPluginActive)
+		//vanilla banner should be hidden if the in-game setting is disabled
+		if (isWikiBannerDisabled() && !customWikiBanner(container))
 		{
-			if (showWikiMinimapButton && hidden)
-			{
-				return;
-			}
-
-			if (!showWikiMinimapButton)
-			{
-				vanilla = true;
-			}
+			hidden = true;
 		}
 
-		if (vanilla)
-		{
-			if (isWikiBannerDisabled())
-			{
-				hidden = true;
-			}
-
-			banner.setHidden(hidden);
-		}
+		banner.setHidden(hidden);
 	}
 
 	private boolean customWikiBanner(Widget container)
@@ -826,22 +798,6 @@ public class CompactOrbsManager
 		}
 
 		getWorldMapOffset();
-	}
-
-	public boolean updateWorldMap()
-	{
-		if (isResized())
-		{
-			return hideWorldMap;
-		}
-
-		Widget worldMap = client.getWidget(Orb.WORLD_MAP);
-		if (worldMap == null)
-		{
-			return false;
-		}
-
-		return hideWorldMap;
 	}
 
 	public int getWorldMapOffset()
@@ -1247,18 +1203,8 @@ public class CompactOrbsManager
 
 			//wiki banner config handling for onConfigChanged
 			case ConfigKeys.HIDE_WIKI:
-
-				if (config.hideWiki())
-				{
-					resolveWikiBannerConflict(ConfigGroup.Wiki.GROUP_NAME, ConfigKeys.Wiki.SHOW_WIKI_MINIMAP_BUTTON);
-				}
-
-				if (isWikiBannerDisabled())
-				{
-					return;
-				}
-
 				updateWikiBannerVisibility(config.hideWiki());
+				warnWikiPluginConflict();
 
 				//update the minimap toggle button when in horizontal layout,
 				//and minimap is hidden (offset is applied that needs updated)
@@ -1303,7 +1249,7 @@ public class CompactOrbsManager
 		}
 	}
 
-	public void resolveWikiBannerConflict(String group, String key)
+	public boolean isWikiPluginBannerActive()
 	{
 		boolean wikiPluginActive = Boolean.TRUE.equals(
 			configManager.getConfiguration(ConfigGroup.RuneLite.GROUP_NAME, ConfigKeys.RuneLite.WIKI_PLUGIN, Boolean.class)
@@ -1313,32 +1259,45 @@ public class CompactOrbsManager
 			configManager.getConfiguration(ConfigGroup.Wiki.GROUP_NAME, ConfigKeys.Wiki.SHOW_WIKI_MINIMAP_BUTTON, Boolean.class)
 		);
 
-		if (wikiPluginActive && showWikiMinimapButton)
+		return wikiPluginActive && showWikiMinimapButton;
+	}
+
+	public void warnWikiPluginConflict()
+	{
+		if (isWikiPluginBannerActive() && config.hideWiki())
 		{
-			if (config.hideWiki())
-			{
-				if (isLoggedIn())
-				{
-					String message = group.equals(ConfigGroup.Wiki.GROUP_NAME)
-						? "disabled Wiki plugin `Show wiki button under minimap` due to a conflict with `Hide Wiki banner`"
-						: "disabled `Hide Wiki banner` due to a conflict with the Wiki plugin `Show wiki button under minimap`";
-
-					sendMessage(message);
-				}
-
-				configManager.setConfiguration(group, key, "FALSE");
-			}
+			sendMessage(msg ->
+				msg
+					.append("the ")
+					.append(ChatColorType.HIGHLIGHT)
+					.append("`Hide Wiki banner` ")
+					.append(ChatColorType.NORMAL)
+					.append("setting is overriding the Wiki plugin's ")
+					.append(ChatColorType.HIGHLIGHT)
+					.append("`Show wiki button under minimap` ")
+					.append(ChatColorType.NORMAL)
+					.append("setting.")
+			);
 		}
 	}
 
-	private void sendMessage(String message)
+	private void sendMessage(Consumer<ChatMessageBuilder> consumer)
 	{
-		String input = new ChatMessageBuilder()
+		if (!isLoggedIn())
+		{
+			return;
+		}
+
+		ChatMessageBuilder builder = new ChatMessageBuilder()
+			.append("[")
 			.append(ChatColorType.HIGHLIGHT)
-			.append("Compact Orbs:")
+			.append("Compact Orbs")
 			.append(ChatColorType.NORMAL)
-			.append(" " + message)
-			.build();
+			.append("] ");
+
+		consumer.accept(builder);
+
+		String input = builder.build();
 
 		chatMessageManager.queue(QueuedMessage.builder()
 			.type(ChatMessageType.CONSOLE)

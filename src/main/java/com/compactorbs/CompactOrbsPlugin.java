@@ -105,6 +105,11 @@ public class CompactOrbsPlugin extends Plugin
 		keyManager.registerKeyListener(hotkeyListener);
 		registerOrbToggleEntries();
 
+		if (!manager.isLoggedIn())
+		{
+			manager.initialLoginPending = true;
+		}
+
 		manager.pendingChildrenUpdate = false;
 		slotManager.allowFixedModeUpdate = true;
 		manager.hideWorldMap = config.hideWorld();
@@ -122,8 +127,6 @@ public class CompactOrbsPlugin extends Plugin
 				manager.configureMinimapOverlayContainer(true);
 			}
 		});
-
-		manager.resolveWikiBannerConflict(ConfigGroup.Wiki.GROUP_NAME, ConfigKeys.Wiki.SHOW_WIKI_MINIMAP_BUTTON);
 	}
 
 	@Override
@@ -139,10 +142,10 @@ public class CompactOrbsPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
-		if (manager.isLoggedIn())
+		if (manager.isLoggedIn() && manager.initialLoginPending)
 		{
+			manager.initialLoginPending = false;
 			manager.createCustomChildren();
-
 			slotManager.allowFixedModeUpdate = true;
 		}
 	}
@@ -175,10 +178,7 @@ public class CompactOrbsPlugin extends Plugin
 				break;
 
 			case Script.WIKI_ICON_INIT:
-				if (manager.isWikiBannerDisabled())
-				{
-					manager.updateWikiBannerVisibility(config.hideWiki());
-				}
+				manager.updateWikiBannerVisibility(config.hideWiki());
 				break;
 
 			case Script.WORLD_MAP_UPDATE:
@@ -245,12 +245,13 @@ public class CompactOrbsPlugin extends Plugin
 		{
 			if (key.equals(ConfigKeys.Wiki.SHOW_WIKI_MINIMAP_BUTTON))
 			{
-				manager.resolveWikiBannerConflict(GROUP_NAME, ConfigKeys.HIDE_WIKI);
+				manager.warnWikiPluginConflict();
 
 				clientThread.invokeLater(() ->
 				{
 					widgetManager.remapTarget(Orbs.WIKI_ICON_CONTAINER, manager.isCompactLayout());
 					manager.updateWikiBannerVisibility(config.hideWiki());
+					manager.updateCustomChildren(true);
 				});
 			}
 		}
@@ -372,8 +373,6 @@ public class CompactOrbsPlugin extends Plugin
 		{
 			return;
 		}
-
-		manager.resolveWikiBannerConflict(GROUP_NAME, ConfigKeys.HIDE_WIKI);
 
 		//rebuild layout if the wiki plugin is turned on or off
 		clientThread.invokeLater(() -> manager.init(Script.FORCE_UPDATE));
