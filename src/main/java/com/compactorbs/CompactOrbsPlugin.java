@@ -142,6 +142,11 @@ public class CompactOrbsPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
+		if (manager.isHopping())
+		{
+			manager.initialLoginPending = true;
+		}
+
 		if (manager.isLoggedIn() && manager.initialLoginPending)
 		{
 			manager.initialLoginPending = false;

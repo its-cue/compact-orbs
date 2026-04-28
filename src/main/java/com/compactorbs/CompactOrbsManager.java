@@ -841,6 +841,11 @@ public class CompactOrbsManager
 		return client.getGameState() == GameState.LOGGED_IN;
 	}
 
+	public boolean isHopping()
+	{
+		return client.getGameState() == GameState.HOPPING;
+	}
+
 	public boolean isCompactLayout()
 	{
 		return isResized() && isMinimapHidden() && !isMinimapMinimized();
