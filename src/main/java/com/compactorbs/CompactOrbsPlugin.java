@@ -62,7 +62,7 @@ import net.runelite.client.util.HotkeyListener;
 @Slf4j
 @PluginDescriptor(
 	name = "Compact Orbs",
-	description = "Collapse the minimap orbs into a compact view.",
+	description = "Minimize the minimap and reposition the orbs into a compact view.",
 	tags = {"compact", "orbs", "layout", "hide", "minimap", "resizable", "classic", "modern", "world", "map", "wiki", "swap", "overlay"},
 	conflicts = {"Fixed Resizable Hybrid", "Orb Hider", "Minimap Hider"}
 )
