@@ -1,35 +1,31 @@
 # Compact Orbs
 [![github](https://img.shields.io/badge/feedback%20&%20issues-black?style=for-the-badge&logo=github&logoColor=white)](https://github.com/its-cue/compact-orbs/issues)[![faq](https://img.shields.io/badge/FAQ-black?style=for-the-badge&logoColor=white)](#faq)[![installs](http://img.shields.io/endpoint?labelColor=000000&color=08d13e&style=for-the-badge&url=https://api.runelite.net/pluginhub/shields/installs/plugin/compact-orbs)](https://runelite.net/plugin-hub/cue)
 
+![](https://imgur.com/fvzsaOP.gif)
+
 <table>
   <tr>
-    <td colspan="2" align="center">
-      <img src="https://imgur.com/fvzsaOP.gif" alt="preview"/>
-    </td>
-  </tr>
-
-  <tr>
-    <td align="center"><b><a href="#layout">Layout</a></b></td>
+    <td><b><a href="#layout">Layout</a></b></td>
     <td>Select & modify a compact layout: <code>Vertical</code>/<code>Horizontal</code></td>
   </tr>
 
   <tr>
-    <td align="center"><b>Hotkey</b></td>
+    <td><b>Hotkey</b></td>
     <td>Use/set a hotkey to show/hide the <code>Minimap</code> & <code>Compass</code> toggle buttons,<br/> or reconfigure it to show/hide the <code>Minimap</code> (<i>hotkey</i>: <code>ctrl + insert</code>)</td>
   </tr>
 
   <tr>
-    <td align="center"><b><a href="#swapping">Orb Swapping</a></b></td>
+    <td><b><a href="#swapping">Orb Swapping</a></b></td>
     <td>Switch an <code>Orb</code> with another  </td>
   </tr>
 
   <tr>
-    <td align="center"><b><a href="#visibility">Orb Visibility</a></b></td>
+    <td><b><a href="#visibility">Orb Visibility</a></b></td>
     <td>Hide any <code>Orb</code>, including the <code>Logout-X</code>, <code>Worldmap</code>, &amp; <code>Xp</code></td>
   </tr>
 
   <tr>
-    <td align="center"><b><a href="#overlay">Minimap Overlay</a></b></td>
+    <td><b><a href="#overlay">Minimap Overlay</a></b></td>
     <td>Display a <code>Vanilla</code> minimap while in compact view</td>
   </tr>
 </table>
@@ -135,6 +131,8 @@
 
 ![](https://imgur.com/6nENyKE.png)
 
+<br/>
+
 </details>
 
 <details id="visibility">
@@ -150,13 +148,14 @@
 
 ## In-game settings
 - to hide/show the `Store`/`Wiki`/`Activity` the settings below should be `enabled` ✔️
+
   ![](https://imgur.com/XwpxyQz.png)
 
 - if kept disabled, the orb will not be considered hidden<br/>ex: the orb to the left of `HP` is `Store`, which is disabled in-game and not hidden in the config
 
   ![](https://imgur.com/1vOaOBC.gif)
 
-_Note_: in the Wiki plugin, the config `Show wiki button under minimap` cannot be enabled at the same time as `Hide Wiki banner`, enabling either will disable the other if also enabled
+_Note_: the config `Show wiki button under minimap` in the Wiki plugin, will be overridden by `Hide Wiki banner`
 
 ![](https://imgur.com/Dm8HVb8.png)
 
