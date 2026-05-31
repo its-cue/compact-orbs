@@ -34,7 +34,13 @@ public class OffsetManager
 {
 	public static int getTargetOffset(Widget widget, ValueKey key, int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		return getOffset(Offsets.fromWidget(widget).getOffset(), key, value, compactLayout, manager, slotManager);
+		Offsets offsets = Offsets.fromWidget(widget);
+		if (offsets == null)
+		{
+			return value;
+		}
+
+		return getOffset(offsets.getOffset(), key, value, compactLayout, manager, slotManager);
 	}
 
 	private static int getOffset(OffsetTarget target, ValueKey key, int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
@@ -42,15 +48,14 @@ public class OffsetManager
 		switch (key)
 		{
 			case X:
-				value = target.xOffset(value, compactLayout, manager, slotManager);
-				break;
+				return target.xOffset(value, compactLayout, manager, slotManager);
 			case Y:
-				value = target.yOffset(value, compactLayout, manager, slotManager);
-				break;
-
-			//TODO: add WIDTH/HEIGHT
+				return target.yOffset(value, compactLayout, manager, slotManager);
+			case WIDTH:
+				return target.widthOffset(value, compactLayout, manager, slotManager);
+			case HEIGHT:
+				return target.heightOffset(value, compactLayout, manager, slotManager);
 		}
-
 		return value;
 	}
 }

@@ -61,8 +61,8 @@ public class CompactOrbsConstants
 		public static final String RIGHT_CLICK_TOGGLE_BUTTONS = "rightClickToggleButtons";
 		public static final String MINIMAP_BUTTON_PLACEMENT = "minimapButtonPlacement";
 		public static final String ORB_LAYOUT = "orbLayout";
-		public static final String HORIZONTAL = "horizontalPosition";
-		public static final String VERTICAL = "verticalPosition";
+		public static final String HORIZONTAL_ANCHOR = "horizontalPosition";
+		public static final String VERTICAL_ANCHOR = "verticalPosition";
 		public static final String DISABLE_REORDERING = "disableReordering";
 		public static final String LEAVE_EMPTY_SPACE = "leaveEmptySpace";
 		public static final String ENABLE_VERTICAL_HEIGHT_OFFSET = "enableVerticalHeightOffset";
@@ -168,6 +168,7 @@ public class CompactOrbsConstants
 		public static final class Original
 		{
 			public static final int MAP_CONTAINER_WIDTH = 211;
+			public static final int MAP_CONTAINER_HEIGHT = 207;
 
 			public static final int XP_DROPS_X = 0;
 			public static final int XP_DROPS_Y = 17;
@@ -196,8 +197,7 @@ public class CompactOrbsConstants
 			public static final int WIKI_ICON_X = 0;
 			public static final int WIKI_ICON_Y = 135;
 
-			public static final int WIKI_VANILLA_X = 0;
-			public static final int WIKI_VANILLA_Y = 0;
+			public static final int WIKI_HEIGHT = 34;
 
 			public static final int LOGOUT_X = 2;
 			public static final int LOGOUT_Y = 2;
@@ -206,6 +206,9 @@ public class CompactOrbsConstants
 			public static final int COMPASS_Y = 5;
 			public static final int COMPASS_DIMENSION = 35;
 
+			public static final int COMPASS_OP_X = COMPASS_X - 2;
+			public static final int COMPASS_OP_Y = COMPASS_Y - 2;
+
 			public static final int MINIMAP_X = 6;
 			public static final int MINIMAP_Y = 8;
 			public static final int MINIMAP_DIMENSION = 152;
@@ -213,88 +216,125 @@ public class CompactOrbsConstants
 
 		public static final class Vertical
 		{
-			public static final int XP_DROPS_X = 68;
-			public static final int XP_DROPS_Y = 44;
+			public static final int LAYOUT_ID = 0;
 
-			public static final int HP_ORB_X = 0;
-			public static final int HP_ORB_Y = 41;
+			public static final int MAP_CONTAINER_WIDTH = 96;
+			public static final int MAP_CONTAINER_HEIGHT = 193;
 
-			public static final int PRAYER_ORB_X = 0;
-			public static final int PRAYER_ORB_Y = 76;
+			public static final int XP_DROPS_X = 7;
+			public static final int XP_DROPS_Y = 42;
 
-			public static final int RUN_ORB_X = 0;
-			public static final int RUN_ORB_Y = 111;
+			public static final int HP_ORB_X = 39;
+			public static final int HP_ORB_Y = 39;
 
-			public static final int SPEC_ORB_X = 0;
-			public static final int SPEC_ORB_Y = 146;
+			public static final int PRAYER_ORB_X = 39;
+			public static final int PRAYER_ORB_Y = 73;
 
-			public static final int STORE_ORB_X = 64;
-			public static final int STORE_ORB_Y = 103;
+			public static final int RUN_ORB_X = 39;
+			public static final int RUN_ORB_Y = 107;
 
-			public static final int ACTIVITY_ORB_X = 64;
-			public static final int ACTIVITY_ORB_Y = 138;
+			public static final int SPEC_ORB_X = 39;
+			public static final int SPEC_ORB_Y = 141;
 
-			public static final int WORLD_MAP_X = 66;
-			public static final int WORLD_MAP_Y = 72;
+			public static final int STORE_ORB_X = 3;
+			public static final int STORE_ORB_Y = 101;
 
-			public static final int WIKI_ICON_X = 20;
-			public static final int WIKI_ICON_Y = 171;
+			public static final int ACTIVITY_ORB_X = 3;
+			public static final int ACTIVITY_ORB_Y = 136;
 
-			public static final int WIKI_VANILLA_X = 0;
-			public static final int WIKI_VANILLA_Y = 10;
+			public static final int WORLD_MAP_X = 5;
+			public static final int WORLD_MAP_Y = 70;
 
-			public static final int LOGOUT_X = 8;
-			public static final int LOGOUT_Y = 22;
+			public static final int WIKI_ICON_X = 38;
+			public static final int WIKI_ICON_Y = 178;
 
-			public static final int COMPASS_X = Original.COMPASS_X + 94;
-			public static final int COMPASS_Y = Original.COMPASS_Y + 13;
+			public static final int LOGOUT_X = 71;
+			public static final int LOGOUT_Y = 2;
 
-			//vertical offset
-			public static final int LEFT_OFFSET = 108;
-			public static final int RIGHT_OFFSET = 0;
+			public static final int COMPASS_X = Original.COMPASS_X - 14;
+			public static final int COMPASS_Y = 1;
 		}
 
 		public static final class Horizontal
 		{
+			public static final int LAYOUT_ID = 1;
+
+			public static final int MAP_CONTAINER_WIDTH = 209;
+			public static final int MAP_CONTAINER_HEIGHT = 102;
+
 			public static final int XP_DROPS_X = 179;
-			public static final int XP_DROPS_Y = 15;
+			public static final int XP_DROPS_Y = 25;
 
 			public static final int HP_ORB_X = 35;
-			public static final int HP_ORB_Y = 25;
+			public static final int HP_ORB_Y = 33;
 
 			public static final int PRAYER_ORB_X = 35;
-			public static final int PRAYER_ORB_Y = 60;
+			public static final int PRAYER_ORB_Y = 68;
 
-			public static final int RUN_ORB_X = 92;
-			public static final int RUN_ORB_Y = 25;
+			public static final int RUN_ORB_X = 93;
+			public static final int RUN_ORB_Y = 33;
 
-			public static final int SPEC_ORB_X = 92;
-			public static final int SPEC_ORB_Y = 60;
+			public static final int SPEC_ORB_X = 93;
+			public static final int SPEC_ORB_Y = 68;
 
 			public static final int STORE_ORB_X = 0;
-			public static final int STORE_ORB_Y = 25;
+			public static final int STORE_ORB_Y = 34;
 
 			public static final int ACTIVITY_ORB_X = 0;
-			public static final int ACTIVITY_ORB_Y = 60;
+			public static final int ACTIVITY_ORB_Y = 68;
 
-			public static final int WORLD_MAP_X = 31;//148
-			public static final int WORLD_MAP_Y = 6;
+			public static final int WORLD_MAP_X = 146;
+			public static final int WORLD_MAP_Y = 16;
 
-			public static final int WIKI_ICON_X = 149;
-			public static final int WIKI_ICON_Y = 71;
+			public static final int WIKI_ICON_X = 151;
+			public static final int WIKI_ICON_Y = 88;
 
-			public static final int WIKI_VANILLA_X = 0;
-			public static final int WIKI_VANILLA_Y = 10;
-
-			public static final int LOGOUT_X = 1;
+			public static final int LOGOUT_X = 182;
 			public static final int LOGOUT_Y = 1;
 
-			public static final int COMPASS_X = Original.COMPASS_X + 117;
-			public static final int COMPASS_Y = Original.COMPASS_Y + 47;
+			public static final int COMPASS_X = Original.COMPASS_X + 115;
+			public static final int COMPASS_Y = Original.COMPASS_Y + 41;
+		}
 
-			//horizontal offset
-			public static final int TOP_OFFSET = 0;
-			public static final int BOTTOM_OFFSET = 100;
+		public static final class HorizontalWide
+		{
+			public static final int LAYOUT_ID = 2;
+
+			public static final int MAP_CONTAINER_WIDTH = 228;
+			public static final int MAP_CONTAINER_HEIGHT = 79;
+
+			public static final int XP_DROPS_X = 75;
+			public static final int XP_DROPS_Y = 12;
+
+			public static final int HP_ORB_X = 0;
+			public static final int HP_ORB_Y = 45;
+
+			public static final int PRAYER_ORB_X = 57;
+			public static final int PRAYER_ORB_Y = 45;
+
+			public static final int RUN_ORB_X = 114;
+			public static final int RUN_ORB_Y = 45;
+
+			public static final int SPEC_ORB_X = 171;
+			public static final int SPEC_ORB_Y = 45;
+
+			public static final int STORE_ORB_X = 37;
+			public static final int STORE_ORB_Y = 10;
+
+			public static final int ACTIVITY_ORB_X = 0;
+			public static final int ACTIVITY_ORB_Y = 10;
+
+			public static final int WORLD_MAP_X = 167;
+			public static final int WORLD_MAP_Y = 0;
+
+			public static final int WIKI_ICON_X = 162;
+			public static final int WIKI_ICON_Y = 29;
+
+			public static final int LOGOUT_X = 200;
+			public static final int LOGOUT_Y = 2;
+
+			public static final int COMPASS_X = Original.COMPASS_X + 72;
+			public static final int COMPASS_Y = 1;
 		}
 
 		public static final class MinimapOverlay
@@ -309,27 +349,9 @@ public class CompactOrbsConstants
 			public static final int COMPASS_CONTENT = 1339;
 		}
 
-		//used when hiding the world map orb, to calc the offset so the hotkey still works
-		public static final int WORLD_MAP_CONTAINER_WIDTH = 30;
-
-		//compass menu op offset
-		public static final int COMPASS_OPTIONS_OFFSET = 2;
-
-		//offsets used to anchor the frame around the compass
-		public static final int FRAME_X_OFFSET = 2;
-		public static final int FRAME_Y_OFFSET = 12;
-
-		//offsets used to anchor the toggle button around the compass sprite
-		public static final int COMPASS_BUTTON_X_OFFSET = 31;
-		public static final int COMPASS_BUTTON_Y_OFFSET = 14;
-
-		//offsets used in horizontal layout, to position the compass button
-		public static final int COMPASS_BUTTON_HORIZONTAL_X_OFFSET = 4;
-		public static final int COMPASS_BUTTON_HORIZONTAL_Y_OFFSET = 22;
-
 		//minimap toggle button locations @ToggleLocation
 		public static final int DEFAULT_MINIMAP_BUTTON_X = 190;
-		public static final int DEFAULT_MINIMAP_BUTTON_Y = 180;
+		public static final int DEFAULT_MINIMAP_BUTTON_Y = 176;
 
 		public static final int ABOVE_XP_MINIMAP_BUTTON_X = 8;
 		public static final int ABOVE_XP_MINIMAP_BUTTON_Y = 0;
@@ -368,6 +390,10 @@ public class CompactOrbsConstants
 
 		//suffix menu color for the toggle buttons
 		public static final Color COLOR = JagexColors.MENU_TARGET;
+
+		//menu index priority
+		public static final int ABOVE_WALK_HERE = 0;
+		public static final int BELOW_WALK_HERE = 5;
 	}
 
 	public static final class Sprite
@@ -413,9 +439,16 @@ public class CompactOrbsConstants
 			public static final int WORLD_MAP = InterfaceID.Orbs.ORB_WORLDMAP;
 		}
 
+		//fixed mode widget ids
+		public static final class Fixed
+		{
+			public static final int ORBS = InterfaceID.Toplevel.MAPCONTAINER;
+		}
+
 		//classic-resizable widget ids
 		public static final class Classic
 		{
+			public static final int MAP_CONTAINER = InterfaceID.ToplevelOsrsStretch.MAP_CONTAINER;
 			public static final int ORBS = InterfaceID.ToplevelOsrsStretch.ORBS;
 			public static final int MAP_NOCLICK_0 = InterfaceID.ToplevelOsrsStretch.MAP_NOCLICK_0;
 			public static final int MAP_NOCLICK_1 = InterfaceID.ToplevelOsrsStretch.MAP_NOCLICK_1;
@@ -433,6 +466,7 @@ public class CompactOrbsConstants
 		//modern-resizable widget ids
 		public static final class Modern
 		{
+			public static final int MAP_CONTAINER = InterfaceID.ToplevelPreEoc.MAP_CONTAINER;
 			public static final int ORBS = InterfaceID.ToplevelPreEoc.ORBS;
 			public static final int MAP_NOCLICK_0 = InterfaceID.ToplevelPreEoc.MAP_NOCLICK_0;
 			public static final int MAP_NOCLICK_1 = InterfaceID.ToplevelPreEoc.MAP_NOCLICK_1;

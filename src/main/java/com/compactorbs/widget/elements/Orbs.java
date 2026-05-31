@@ -26,6 +26,7 @@
 package com.compactorbs.widget.elements;
 
 import com.compactorbs.CompactOrbsConstants.Layout.Horizontal;
+import com.compactorbs.CompactOrbsConstants.Layout.HorizontalWide;
 import com.compactorbs.CompactOrbsConstants.Layout.Original;
 import com.compactorbs.CompactOrbsConstants.Layout.Vertical;
 import com.compactorbs.CompactOrbsConstants.Script;
@@ -33,6 +34,7 @@ import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
 import com.compactorbs.CompactOrbsConstants.Widgets.Orb;
 import com.compactorbs.util.SetValue;
 import com.compactorbs.util.ValueKey;
+import static com.compactorbs.util.ValueKey.HEIGHT;
 import static com.compactorbs.util.ValueKey.X;
 import static com.compactorbs.util.ValueKey.X_POSITION_MODE;
 import static com.compactorbs.util.ValueKey.Y;
@@ -55,17 +57,14 @@ public enum Orbs implements TargetWidget
 			X, new SetValue(
 				Original.XP_DROPS_X,
 				Vertical.XP_DROPS_X,
-				Horizontal.XP_DROPS_X
+				Horizontal.XP_DROPS_X,
+				HorizontalWide.XP_DROPS_X
 			),
 			Y, new SetValue(
 				Original.XP_DROPS_Y,
 				Vertical.XP_DROPS_Y,
-				Horizontal.XP_DROPS_Y
-			),
-			X_POSITION_MODE, new SetValue(
-				WidgetPositionMode.ABSOLUTE_LEFT,
-				WidgetPositionMode.ABSOLUTE_RIGHT,
-				WidgetPositionMode.ABSOLUTE_LEFT
+				Horizontal.XP_DROPS_Y,
+				HorizontalWide.XP_DROPS_Y
 			)
 		)
 	),
@@ -75,17 +74,14 @@ public enum Orbs implements TargetWidget
 			X, new SetValue(
 				Original.HP_ORB_X,
 				Vertical.HP_ORB_X,
-				Horizontal.HP_ORB_X
+				Horizontal.HP_ORB_X,
+				HorizontalWide.HP_ORB_X
 			),
 			Y, new SetValue(
 				Original.HP_ORB_Y,
 				Vertical.HP_ORB_Y,
-				Horizontal.HP_ORB_Y
-			),
-			X_POSITION_MODE, new SetValue(
-				WidgetPositionMode.ABSOLUTE_LEFT,
-				WidgetPositionMode.ABSOLUTE_RIGHT,
-				WidgetPositionMode.ABSOLUTE_LEFT
+				Horizontal.HP_ORB_Y,
+				HorizontalWide.HP_ORB_Y
 			)
 		)
 	),
@@ -95,17 +91,14 @@ public enum Orbs implements TargetWidget
 			X, new SetValue(
 				Original.PRAYER_ORB_X,
 				Vertical.PRAYER_ORB_X,
-				Horizontal.PRAYER_ORB_X
+				Horizontal.PRAYER_ORB_X,
+				HorizontalWide.PRAYER_ORB_X
 			),
 			Y, new SetValue(
 				Original.PRAYER_ORB_Y,
 				Vertical.PRAYER_ORB_Y,
-				Horizontal.PRAYER_ORB_Y
-			),
-			X_POSITION_MODE, new SetValue(
-				WidgetPositionMode.ABSOLUTE_LEFT,
-				WidgetPositionMode.ABSOLUTE_RIGHT,
-				WidgetPositionMode.ABSOLUTE_LEFT
+				Horizontal.PRAYER_ORB_Y,
+				HorizontalWide.PRAYER_ORB_Y
 			)
 		)
 	),
@@ -115,16 +108,14 @@ public enum Orbs implements TargetWidget
 			X, new SetValue(
 				Original.RUN_ORB_X,
 				Vertical.RUN_ORB_X,
-				Horizontal.RUN_ORB_X),
+				Horizontal.RUN_ORB_X,
+				HorizontalWide.RUN_ORB_X
+			),
 			Y, new SetValue(
 				Original.RUN_ORB_Y,
 				Vertical.RUN_ORB_Y,
-				Horizontal.RUN_ORB_Y
-			),
-			X_POSITION_MODE, new SetValue(
-				WidgetPositionMode.ABSOLUTE_LEFT,
-				WidgetPositionMode.ABSOLUTE_RIGHT,
-				WidgetPositionMode.ABSOLUTE_LEFT
+				Horizontal.RUN_ORB_Y,
+				HorizontalWide.RUN_ORB_Y
 			)
 		)
 	),
@@ -134,17 +125,14 @@ public enum Orbs implements TargetWidget
 			X, new SetValue(
 				Original.SPEC_ORB_X,
 				Vertical.SPEC_ORB_X,
-				Horizontal.SPEC_ORB_X
+				Horizontal.SPEC_ORB_X,
+				HorizontalWide.SPEC_ORB_X
 			),
 			Y, new SetValue(
 				Original.SPEC_ORB_Y,
 				Vertical.SPEC_ORB_Y,
-				Horizontal.SPEC_ORB_Y
-			),
-			X_POSITION_MODE, new SetValue(
-				WidgetPositionMode.ABSOLUTE_LEFT,
-				WidgetPositionMode.ABSOLUTE_RIGHT,
-				WidgetPositionMode.ABSOLUTE_LEFT
+				Horizontal.SPEC_ORB_Y,
+				HorizontalWide.SPEC_ORB_Y
 			)
 		)
 	),
@@ -155,17 +143,14 @@ public enum Orbs implements TargetWidget
 			X, new SetValue(
 				Original.STORE_ORB_X,
 				Vertical.STORE_ORB_X,
-				Horizontal.STORE_ORB_X
+				Horizontal.STORE_ORB_X,
+				HorizontalWide.STORE_ORB_X
 			),
 			Y, new SetValue(
 				Original.STORE_ORB_Y,
 				Vertical.STORE_ORB_Y,
-				Horizontal.STORE_ORB_Y
-			),
-			X_POSITION_MODE, new SetValue(
-				WidgetPositionMode.ABSOLUTE_LEFT,
-				WidgetPositionMode.ABSOLUTE_RIGHT,
-				WidgetPositionMode.ABSOLUTE_LEFT
+				Horizontal.STORE_ORB_Y,
+				HorizontalWide.STORE_ORB_Y
 			)
 		)
 	),
@@ -176,17 +161,14 @@ public enum Orbs implements TargetWidget
 			X, new SetValue(
 				Original.ACTIVITY_ORB_X,
 				Vertical.ACTIVITY_ORB_X,
-				Horizontal.ACTIVITY_ORB_X
+				Horizontal.ACTIVITY_ORB_X,
+				HorizontalWide.ACTIVITY_ORB_X
 			),
 			Y, new SetValue(
 				Original.ACTIVITY_ORB_Y,
 				Vertical.ACTIVITY_ORB_Y,
-				Horizontal.ACTIVITY_ORB_Y
-			),
-			X_POSITION_MODE, new SetValue(
-				WidgetPositionMode.ABSOLUTE_LEFT,
-				WidgetPositionMode.ABSOLUTE_RIGHT,
-				WidgetPositionMode.ABSOLUTE_LEFT
+				Horizontal.ACTIVITY_ORB_Y,
+				HorizontalWide.ACTIVITY_ORB_Y
 			)
 		)
 	),
@@ -197,16 +179,21 @@ public enum Orbs implements TargetWidget
 			X, new SetValue(
 				Original.WORLD_MAP_X,
 				Vertical.WORLD_MAP_X,
-				Horizontal.WORLD_MAP_X
+				Horizontal.WORLD_MAP_X,
+				HorizontalWide.WORLD_MAP_X
 			),
 			Y, new SetValue(
 				Original.WORLD_MAP_Y,
 				Vertical.WORLD_MAP_Y,
-				Horizontal.WORLD_MAP_Y
+				Horizontal.WORLD_MAP_Y,
+				HorizontalWide.WORLD_MAP_Y
+			),
+			X_POSITION_MODE, new SetValue(
+				WidgetPositionMode.ABSOLUTE_RIGHT,
+				WidgetPositionMode.ABSOLUTE_LEFT
 			)
 		)
 	),
-	//wiki plugin banner is child 0, otherwise it's the main container
 	WIKI_ICON_CONTAINER(
 		Orb.WIKI_ICON,
 		Script.WIKI_ICON_UPDATE,
@@ -214,21 +201,35 @@ public enum Orbs implements TargetWidget
 			X, new SetValue(
 				Original.WIKI_ICON_X,
 				Vertical.WIKI_ICON_X,
-				Horizontal.WIKI_ICON_X
+				Horizontal.WIKI_ICON_X,
+				HorizontalWide.WIKI_ICON_X
 			),
 			Y, new SetValue(
 				Original.WIKI_ICON_Y,
 				Vertical.WIKI_ICON_Y,
-				Horizontal.WIKI_ICON_Y
+				Horizontal.WIKI_ICON_Y,
+				HorizontalWide.WIKI_ICON_Y
+			),
+			HEIGHT, new SetValue(
+				Original.WIKI_HEIGHT,
+				Original.WIKI_HEIGHT - 20
 			),
 			X_POSITION_MODE, new SetValue(
 				WidgetPositionMode.ABSOLUTE_RIGHT,
-				WidgetPositionMode.ABSOLUTE_RIGHT,
+				WidgetPositionMode.ABSOLUTE_LEFT
+			)
+		)
+	),
+	WIKI_PLUGIN_ICON(
+		Orb.WIKI_ICON, 0,
+		Script.WIKI_ICON_UPDATE,
+		Map.of(
+			X_POSITION_MODE, new SetValue(
+				WidgetPositionMode.ABSOLUTE_CENTER,
 				WidgetPositionMode.ABSOLUTE_LEFT
 			),
 			Y_POSITION_MODE, new SetValue(
-				WidgetPositionMode.ABSOLUTE_TOP,
-				WidgetPositionMode.ABSOLUTE_TOP,
+				WidgetPositionMode.ABSOLUTE_CENTER,
 				WidgetPositionMode.ABSOLUTE_TOP
 			)
 		)
@@ -237,50 +238,30 @@ public enum Orbs implements TargetWidget
 		Orb.WIKI_CONTAINER_VANILLA,
 		Script.WIKI_ICON_UPDATE,
 		Map.of(
-			X, new SetValue(
-				Original.WIKI_VANILLA_X,
-				Vertical.WIKI_VANILLA_X,
-				Horizontal.WIKI_VANILLA_X
-			),
-			Y, new SetValue(
-				Original.WIKI_VANILLA_Y,
-				Vertical.WIKI_VANILLA_Y,
-				Horizontal.WIKI_VANILLA_Y
+			HEIGHT, new SetValue(
+				Original.WIKI_HEIGHT - 10,
+				Original.WIKI_HEIGHT - 20
 			),
 			X_POSITION_MODE, new SetValue(
 				WidgetPositionMode.ABSOLUTE_CENTER,
-				WidgetPositionMode.ABSOLUTE_RIGHT,
 				WidgetPositionMode.ABSOLUTE_LEFT
 			),
 			Y_POSITION_MODE, new SetValue(
 				WidgetPositionMode.ABSOLUTE_CENTER,
-				WidgetPositionMode.ABSOLUTE_TOP,
 				WidgetPositionMode.ABSOLUTE_TOP
 			)
 		)
 	),
-	WIKI_VANILLA_GRAPHIC(
+	WIKI_VANILLA_ICON(
 		Orb.WIKI_ICON_VANILLA,
 		Script.WIKI_ICON_UPDATE,
 		Map.of(
-			X, new SetValue(
-				Original.WIKI_VANILLA_X,
-				Vertical.WIKI_VANILLA_X,
-				Horizontal.WIKI_VANILLA_X
-			),
-			Y, new SetValue(
-				Original.WIKI_VANILLA_Y,
-				Vertical.WIKI_VANILLA_Y,
-				Horizontal.WIKI_VANILLA_Y
-			),
 			X_POSITION_MODE, new SetValue(
 				WidgetPositionMode.ABSOLUTE_CENTER,
-				WidgetPositionMode.ABSOLUTE_RIGHT,
 				WidgetPositionMode.ABSOLUTE_LEFT
 			),
 			Y_POSITION_MODE, new SetValue(
 				WidgetPositionMode.ABSOLUTE_CENTER,
-				WidgetPositionMode.ABSOLUTE_TOP,
 				WidgetPositionMode.ABSOLUTE_TOP
 			)
 		)
@@ -291,12 +272,18 @@ public enum Orbs implements TargetWidget
 			X, new SetValue(
 				Original.LOGOUT_X,
 				Vertical.LOGOUT_X,
-				Horizontal.LOGOUT_X
+				Horizontal.LOGOUT_X,
+				HorizontalWide.LOGOUT_X
 			),
 			Y, new SetValue(
 				Original.LOGOUT_Y,
 				Vertical.LOGOUT_Y,
-				Horizontal.LOGOUT_Y
+				Horizontal.LOGOUT_Y,
+				HorizontalWide.LOGOUT_Y
+			),
+			X_POSITION_MODE, new SetValue(
+				WidgetPositionMode.ABSOLUTE_RIGHT,
+				WidgetPositionMode.ABSOLUTE_LEFT
 			)
 		)
 	),
@@ -306,12 +293,18 @@ public enum Orbs implements TargetWidget
 			X, new SetValue(
 				Original.LOGOUT_X,
 				Vertical.LOGOUT_X,
-				Horizontal.LOGOUT_X
+				Horizontal.LOGOUT_X,
+				HorizontalWide.LOGOUT_X
 			),
 			Y, new SetValue(
 				Original.LOGOUT_Y,
 				Vertical.LOGOUT_Y,
-				Horizontal.LOGOUT_Y
+				Horizontal.LOGOUT_Y,
+				HorizontalWide.LOGOUT_Y
+			),
+			X_POSITION_MODE, new SetValue(
+				WidgetPositionMode.ABSOLUTE_RIGHT,
+				WidgetPositionMode.ABSOLUTE_LEFT
 			)
 		)
 	),
@@ -322,17 +315,14 @@ public enum Orbs implements TargetWidget
 			X, new SetValue(
 				Original.ACTIVITY_ORB_X,
 				Vertical.ACTIVITY_ORB_X,
-				Horizontal.ACTIVITY_ORB_X
+				Horizontal.ACTIVITY_ORB_X,
+				HorizontalWide.ACTIVITY_ORB_X
 			),
 			Y, new SetValue(
 				Original.ACTIVITY_ORB_Y,
 				Vertical.ACTIVITY_ORB_Y,
-				Horizontal.ACTIVITY_ORB_Y
-			),
-			X_POSITION_MODE, new SetValue(
-				WidgetPositionMode.ABSOLUTE_LEFT,
-				WidgetPositionMode.ABSOLUTE_RIGHT,
-				WidgetPositionMode.ABSOLUTE_LEFT
+				Horizontal.ACTIVITY_ORB_Y,
+				HorizontalWide.ACTIVITY_ORB_Y
 			)
 		)
 	);

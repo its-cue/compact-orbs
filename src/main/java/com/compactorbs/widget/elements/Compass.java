@@ -25,20 +25,20 @@
 
 package com.compactorbs.widget.elements;
 
-import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsConstants.Layout.Original;
-import com.compactorbs.CompactOrbsConstants.Layout.Vertical;
-import com.compactorbs.CompactOrbsConstants.Layout.Horizontal;
 import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
 import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
 import com.compactorbs.util.SetValue;
 import com.compactorbs.util.ValueKey;
 import static com.compactorbs.util.ValueKey.X;
+import static com.compactorbs.util.ValueKey.X_POSITION_MODE;
 import static com.compactorbs.util.ValueKey.Y;
+import static com.compactorbs.util.ValueKey.Y_POSITION_MODE;
 import com.compactorbs.widget.TargetWidget;
 import java.util.Map;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import net.runelite.api.widgets.WidgetSizeMode;
 
 @Getter
 @RequiredArgsConstructor
@@ -49,13 +49,19 @@ public enum Compass implements TargetWidget
 		Map.of(
 			X, new SetValue(
 				Original.COMPASS_X,
-				Vertical.COMPASS_X,
-				Horizontal.COMPASS_X
+				0
 			),
 			Y, new SetValue(
 				Original.COMPASS_Y,
-				Vertical.COMPASS_Y,
-				Horizontal.COMPASS_Y
+				0
+			),
+			X_POSITION_MODE, new SetValue(
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.MINUS
+			),
+			Y_POSITION_MODE, new SetValue(
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.MINUS
 			)
 		)
 	),
@@ -63,14 +69,20 @@ public enum Compass implements TargetWidget
 		Classic.COMPASS_OPTIONS,
 		Map.of(
 			X, new SetValue(
-				Original.COMPASS_X - Layout.COMPASS_OPTIONS_OFFSET,
-				Vertical.COMPASS_X - Layout.COMPASS_OPTIONS_OFFSET,
-				Horizontal.COMPASS_X - Layout.COMPASS_OPTIONS_OFFSET
+				Original.COMPASS_OP_X,
+				0
 			),
 			Y, new SetValue(
-				Original.COMPASS_Y - Layout.COMPASS_OPTIONS_OFFSET,
-				Vertical.COMPASS_Y - Layout.COMPASS_OPTIONS_OFFSET,
-				Horizontal.COMPASS_Y - Layout.COMPASS_OPTIONS_OFFSET
+				Original.COMPASS_OP_Y,
+				0
+			),
+			X_POSITION_MODE, new SetValue(
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.MINUS
+			),
+			Y_POSITION_MODE, new SetValue(
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.MINUS
 			)
 		)
 	),
@@ -80,13 +92,19 @@ public enum Compass implements TargetWidget
 		Map.of(
 			X, new SetValue(
 				Original.COMPASS_X,
-				Vertical.COMPASS_X,
-				Horizontal.COMPASS_X
+				0
 			),
 			Y, new SetValue(
 				Original.COMPASS_Y,
-				Vertical.COMPASS_Y,
-				Horizontal.COMPASS_Y
+				0
+			),
+			X_POSITION_MODE, new SetValue(
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.MINUS
+			),
+			Y_POSITION_MODE, new SetValue(
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.MINUS
 			)
 		)
 	),
@@ -94,14 +112,20 @@ public enum Compass implements TargetWidget
 		Modern.COMPASS_OPTIONS,
 		Map.of(
 			X, new SetValue(
-				Original.COMPASS_X - Layout.COMPASS_OPTIONS_OFFSET,
-				Vertical.COMPASS_X - Layout.COMPASS_OPTIONS_OFFSET,
-				Horizontal.COMPASS_X - Layout.COMPASS_OPTIONS_OFFSET
+				Original.COMPASS_OP_X,
+				0
 			),
 			Y, new SetValue(
-				Original.COMPASS_Y - Layout.COMPASS_OPTIONS_OFFSET,
-				Vertical.COMPASS_Y - Layout.COMPASS_OPTIONS_OFFSET,
-				Horizontal.COMPASS_Y - Layout.COMPASS_OPTIONS_OFFSET
+				Original.COMPASS_OP_Y,
+				0
+			),
+			X_POSITION_MODE, new SetValue(
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.MINUS
+			),
+			Y_POSITION_MODE, new SetValue(
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.MINUS
 			)
 		)
 	);

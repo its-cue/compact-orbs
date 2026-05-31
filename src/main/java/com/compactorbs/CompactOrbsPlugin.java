@@ -31,10 +31,10 @@ import com.compactorbs.CompactOrbsConstants.ConfigKeys;
 import com.compactorbs.CompactOrbsConstants.Script;
 import com.compactorbs.CompactOrbsConstants.Varbit;
 import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
+import com.compactorbs.CompactOrbsConstants.Widgets.Fixed;
 import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
 import com.compactorbs.CompactOrbsConstants.Widgets.Orb;
 import com.compactorbs.widget.WidgetManager;
-import com.compactorbs.widget.elements.Compass;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.overlay.MinimapOverlay;
 import com.compactorbs.widget.slot.Slot;
@@ -44,6 +44,7 @@ import com.google.inject.Provides;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.GameState;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.VarbitChanged;
@@ -103,15 +104,14 @@ public class CompactOrbsPlugin extends Plugin
 	{
 		overlayManager.add(minimapOverlay);
 		keyManager.registerKeyListener(hotkeyListener);
-		registerOrbToggleEntries();
+		manager.registerOrbToggleEntries();
 
 		if (!manager.isLoggedIn())
 		{
 			manager.initialLoginPending = true;
 		}
 
-		manager.pendingChildrenUpdate = false;
-		slotManager.allowFixedModeUpdate = true;
+		manager.updateFixedMode = true;
 		manager.hideWorldMap = config.hideWorld();
 		manager.hideLogoutX = config.hideLogout();
 
@@ -124,6 +124,7 @@ public class CompactOrbsPlugin extends Plugin
 				manager.handleLogoutXHiddenState(false);
 
 				manager.init(Script.FORCE_UPDATE);
+				manager.setupOrbsContainer();
 				manager.configureMinimapOverlayContainer(true);
 			}
 		});
@@ -142,7 +143,7 @@ public class CompactOrbsPlugin extends Plugin
 	@Subscribe
 	public void onGameStateChanged(GameStateChanged event)
 	{
-		if (manager.isHopping())
+		if (event.getGameState() == GameState.HOPPING)
 		{
 			manager.initialLoginPending = true;
 		}
@@ -151,7 +152,6 @@ public class CompactOrbsPlugin extends Plugin
 		{
 			manager.initialLoginPending = false;
 			manager.createCustomChildren();
-			slotManager.allowFixedModeUpdate = true;
 		}
 	}
 
@@ -189,7 +189,7 @@ public class CompactOrbsPlugin extends Plugin
 			case Script.WORLD_MAP_UPDATE:
 				if (manager.hideWorldMap)
 				{
-					widgetManager.remapTarget(Orbs.WORLD_MAP_CONTAINER, config.hideMinimap() && manager.isResized());
+					widgetManager.remapTarget(Orbs.WORLD_MAP_CONTAINER, config.hideMinimap() && !manager.isFixedMode());
 					return;
 				}
 			case Script.STORE_ORB_UPDATE:
@@ -213,11 +213,12 @@ public class CompactOrbsPlugin extends Plugin
 		{
 			case Varbit.MINIMAP_TOGGLE:
 				manager.updateCustomChildren(true);
+				manager.setupMinimapContainer(!manager.isMinimapMinimized());
 				break;
 
 			case Varbit.STORE_ORB_TOGGLE:
 			case Varbit.ACTIVITY_ORB_TOGGLE:
-				if (!config.disableReordering())
+				if (manager.allowReordering())
 				{
 					widgetManager.remapTargets(manager.isCompactLayout(), Script.FORCE_UPDATE, Orbs.values());
 				}
@@ -231,6 +232,10 @@ public class CompactOrbsPlugin extends Plugin
 		int id = event.getGroupId();
 		switch (id)
 		{
+			case Fixed.ORBS >> 16:
+				manager.updateFixedMode = true;
+				break;
+
 			case Orb.UNIVERSE >> 16:
 			case Classic.ORBS >> 16:
 			case Modern.ORBS >> 16:
@@ -278,15 +283,6 @@ public class CompactOrbsPlugin extends Plugin
 		switch (key)
 		{
 			case ConfigKeys.MINIMAP:
-				if (key.equals(manager.suppressConfigChangedKey))
-				{
-					return;
-				}
-
-				//rebuild to prevent stale layout when config is set to defaults
-				clientThread.invokeLater(() -> manager.init(Script.FORCE_UPDATE));
-				break;
-
 			case ConfigKeys.COMPASS:
 			case ConfigKeys.HOTKEY_TOGGLE:
 			case ConfigKeys.HOTKEY_MINIMAP:
@@ -297,8 +293,6 @@ public class CompactOrbsPlugin extends Plugin
 				clientThread.invokeLater(manager::updateMinimapToggleButton);
 				break;
 
-			case ConfigKeys.MINIMAP_TOGGLE_BUTTON:
-			case ConfigKeys.COMPASS_TOGGLE_BUTTON:
 			case ConfigKeys.RIGHT_CLICK_TOGGLE_BUTTONS:
 				clientThread.invokeLater(() -> manager.updateCustomChildren(true));
 				break;
@@ -318,12 +312,6 @@ public class CompactOrbsPlugin extends Plugin
 				clientThread.invoke(() -> slotManager.generateSlots(true));
 				break;
 
-			case ConfigKeys.ORB_LAYOUT:
-			case ConfigKeys.HORIZONTAL:
-			case ConfigKeys.VERTICAL:
-				clientThread.invokeLater(() -> manager.init(Script.FORCE_UPDATE));
-				break;
-
 			case ConfigKeys.ENABLE_MINIMAP_OVERLAY:
 				clientThread.invokeLater(() -> manager.updateMinimapOverlayVisibility());
 				break;
@@ -340,33 +328,41 @@ public class CompactOrbsPlugin extends Plugin
 				});
 				break;
 
+			case ConfigKeys.ORB_LAYOUT:
+			case ConfigKeys.MINIMAP_TOGGLE_BUTTON:
+			case ConfigKeys.COMPASS_TOGGLE_BUTTON:
+			case ConfigKeys.HORIZONTAL_ANCHOR:
+			case ConfigKeys.VERTICAL_ANCHOR:
 			case ConfigKeys.ENABLE_VERTICAL_HEIGHT_OFFSET:
+				clientThread.invokeLater(() ->
+				{
+					manager.updateLayout();
+					manager.setupOrbsContainer();
+				});
+				break;
+
+			//orb visibility
 			default:
 				clientThread.invokeLater(() ->
 				{
-					manager.getLayoutOffsets();
-
-					if (!key.equals(ConfigKeys.ENABLE_VERTICAL_HEIGHT_OFFSET))
-					{
-						manager.updateOrbByConfig(event.getKey());
-					}
-
-					if (manager.isCompactLayout() && widgetManager.getCurrentParent() != null)
-					{
-						//update the orbs positions when hiding/showing
-						widgetManager.remapTargets(true, Script.FORCE_UPDATE, Orbs.values());
-
-						//update the compass positions - to enable repositioning based on hidden/shown orbs
-						widgetManager.remapTargets(true, Script.FORCE_UPDATE, Compass.values());
-
-						//update custom children
-						manager.updateCompassFrameChild();
-						manager.updateCompassToggleButton();
-						manager.updateMinimapToggleButton();
-					}
+					manager.updateOrbByConfig(event.getKey());
+					manager.updateLayout();
 				});
 				break;
 		}
+	}
+
+	@Override
+	public void resetConfiguration()
+	{
+		clientThread.invokeLater(() ->
+		{
+			manager.hasSeenWikiWarning = false;
+			manager.init(Script.FORCE_UPDATE);
+			manager.setupOrbsContainer();
+			//world map and wiki require revalidation because of the containers position mode change, works for now (TODO)
+			widgetManager.revalidate(Orbs.WORLD_MAP_CONTAINER, Orbs.WIKI_ICON_CONTAINER);
+		});
 	}
 
 	@Subscribe
@@ -383,29 +379,13 @@ public class CompactOrbsPlugin extends Plugin
 		clientThread.invokeLater(() -> manager.init(Script.FORCE_UPDATE));
 	}
 
-	//register all orb hiding toggles on startup
-	public void registerOrbToggleEntries()
-	{
-		manager.registerOrbToggle(ConfigKeys.HIDE_HP, config::hideHp, Orbs.HP_ORB_CONTAINER);
-		manager.registerOrbToggle(ConfigKeys.HIDE_PRAYER, config::hidePray, Orbs.PRAYER_ORB_CONTAINER);
-		manager.registerOrbToggle(ConfigKeys.HIDE_RUN, config::hideRun, Orbs.RUN_ORB_CONTAINER);
-		manager.registerOrbToggle(ConfigKeys.HIDE_SPEC, config::hideSpec, Orbs.SPEC_ORB_CONTAINER);
-		manager.registerOrbToggle(ConfigKeys.HIDE_XP, config::hideXp, Orbs.XP_DROPS_CONTAINER);
-		manager.registerOrbToggle(ConfigKeys.HIDE_ACTIVITY, config::hideActivity, Orbs.ACTIVITY_ORB_CONTAINER);
-		manager.registerOrbToggle(ConfigKeys.HIDE_STORE, config::hideStore, Orbs.STORE_ORB_CONTAINER);
-		manager.registerOrbToggle(ConfigKeys.HIDE_LOGOUT_X, config::hideLogout, Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
-		manager.registerOrbToggle(ConfigKeys.HIDE_GRID, config::hideGrid, Orbs.GRID_MASTER_ORB_CONTAINER);
-		manager.registerOrbToggle(ConfigKeys.HIDE_WORLD, config::hideWorld, Orbs.WORLD_MAP_CONTAINER);
-		manager.registerOrbToggle(ConfigKeys.HIDE_WIKI, config::hideWiki, Orbs.WIKI_VANILLA_GRAPHIC, Orbs.WIKI_VANILLA_CONTAINER, Orbs.WIKI_ICON_CONTAINER);
-	}
-
 	private final HotkeyListener hotkeyListener = new HotkeyListener(() -> config.toggleButtonHotkey())
 	{
 		@Override
 		public void hotkeyPressed()
 		{
 			//prevent hotkey in fixed mode
-			if (!manager.isResized())
+			if (manager.isFixedMode())
 			{
 				return;
 			}

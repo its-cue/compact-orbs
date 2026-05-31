@@ -35,16 +35,14 @@ import lombok.Getter;
 public class StoreOrbOffset implements OffsetTarget
 {
 	@Override
-	public int xOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	public int xOffset(int x, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		int x = value + manager.verticalOffset;
-
 		if (!compactLayout)
 		{
-			return !manager.isResized() ? 0 : value;
+			return manager.isFixedMode() ? 0 : x;
 		}
 
-		if (manager.isHorizontalLayout())
+		if (manager.getCurrentLayout().isHorizontal())
 		{
 			x = slotManager.applyHiddenXOffset(Orbs.STORE_ORB_CONTAINER, x);
 		}
@@ -52,16 +50,14 @@ public class StoreOrbOffset implements OffsetTarget
 	}
 
 	@Override
-	public int yOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	public int yOffset(int y, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		int y = value + manager.horizontalOffset;
-
 		if (!compactLayout)
 		{
-			return !manager.isResized() ? 83 : value;
+			return manager.isFixedMode() ? 83 : y;
 		}
 
-		if (manager.isVerticalLayout())
+		if (manager.getCurrentLayout().isVertical())
 		{
 			y = slotManager.applyHiddenYOffset(Orbs.STORE_ORB_CONTAINER, y);
 		}

@@ -40,24 +40,34 @@ import net.runelite.client.config.Keybind;
 @ConfigGroup(GROUP_NAME)
 public interface CompactOrbsConfig extends Config
 {
-	@Getter
-	@RequiredArgsConstructor
-	enum OrbLayout
+	enum VerticalAnchor
 	{
-		VERTICAL(0),
-		HORIZONTAL(1);
+		LEFT, RIGHT;
 
-		private final int index;
+		public boolean isLeft()
+		{
+			return this == LEFT;
+		}
+
+		public boolean isRight()
+		{
+			return this == RIGHT;
+		}
 	}
 
-	enum VerticalPosition
+	enum HorizontalAnchor
 	{
-		LEFT, RIGHT
-	}
+		TOP, BOTTOM;
 
-	enum HorizontalPosition
-	{
-		TOP, BOTTOM
+		public boolean isTop()
+		{
+			return this == TOP;
+		}
+
+		public boolean isBottom()
+		{
+			return this == BOTTOM;
+		}
 	}
 
 	//limit which slots can be swapped
@@ -178,40 +188,42 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.ORB_LAYOUT,
 		name = "Layout",
-		description = "Switch between a compact vertical or horizontal layout",
+		description = "Choose a compact layout <br>"
+			+ " -Vertical: default layout, data orbs stacked vertically <br>"
+			+ " -Horizontal: data orbs in a 2x2 grid, with remaining orbs & compass trailing <br>"
+			+ " -Horizontal (Wide): data orbs lined up in 1 row, with remaining orbs & compass above <br>",
 		section = compact,
 		position = 5
 	)
-	default OrbLayout layout()
+	default CompactOrbsLayout layout()
 	{
-		return OrbLayout.VERTICAL;
+		return CompactOrbsLayout.VERTICAL;
 	}
 
 	@ConfigItem(
-		keyName = ConfigKeys.HORIZONTAL,
-		name = "Horizontal direction",
-		description = "Shift orbs from top-down, or bottom-up <br>"
-			+ "Also dictates layouts position in the minimap container",
+		keyName = ConfigKeys.HORIZONTAL_ANCHOR,
+		name = "Horizontal anchor",
+		description = "Snap/shift orbs to the top or bottom of the minimap container <br>"
+			+ "with reordering enabled, orbs will shift towards the snap direction",
 		section = compact,
 		position = 6
 	)
-	default HorizontalPosition horizontalPosition()
+	default HorizontalAnchor horizontalAnchor()
 	{
-		return HorizontalPosition.BOTTOM;
+		return HorizontalAnchor.BOTTOM;
 	}
 
-	//change to account for alignment, not position
 	@ConfigItem(
-		keyName = ConfigKeys.VERTICAL,
-		name = "Vertical direction",
-		description = "Shift orbs from left, or right <br>"
-			+ "Also dictates layouts position in the minimap container",
+		keyName = ConfigKeys.VERTICAL_ANCHOR,
+		name = "Vertical anchor",
+		description = "Snap orbs to the left or right of the minimap container <br>"
+			+ "with reordering enabled, orbs will shift towards the snap direction",
 		section = compact,
 		position = 7
 	)
-	default VerticalPosition verticalPosition()
+	default VerticalAnchor verticalAnchor()
 	{
-		return VerticalPosition.RIGHT;
+		return VerticalAnchor.RIGHT;
 	}
 
 	@ConfigItem(

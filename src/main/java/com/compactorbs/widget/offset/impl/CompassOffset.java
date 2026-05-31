@@ -25,8 +25,11 @@
 
 package com.compactorbs.widget.offset.impl;
 
+import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsManager;
+import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.offset.OffsetTarget;
+import com.compactorbs.widget.slot.Slot;
 import com.compactorbs.widget.slot.SlotManager;
 import lombok.Getter;
 
@@ -34,28 +37,49 @@ import lombok.Getter;
 public class CompassOffset implements OffsetTarget
 {
 	private int offsetX;
-
 	private int offsetY;
 
 	@Override
-	public int xOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	public int xOffset(int x, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		int x = value - manager.verticalOffset;
-
 		if (!compactLayout)
 		{
-			return value;
+			return x;
 		}
 
-		if (manager.isHorizontalLayout()
+		if (manager.isVerticalRight())
+		{
+			x += manager.getCurrentLayout().getRightOffset();
+		}
+
+		if (manager.getCurrentLayout().isVertical())
+		{
+			if (manager.allowReordering()
+				&& (manager.isClassicResizable() || manager.hideLogoutX)
+				&& manager.getCurrentLayout().isLastVisible(
+				Slot.WIKI_SLOT, slotManager.getHiddenCountAbove(Orbs.WIKI_ICON_CONTAINER)))
+			{
+				x += 18;
+			}
+		}
+
+		if (manager.getCurrentLayout().isHorizontal()
 			&& manager.isVerticalLeft())
 		{
-			int hiddenWidth = slotManager.getHorizontalHiddenWidth();
-			x -= hiddenWidth;
+			x -= slotManager.getHiddenSize();
+		}
 
-			if (hiddenWidth >= 148) //sum of hidden width, in horizontal mode
+		if (manager.getCurrentLayout().isHorizontalWide()
+			&& manager.isVerticalRight())
+		{
+			if (manager.hideWorldMap && manager.isWikiHidden() && manager.allowReordering())
 			{
-				x += 2; //small offset to avoid full left cut-off
+				x += 41;
+
+				if ((manager.hideLogoutX || manager.isClassicResizable()) && manager.hideMinimapToggle())
+				{
+					x += Layout.TOGGLE_BUTTON_SIZE;
+				}
 			}
 		}
 
@@ -64,21 +88,32 @@ public class CompassOffset implements OffsetTarget
 	}
 
 	@Override
-	public int yOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	public int yOffset(int y, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		int y = value + manager.horizontalOffset;
-
 		if (!compactLayout)
 		{
-			return value;
+			return y;
 		}
 
-		if (manager.isVerticalLayout()
+		if (manager.isHorizontalBottom())
+		{
+			y += manager.getCurrentLayout().getBottomOffset();
+		}
+
+		if (manager.getCurrentLayout().isVertical()
 			&& manager.isHorizontalBottom())
 		{
-			int hiddenHeight = slotManager.getVerticalHiddenHeight();
-			y += hiddenHeight;
-
+			if ((manager.isClassicResizable() || manager.hideLogoutX)
+				&& manager.allowReordering()
+				&& manager.getCurrentLayout().isLastVisible(
+				Slot.WIKI_SLOT, slotManager.getHiddenCountAbove(Orbs.WIKI_ICON_CONTAINER)))
+			{
+				y = Layout.Vertical.MAP_CONTAINER_HEIGHT - Layout.COMPASS_FRAME_SIZE - 17;
+			}
+			else
+			{
+				y += slotManager.getHiddenSize();
+			}
 		}
 
 		offsetY = y;

@@ -27,6 +27,7 @@ package com.compactorbs.widget.slot;
 
 import com.compactorbs.CompactOrbsConfig;
 import com.compactorbs.CompactOrbsConstants;
+import com.compactorbs.CompactOrbsLayout;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.TargetWidget;
 import com.compactorbs.widget.WidgetManager;
@@ -62,16 +63,13 @@ public class SlotManager
 		VANILLA
 	}
 
-	//if previousId is -1, additional check to apply an update if in fixed mode atleast once
-	public boolean allowFixedModeUpdate;
-
 	//map of slots and their target widget per layout mode
 	private final EnumMap<SlotLayoutMode, EnumMap<Slot, TargetWidget>> slotLayoutMap = new EnumMap<>(SlotLayoutMode.class);
 
 	public void initSlots()
 	{
 		validateSlotConfig();
-		generateSlots(manager.enableOrbSwapping());
+		generateSlots(config.enableOrbSwapping());
 	}
 
 	public void reset()
@@ -106,7 +104,7 @@ public class SlotManager
 		}
 
 		swapSlots(layout, slot, desired, current);
-		remapTargetsForUpdate(manager.enableOrbSwapping());
+		remapTargetsForUpdate(config.enableOrbSwapping());
 	}
 
 	//place the incoming orb at current slot, move outgoing orb to source slot
@@ -130,7 +128,7 @@ public class SlotManager
 		if (updateVisual)
 		{
 			widgetManager.remapTargets(
-				manager.isMinimapHidden() && manager.isResized(),
+				manager.isMinimapHidden() && !manager.isFixedMode(),
 				CompactOrbsConstants.Script.FORCE_UPDATE,
 				//swappable orbs
 				Orbs.HP_ORB_CONTAINER, Orbs.PRAYER_ORB_CONTAINER, Orbs.RUN_ORB_CONTAINER, Orbs.SPEC_ORB_CONTAINER,
@@ -180,24 +178,32 @@ public class SlotManager
 			return 0;
 		}
 
-		List<Slot> columnOrRow = (manager.isHorizontalLayout()
-			? Slot.getRowSlots(targetSlot)
-			: Slot.getColumnSlots(targetSlot));
+		List<Slot> group = manager.getCurrentLayout().getGroup(targetSlot);
 
-		int targetIndex = columnOrRow.indexOf(targetSlot);
+		int targetIndex = group.indexOf(targetSlot);
 		if (targetIndex < 0)
 		{
 			return 0;
 		}
 
 		return isBelow
-			? hiddenBelowOffset(columnOrRow, targetIndex, count)
-			: hiddenAboveOffset(columnOrRow, targetIndex, count);
+			? hiddenBelowOffset(group, targetIndex, count)
+			: hiddenAboveOffset(group, targetIndex, count);
 	}
 
 	private int hiddenAboveOffset(List<Slot> columnOrRow, int targetIndex, boolean count)
 	{
 		int total = 0;
+
+		if (manager.applyVerticalHeightOffset() && manager.getCurrentLayout().isVertical())
+		{
+			total = 20;
+
+			if (config.hideCompassToggle())
+			{
+				total = 35;
+			}
+		}
 
 		for (int index = 0; index < targetIndex; index++)
 		{
@@ -247,34 +253,20 @@ public class SlotManager
 			return 0;
 		}
 
-		return manager.isHorizontalLayout()
-			? widget.getOriginalWidth()
-			: widget.getOriginalHeight();
+		return manager.getCurrentLayout().getSlotDimension(widget);
 	}
 
-	public int getVerticalHiddenHeight()
+	public int getHiddenSize()
 	{
-		if (manager.leaveEmptySpace() || manager.preventReordering())
+		if (config.leaveEmptySpace() || config.disableReordering())
 		{
 			return 0;
 		}
 
+		CompactOrbsLayout layout = manager.getCurrentLayout();
 		return Math.min(
-			sumHiddenSize(Slot.VERTICAL_LEFT_COLUMN),
-			sumHiddenSize(Slot.VERTICAL_RIGHT_COLUMN)
-		);
-	}
-
-	public int getHorizontalHiddenWidth()
-	{
-		if (manager.leaveEmptySpace() || manager.preventReordering())
-		{
-			return 0;
-		}
-
-		return Math.min(
-			sumHiddenSize(Slot.HORIZONTAL_TOP_ROW),
-			sumHiddenSize(Slot.HORIZONTAL_BOTTOM_ROW)
+			sumHiddenSize(layout.getA()),
+			sumHiddenSize(layout.getB())
 		);
 	}
 
@@ -324,7 +316,7 @@ public class SlotManager
 
 	public int applyHiddenYOffset(TargetWidget target, int y)
 	{
-		if (!manager.preventReordering())
+		if (manager.allowReordering())
 		{
 			if (manager.isHorizontalTop())
 			{
@@ -341,7 +333,7 @@ public class SlotManager
 
 	public int applyHiddenXOffset(TargetWidget target, int x)
 	{
-		if (!manager.preventReordering())
+		if (manager.allowReordering())
 		{
 			if (manager.isVerticalLeft())
 			{
@@ -366,7 +358,7 @@ public class SlotManager
 		if (target == Orbs.ACTIVITY_ORB_CONTAINER && manager.isActivityOrbDisabled())
 		{
 			//don't count as hidden unless the config to hide is enabled (requested)
-			if (config.hideActivity() && !config.disableReordering())
+			if (config.hideActivity() && manager.allowReordering())
 			{
 				return true;
 			}
@@ -374,7 +366,7 @@ public class SlotManager
 
 		if (target == Orbs.STORE_ORB_CONTAINER && manager.isStoreOrbDisabled())
 		{
-			if (config.hideStore() && !config.disableReordering())
+			if (config.hideStore() && manager.allowReordering())
 			{
 				return true;
 			}
@@ -406,7 +398,7 @@ public class SlotManager
 	private TargetWidget getOrbBySlot(Slot slot, SlotLayoutMode layout)
 	{
 		TargetWidget target = slot.getOriginal();
-		if (target instanceof Orbs && manager.enableOrbSwapping())
+		if (target instanceof Orbs && config.enableOrbSwapping())
 		{
 			TargetWidget configured = slot.getOrbByConfig(config, layout);
 			if (configured != null)

@@ -36,48 +36,39 @@ import lombok.Getter;
 public class WikiContainerOffset implements OffsetTarget
 {
 	@Override
-	public int xOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	public int xOffset(int x, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		int x = value + manager.verticalOffset;
-
 		if (!compactLayout)
 		{
-			return !manager.isResized() ? 8 : value;
+			return manager.isFixedMode() ? 8 : x;
 		}
 
-		if (manager.isHorizontalLayout()
+		if (manager.getCurrentLayout().isHorizontal()
 			&& manager.isVerticalLeft())
 		{
-			int hiddenWidth = slotManager.getHorizontalHiddenWidth();
-			x -= hiddenWidth;
+			x -= slotManager.getHiddenSize();
 		}
 
 		return x;
 	}
 
 	@Override
-	public int yOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	public int yOffset(int y, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		int y = value + manager.horizontalOffset;
-
 		if (!compactLayout)
 		{
-			return !manager.isResized() ? 135 : value;
+			return manager.isFixedMode() ? 135 : y;
 		}
 
-		if (manager.isVerticalLayout())
+		if (manager.getCurrentLayout().isVertical())
 		{
 			y = slotManager.applyHiddenYOffset(Orbs.WIKI_ICON_CONTAINER, y);
 
-			if (manager.isHorizontalTop())
+			if (manager.isHorizontalTop()
+				&& manager.allowReordering()
+				&& manager.getCurrentLayout().isLastVisible(Slot.WIKI_SLOT, slotManager.getHiddenCountAbove(Orbs.WIKI_ICON_CONTAINER)))
 			{
-				//apply an offset when the amount hidden, leaves wiki slot as the last
-				//0-HP, 1-Pray, 2-Run, 3-Spec, 4-Wiki
-				if (slotManager.getHiddenCountAbove(Orbs.WIKI_ICON_CONTAINER) == Slot.VERTICAL_RIGHT_COLUMN.indexOf(Slot.WIKI_SLOT)
-					&& !manager.preventReordering())
-				{
-					y += 10;
-				}
+				y += 3;
 			}
 		}
 

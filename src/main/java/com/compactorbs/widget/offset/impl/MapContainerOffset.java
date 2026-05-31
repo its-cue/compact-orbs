@@ -31,37 +31,53 @@ import com.compactorbs.widget.slot.SlotManager;
 import lombok.Getter;
 
 @Getter
-public class WikiVanillaOffset implements OffsetTarget
+public class MapContainerOffset implements OffsetTarget
 {
 	@Override
-	public int xOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	public int widthOffset(int w, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		int x = 0;
-
-		if (!compactLayout)
+		if (!compact)
 		{
-			return value;
+			return w;
 		}
 
-		//graphic icon should be at the top of the container, x0
-		//to help prevent overlapping menu options with other elements
-		//during compact layouts
-		return x;
+		if (manager.isVerticalRight())
+		{
+			w += manager.getCurrentLayout().getRightOffset();
+		}
+
+		if ((manager.getCurrentLayout().isHorizontal())
+			&& manager.isVerticalLeft())
+		{
+			w -= slotManager.getHiddenSize();
+		}
+
+		return w;
 	}
 
 	@Override
-	public int yOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	public int heightOffset(int h, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		int y = 0;
-
-		if (!compactLayout)
+		if (!compact)
 		{
-			return value;
+			return h;
 		}
 
-		//graphic icon should be at the top of the container, y0
-		//to help prevent overlapping menu options with other elements
-		//during compact layouts
-		return y;
+		if (manager.isHorizontalBottom())
+		{
+			h += manager.getCurrentLayout().getBottomOffset();
+		}
+
+		if (manager.getCurrentLayout().isVertical())
+		{
+			if (manager.isHorizontalTop())
+			{
+				h -= slotManager.getHiddenSize();
+			}
+		}
+
+		return h;
 	}
 }
+
+

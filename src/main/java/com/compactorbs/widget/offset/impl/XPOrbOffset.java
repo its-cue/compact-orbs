@@ -25,6 +25,7 @@
 
 package com.compactorbs.widget.offset.impl;
 
+import com.compactorbs.CompactOrbsConstants;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.offset.OffsetTarget;
@@ -35,26 +36,60 @@ import lombok.Getter;
 public class XPOrbOffset implements OffsetTarget
 {
 	@Override
-	public int xOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	public int xOffset(int x, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		int x = value + manager.verticalOffset;
-
 		if (!compactLayout)
 		{
-			return value;
+			return x;
 		}
 
-		if (manager.isHorizontalLayout())
+		if (manager.getCurrentLayout().isHorizontal())
 		{
 			if (manager.isVerticalLeft())
 			{
-				int hiddenWidth = slotManager.getHorizontalHiddenWidth();
-				x -= hiddenWidth;
+				x -= slotManager.getHiddenSize();
 			}
 
-			if (manager.hideWorldMap)
+			if (manager.allowReordering())
 			{
-				x -= 31;
+				if (manager.hideWorldMap)
+				{
+					x -= 31;
+
+					if (manager.isCompassHidden())
+					{
+						x += 10;
+					}
+				}
+				else
+				{
+					if (manager.isCompassHidden())
+					{
+						x -= 26;
+					}
+				}
+			}
+		}
+
+		if (manager.getCurrentLayout().isHorizontalWide())
+		{
+			if (manager.isVerticalRight() && manager.allowReordering())
+			{
+				if (manager.hideWorldMap)
+				{
+					x += 94;
+				}
+				else
+				{
+					if (manager.isClassicResizable() || manager.hideLogoutX)
+					{
+						x += 125;
+					}
+					else if (manager.isCompassHidden())
+					{
+						x += 63;
+					}
+				}
 			}
 		}
 
@@ -62,25 +97,43 @@ public class XPOrbOffset implements OffsetTarget
 	}
 
 	@Override
-	public int yOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	public int yOffset(int y, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		int y = value + manager.horizontalOffset;
-
 		if (!compactLayout)
 		{
-			return value;
+			return y;
 		}
 
-		if (manager.isVerticalLayout())
+		if (manager.getCurrentLayout().isVertical())
 		{
 			y = slotManager.applyHiddenYOffset(Orbs.XP_DROPS_CONTAINER, y);
 		}
 
-		if (manager.isHorizontalLayout())
+		if (manager.getCurrentLayout().isHorizontal())
 		{
-			if (manager.hideWorldMap)
+			//adjust xp orb y to where the world map was
+			if (manager.allowReordering())
 			{
-				y -= 6;
+				if (manager.hideWorldMap)
+				{
+					y -= 6;
+
+					if (manager.isCompassHidden())
+					{
+						y += 38;
+					}
+				}
+			}
+		}
+
+		if (manager.getCurrentLayout().isHorizontalWide())
+		{
+			if (manager.isVerticalRight() && manager.allowReordering())
+			{
+				if (manager.isCompassHidden() || manager.isClassicResizable() || manager.hideWorldMap || manager.hideLogoutX)
+				{
+					y -= CompactOrbsConstants.Layout.TOGGLE_BUTTON_SIZE - 5;
+				}
 			}
 		}
 

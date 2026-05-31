@@ -40,7 +40,33 @@ public interface OffsetTarget
 		return 0;
 	}
 
-	int xOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager);
+	default int getOffsetWidth()
+	{
+		return 0;
+	}
 
-	int yOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager);
+	default int getOffsetHeight()
+	{
+		return 0;
+	}
+
+	default int xOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	{
+		return value;
+	}
+
+	default int yOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	{
+		return value;
+	}
+
+	default int widthOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	{
+		return value;
+	}
+
+	default int heightOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	{
+		return value;
+	}
 }

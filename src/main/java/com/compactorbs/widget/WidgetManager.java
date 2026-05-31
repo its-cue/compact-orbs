@@ -25,6 +25,7 @@
 
 package com.compactorbs.widget;
 
+import com.compactorbs.CompactOrbsConfig;
 import com.compactorbs.CompactOrbsConstants;
 import com.compactorbs.CompactOrbsConstants.Script;
 import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
@@ -36,6 +37,7 @@ import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.offset.OffsetManager;
 import com.compactorbs.widget.slot.Slot;
 import com.compactorbs.widget.slot.SlotManager;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
@@ -54,12 +56,13 @@ public class WidgetManager
 	private Client client;
 
 	@Inject
+	private CompactOrbsConfig config;
+
+	@Inject
 	private CompactOrbsManager manager;
 
 	@Inject
 	private SlotManager slotManager;
-
-	private boolean targetRemapped = false;
 
 	//update multiple widgets that match the script id (FORCE_UPDATE bypasses the check)
 	public void remapTargets(boolean compactLayout, int scriptId, TargetWidget... widgets)
@@ -87,8 +90,6 @@ public class WidgetManager
 			return;
 		}
 
-		targetRemapped = false;
-
 		//ignore the widget inspector (shares same container/index as grid master)
 		if (target == Orbs.GRID_MASTER_ORB_CONTAINER &&
 			widget.getSpriteId() == CompactOrbsConstants.Sprite.WIDGET_INSPECTOR)
@@ -96,16 +97,19 @@ public class WidgetManager
 			return;
 		}
 
-		getTarget(target).getValueMap().forEach((key, value) ->
-			setValue(widget, key, value, compactLayout)
-		);
+		boolean remapped = false;
 
-		if (!manager.isResized())
+		for (Map.Entry<ValueKey, SetValue> entry : getTarget(target).getValueMap().entrySet())
+		{
+			remapped |= setValue(widget, entry.getKey(), entry.getValue(), compactLayout);
+		}
+
+		if (manager.isFixedMode())
 		{
 			applyFixedModeValues(widget, target);
 		}
 
-		if (targetRemapped)
+		if (remapped)
 		{
 			widget.revalidate();
 		}
@@ -125,7 +129,7 @@ public class WidgetManager
 	//returns which orb the target should reference
 	public TargetWidget getSlotTarget(TargetWidget target)
 	{
-		if (!Orbs.SWAPPABLE_ORBS.contains((Orbs) target) || !manager.enableOrbSwapping())
+		if (!Orbs.SWAPPABLE_ORBS.contains((Orbs) target) || !config.enableOrbSwapping())
 		{
 			return target;
 		}
@@ -140,57 +144,43 @@ public class WidgetManager
 	}
 
 	//sets the widgets X/Y or position mode as necessary
-	private void setValue(Widget widget, ValueKey key, SetValue value, boolean compactLayout)
+	private boolean setValue(Widget w, ValueKey key, SetValue value, boolean compactLayout)
 	{
-		if (value == null)
-		{
-			return;
-		}
-
-		int v = value.get(manager.getLayout(), compactLayout);
+		int v = value.get(manager.getCurrentLayout(), compactLayout);
+		int offset = OffsetManager.getTargetOffset(w, key, v, compactLayout, manager, slotManager);
 
 		switch (key)
 		{
 			case X:
-				updateValue(widget::getOriginalX, widget::setOriginalX,
-					OffsetManager.getTargetOffset(widget, key, v, compactLayout, manager, slotManager));
-				break;
+				return updateValue(w::getOriginalX, w::setOriginalX, offset);
 			case Y:
-				updateValue(widget::getOriginalY, widget::setOriginalY,
-					OffsetManager.getTargetOffset(widget, key, v, compactLayout, manager, slotManager));
-				break;
+				return updateValue(w::getOriginalY, w::setOriginalY, offset);
 			case WIDTH:
-				updateValue(widget::getOriginalWidth, widget::setOriginalWidth, v);
-				break;
+				return updateValue(w::getOriginalWidth, w::setOriginalWidth, offset);
 			case HEIGHT:
-				updateValue(widget::getOriginalHeight, widget::setOriginalHeight, v);
-				break;
+				return updateValue(w::getOriginalHeight, w::setOriginalHeight, offset);
 			case X_POSITION_MODE:
-				updateValue(widget::getXPositionMode, widget::setXPositionMode, v);
-				break;
+				return updateValue(w::getXPositionMode, w::setXPositionMode, v);
 			case Y_POSITION_MODE:
-				updateValue(widget::getYPositionMode, widget::setYPositionMode, v);
-				break;
+				return updateValue(w::getYPositionMode, w::setYPositionMode, v);
 			case WIDTH_MODE:
-				updateValue(widget::getWidthMode, widget::setWidthMode, v);
-				break;
+				return updateValue(w::getWidthMode, w::setWidthMode, v);
 			case HEIGHT_MODE:
-				updateValue(widget::getHeightMode, widget::setHeightMode, v);
-				break;
-
-			default:
-				throw new IllegalStateException("Unhandled ValueKey: " + key);
+				return updateValue(w::getHeightMode, w::setHeightMode, v);
 		}
+		throw new IllegalStateException("Unhandled ValueKey (" + key + ") for widget: " + w.getId());
 	}
 
 	//sets a value only if it has changed
-	public void updateValue(IntSupplier getter, IntConsumer setter, int value)
+	public boolean updateValue(IntSupplier getter, IntConsumer setter, int value)
 	{
 		if (getter.getAsInt() != value)
 		{
 			setter.accept(value);
-			targetRemapped = true;
+			return true;
 		}
+
+		return false;
 	}
 
 	private void applyFixedModeValues(Widget widget, TargetWidget target)
@@ -276,6 +266,19 @@ public class WidgetManager
 		if (widget.getNoClickThrough() != noClickThrough)
 		{
 			widget.setNoClickThrough(noClickThrough);
+		}
+	}
+
+	public void revalidate(TargetWidget... widgets)
+	{
+		for (TargetWidget target : widgets)
+		{
+			Widget widget = client.getWidget(target.getComponentId());
+			if (widget == null)
+			{
+				continue;
+			}
+			widget.revalidate();
 		}
 	}
 
@@ -415,9 +418,8 @@ public class WidgetManager
 		return (scriptId == Script.FORCE_UPDATE) || target.getScriptId() == scriptId;
 	}
 
-	//check if the child is missing, or not a child of the given parent widget
-	public boolean isMissing(Widget child, Widget parent)
+	public boolean exists(Widget child, Widget parent)
 	{
-		return child == null || child.getParentId() != parent.getId();
+		return child != null && child.getParentId() == parent.getId();
 	}
 }

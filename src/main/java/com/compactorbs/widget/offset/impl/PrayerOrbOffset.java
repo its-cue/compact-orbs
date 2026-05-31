@@ -35,16 +35,14 @@ import lombok.Getter;
 public class PrayerOrbOffset implements OffsetTarget
 {
 	@Override
-	public int xOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	public int xOffset(int x, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		int x = value + manager.verticalOffset;
-
 		if (!compactLayout)
 		{
-			return value;
+			return x;
 		}
 
-		if (manager.isHorizontalLayout())
+		if (manager.getCurrentLayout().isHorizontal() || manager.getCurrentLayout().isHorizontalWide())
 		{
 			x = slotManager.applyHiddenXOffset(Orbs.PRAYER_ORB_CONTAINER, x);
 		}
@@ -53,16 +51,14 @@ public class PrayerOrbOffset implements OffsetTarget
 	}
 
 	@Override
-	public int yOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	public int yOffset(int y, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		int y = value + manager.horizontalOffset;
-
 		if (!compactLayout)
 		{
-			return value;
+			return y;
 		}
 
-		if (manager.isVerticalLayout())
+		if (manager.getCurrentLayout().isVertical())
 		{
 			y = slotManager.applyHiddenYOffset(Orbs.PRAYER_ORB_CONTAINER, y);
 		}

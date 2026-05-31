@@ -25,6 +25,7 @@
 
 package com.compactorbs.util;
 
+import com.compactorbs.CompactOrbsLayout;
 import lombok.Getter;
 
 @Getter
@@ -39,19 +40,24 @@ public class SetValue
 		this.modified = modified;
 	}
 
-	public int get(int index, boolean compactLayout)
+	public SetValue(int original, int modified)
 	{
-		if (!compactLayout)
+		this.original = original;
+		this.modified = new int[]{modified};
+	}
+
+	public int get(CompactOrbsLayout layout, boolean compactLayout)
+	{
+		if (!compactLayout || modified.length == 0)
 		{
 			return original;
 		}
 
-		if (index >= 0 && index < modified.length)
-		{
-			return modified[index];
-		}
+		int index = layout.getIndex();
 
-		throw new IllegalArgumentException("Layout index out of bounds: " + index);
+		return index < modified.length
+			? modified[index]
+			: modified[0];
 	}
 
 }

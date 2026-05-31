@@ -34,51 +34,68 @@ import lombok.Getter;
 @Getter
 public class WorldMapOffset implements OffsetTarget
 {
-	@Override
-	public int xOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	private int getHiddenOffset()
 	{
-		int x = value + manager.verticalOffset;
-
-		if (manager.hideWorldMap)
-		{
-			return manager.getWorldMapOffset();
-		}
-
-		if (!compactLayout)
-		{
-			return !manager.isResized() ? 10 : value;
-		}
-
-		if (manager.isHorizontalLayout()
-			&& manager.isVerticalLeft())
-		{
-			int hiddenWidth = slotManager.getHorizontalHiddenWidth();
-			x += hiddenWidth;
-		}
-
-		return x + manager.getWorldMapOffset();
+		//this will keep 1 pixel inside the container -
+		//enough to keep valid for hotkey use
+		return -29;
 	}
 
 	@Override
-	public int yOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	public int xOffset(int x, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		int y = value + manager.horizontalOffset;
-
 		if (manager.hideWorldMap)
 		{
-			return manager.getWorldMapOffset();
+			return getHiddenOffset();
 		}
 
 		if (!compactLayout)
 		{
-			return !manager.isResized() ? y : value;
+			return manager.isFixedMode() ? 10 : x;
 		}
 
-		if (manager.isVerticalLayout())
+		if (manager.getCurrentLayout().isHorizontal())
+		{
+			if (manager.isCompassHidden() && manager.allowReordering())
+			{
+				x += 10;
+			}
+
+			if (manager.isVerticalLeft())
+			{
+				x -= slotManager.getHiddenSize();
+			}
+		}
+
+		return x;
+	}
+
+	@Override
+	public int yOffset(int y, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	{
+		if (manager.hideWorldMap)
+		{
+			return getHiddenOffset();
+		}
+
+		if (!compactLayout)
+		{
+			return y;
+		}
+
+		if (manager.getCurrentLayout().isVertical())
 		{
 			y = slotManager.applyHiddenYOffset(Orbs.WORLD_MAP_CONTAINER, y);
 		}
 
-		return y + manager.getWorldMapOffset();
+		if (manager.getCurrentLayout().isHorizontal())
+		{
+			if (manager.isCompassHidden() && manager.allowReordering())
+			{
+				y += 41;
+			}
+		}
+
+		return y;
 	}
 }

@@ -31,17 +31,37 @@ import com.compactorbs.widget.slot.SlotManager;
 import lombok.Getter;
 
 @Getter
-public class WikiOffset implements OffsetTarget
+public class OrbContainerOffset implements OffsetTarget
 {
 	@Override
-	public int xOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	public int xOffset(int x, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		return value;
+		if (!compact)
+		{
+			return x;
+		}
+
+		if (manager.isVerticalRight())
+		{
+			x += manager.getCurrentLayout().getRightOffset();
+		}
+
+		return x;
 	}
 
 	@Override
-	public int yOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	public int yOffset(int y, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		return value;
+		if (!compact)
+		{
+			return y;
+		}
+
+		if (manager.isHorizontalBottom())
+		{
+			y += manager.getCurrentLayout().getBottomOffset();
+		}
+
+		return y;
 	}
 }

@@ -25,20 +25,19 @@
 
 package com.compactorbs.widget.offset;
 
-import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
-import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
+import com.compactorbs.widget.elements.Minimap;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.offset.impl.ActivityOrbOffset;
-import com.compactorbs.widget.offset.impl.CompassOffset;
 import com.compactorbs.widget.offset.impl.HPOrbOffset;
 import com.compactorbs.widget.offset.impl.LogoutXOffset;
+import com.compactorbs.widget.offset.impl.MapContainerOffset;
+import com.compactorbs.widget.offset.impl.CompassOffset;
+import com.compactorbs.widget.offset.impl.OrbContainerOffset;
 import com.compactorbs.widget.offset.impl.PrayerOrbOffset;
 import com.compactorbs.widget.offset.impl.RunOrbOffset;
 import com.compactorbs.widget.offset.impl.SpecOrbOffset;
 import com.compactorbs.widget.offset.impl.StoreOrbOffset;
 import com.compactorbs.widget.offset.impl.WikiContainerOffset;
-import com.compactorbs.widget.offset.impl.WikiOffset;
-import com.compactorbs.widget.offset.impl.WikiVanillaOffset;
 import com.compactorbs.widget.offset.impl.WorldMapOffset;
 import com.compactorbs.widget.offset.impl.XPOrbOffset;
 import java.util.HashMap;
@@ -49,15 +48,6 @@ import net.runelite.api.widgets.Widget;
 @Getter
 public enum Offsets
 {
-	COMPASS(new CompassOffset(),
-		new int[]{Modern.COMPASS_PARENT, Classic.COMPASS_PARENT}
-	),
-	WIKI(new WikiOffset(),
-		new int[]{Orbs.WIKI_ICON_CONTAINER.getComponentId()}
-	),
-	WIKI_VANILLA(new WikiVanillaOffset(),
-		new int[]{Orbs.WIKI_VANILLA_CONTAINER.getComponentId()}
-	),
 	WIKI_CONTAINER(new WikiContainerOffset(),
 		Orbs.WIKI_ICON_CONTAINER.getComponentId()
 	),
@@ -88,40 +78,39 @@ public enum Offsets
 	),
 	WORLD_MAP(new WorldMapOffset(),
 		Orbs.WORLD_MAP_CONTAINER.getComponentId()
+	),
+	//top level container
+	MAP_CONTAINER(new MapContainerOffset(),
+		Minimap.CLASSIC_MAP_CONTAINER.getComponentId(),
+		Minimap.MODERN_MAP_CONTAINER.getComponentId()
+	),
+	//minimap / compass container
+	MAP_MINIMAP(new CompassOffset(),
+		Minimap.CLASSIC_MAP_MINIMAP.getComponentId(),
+		Minimap.MODERN_MAP_MINIMAP.getComponentId()
+	),
+	//orb parent container
+	ORB_CONTAINER(new OrbContainerOffset(),
+		Minimap.CLASSIC_ORBS_CONTAINER.getComponentId(),
+		Minimap.MODERN_ORBS_CONTAINER.getComponentId()
 	);
 
 	private final OffsetTarget offset;
-	private final int[] parent;
-	private final Integer[] id;
+	private final Integer[] componentIds;
 
-	Offsets(OffsetTarget offsetTarget, int[] parent, Integer... id)
+	Offsets(OffsetTarget offsetTarget, Integer... componentIds)
 	{
 		this.offset = offsetTarget;
-		this.parent = parent;
-		this.id = id;
+		this.componentIds = componentIds;
 	}
 
-	Offsets(OffsetTarget offsetTarget, Integer... id)
-	{
-		this(offsetTarget, new int[]{-1}, id);
-	}
-
-	private static final Map<Integer, Offsets> BY_PARENT_ID = new HashMap<>();
 	private static final Map<Integer, Offsets> BY_WIDGET_ID = new HashMap<>();
 
 	static
 	{
 		for (Offsets key : values())
 		{
-			for (int parentId : key.parent)
-			{
-				if (parentId != -1)
-				{
-					BY_PARENT_ID.put(parentId, key);
-				}
-			}
-
-			for (Integer widgetId : key.id)
+			for (Integer widgetId : key.componentIds)
 			{
 				BY_WIDGET_ID.put(widgetId, key);
 			}
@@ -130,12 +119,6 @@ public enum Offsets
 
 	public static Offsets fromWidget(Widget widget)
 	{
-		Offsets key = BY_PARENT_ID.get(widget.getParentId());
-		if (key != null)
-		{
-			return key;
-		}
-
 		return BY_WIDGET_ID.get(widget.getId());
 	}
 }

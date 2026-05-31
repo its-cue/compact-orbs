@@ -29,17 +29,14 @@ import com.compactorbs.CompactOrbsConfig;
 import com.compactorbs.CompactOrbsConfig.FilteredOrb;
 import com.compactorbs.CompactOrbsConstants.ConfigKeys;
 import com.compactorbs.widget.TargetWidget;
-import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.elements.Compass;
+import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.slot.SlotManager.SlotLayoutMode;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @Getter
 @RequiredArgsConstructor
 public enum Slot
@@ -154,42 +151,10 @@ public enum Slot
 
 	private static final Map<String, SlotLayout> CONFIG_LOOKUP;
 
-	public static final List<Slot> VERTICAL_LEFT_COLUMN;
-	public static final List<Slot> VERTICAL_RIGHT_COLUMN;
-	public static final List<Slot> HORIZONTAL_TOP_ROW;
-	public static final List<Slot> HORIZONTAL_BOTTOM_ROW;
-
-	private static final Map<Slot, List<Slot>> VERTICAL_LOOKUP;
-	private static final Map<Slot, List<Slot>> HORIZONTAL_LOOKUP;
-
-	public static List<Slot> getColumnSlots(Slot slot)
-	{
-		return VERTICAL_LOOKUP.get(slot);
-	}
-
-	public static List<Slot> getRowSlots(Slot slot)
-	{
-		return HORIZONTAL_LOOKUP.get(slot);
-	}
-
 	//get a slot by its configKey (used in onConfigChanged)
 	public static SlotLayout getSlotByConfigKey(String configKey)
 	{
 		return CONFIG_LOOKUP.get(configKey);
-	}
-
-	@SafeVarargs
-	private static Map<Slot, List<Slot>> buildLookup(List<Slot>... layout)
-	{
-		Map<Slot, List<Slot>> lookup = new HashMap<>();
-		for (List<Slot> group : layout)
-		{
-			for (Slot slot : group)
-			{
-				lookup.put(slot, group);
-			}
-		}
-		return Map.copyOf(lookup);
 	}
 
 	private static Map<String, SlotLayout> buildConfigLookup()
@@ -211,43 +176,6 @@ public enum Slot
 
 	static
 	{
-		VERTICAL_LEFT_COLUMN = List.of(
-			XP_SLOT,
-			WORLD_MAP_SLOT,
-			STORE_SLOT,
-			ACTIVITY_SLOT
-		);
-
-		VERTICAL_RIGHT_COLUMN = List.of(
-			HP_SLOT,
-			PRAYER_SLOT,
-			RUN_SLOT,
-			SPEC_SLOT,
-			WIKI_SLOT
-		);
-
-		HORIZONTAL_TOP_ROW = List.of(
-			STORE_SLOT,
-			HP_SLOT,
-			RUN_SLOT
-		);
-
-		HORIZONTAL_BOTTOM_ROW = List.of(
-			ACTIVITY_SLOT,
-			PRAYER_SLOT,
-			SPEC_SLOT
-		);
-
-		VERTICAL_LOOKUP = buildLookup(
-			VERTICAL_LEFT_COLUMN,
-			VERTICAL_RIGHT_COLUMN
-		);
-
-		HORIZONTAL_LOOKUP = buildLookup(
-			HORIZONTAL_TOP_ROW,
-			HORIZONTAL_BOTTOM_ROW
-		);
-
 		CONFIG_LOOKUP = buildConfigLookup();
 	}
 }

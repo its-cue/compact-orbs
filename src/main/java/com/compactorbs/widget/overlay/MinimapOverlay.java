@@ -80,10 +80,10 @@ public class MinimapOverlay extends Overlay
 			return null;
 		}
 
-		if (!manager.isMinimapOverlayEnabled() //not enabled
-			|| !manager.isMinimapHidden() //map is visible
-			|| !manager.isResized() //fixed mode
-			|| manager.isMinimapMinimized()) //native minimized map
+		if (manager.isFixedMode()
+			|| !manager.isMinimapOverlayEnabled()
+			|| !manager.isMinimapHidden()
+			|| manager.isMinimapMinimized())
 		{
 			return null;
 		}

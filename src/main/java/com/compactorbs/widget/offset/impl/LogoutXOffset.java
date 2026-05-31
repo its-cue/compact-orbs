@@ -35,10 +35,8 @@ import lombok.Getter;
 public class LogoutXOffset implements OffsetTarget
 {
 	@Override
-	public int xOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	public int xOffset(int x, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		int x = value + manager.verticalOffset;
-
 		if (manager.hideLogoutX
 			&& (manager.showOverlayLogoutX() || manager.isMinimapOverlayEnabled())
 			&& !manager.isMinimapMinimized())
@@ -48,42 +46,50 @@ public class LogoutXOffset implements OffsetTarget
 
 		if (!compactLayout)
 		{
-			return value;
+			return x;
 		}
 
-		if (manager.isHorizontalLayout()
+		if (manager.isVerticalRight())
+		{
+			x += manager.getCurrentLayout().getRightOffset();
+		}
+
+		if (manager.getCurrentLayout().isHorizontal()
 			&& manager.isVerticalLeft())
 		{
-			int hiddenWidth = slotManager.getHorizontalHiddenWidth();
-			x += hiddenWidth;
+			x -= slotManager.getHiddenSize();
 		}
 
 		return x;
 	}
 
 	@Override
-	public int yOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	public int yOffset(int y, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		int y = value + manager.horizontalOffset;
-
 		if (!compactLayout)
 		{
-			return value;
+			return y;
 		}
 
-		if (manager.isVerticalLayout()
-			&& manager.isHorizontalBottom())
+		if (manager.isHorizontalBottom())
 		{
-			int hiddenHeight = slotManager.getVerticalHiddenHeight();
-			y += hiddenHeight;
-		}
+			y += manager.getCurrentLayout().getBottomOffset();
 
-		//maybe just let it bypass - !manager.preventOrbReordering()
-		if (manager.isHorizontalLayout())
-		{
-			if (manager.isXpDropHidden() || manager.hideWorldMap)
+			if (manager.getCurrentLayout().isVertical())
 			{
-				y += 19;
+				y += slotManager.getHiddenSize();
+			}
+		}
+
+		if (manager.getCurrentLayout().isHorizontal())
+		{
+			if (manager.allowReordering())
+			{
+				if (manager.isXpDropHidden() || manager.hideWorldMap || manager.isCompassHidden())
+				{
+					y += 19 + (manager.isCompassHidden() ? 16 : 0);
+
+				}
 			}
 		}
 

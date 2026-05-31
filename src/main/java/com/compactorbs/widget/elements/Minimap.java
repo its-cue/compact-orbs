@@ -25,20 +25,179 @@
 
 package com.compactorbs.widget.elements;
 
+import com.compactorbs.CompactOrbsConstants;
+import com.compactorbs.CompactOrbsConstants.Layout.Horizontal;
+import com.compactorbs.CompactOrbsConstants.Layout.HorizontalWide;
+import com.compactorbs.CompactOrbsConstants.Layout.Original;
+import com.compactorbs.CompactOrbsConstants.Layout.Vertical;
 import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
 import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
+import com.compactorbs.CompactOrbsConstants.Widgets.Orb;
 import com.compactorbs.util.SetValue;
 import com.compactorbs.util.ValueKey;
+import static com.compactorbs.util.ValueKey.HEIGHT;
+import static com.compactorbs.util.ValueKey.WIDTH;
+import static com.compactorbs.util.ValueKey.WIDTH_MODE;
+import static com.compactorbs.util.ValueKey.X;
+import static com.compactorbs.util.ValueKey.Y;
 import com.compactorbs.widget.TargetWidget;
 import java.util.Map;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import net.runelite.api.widgets.WidgetSizeMode;
 
 @Getter
 @RequiredArgsConstructor
 public enum Minimap implements TargetWidget
 {
-	//classic-resizable
+	//top level container
+	CLASSIC_MAP_CONTAINER(
+		Classic.MAP_CONTAINER,
+		Map.of(
+			WIDTH, new SetValue(
+				Original.MAP_CONTAINER_WIDTH,
+				Vertical.MAP_CONTAINER_WIDTH,
+				Horizontal.MAP_CONTAINER_WIDTH,
+				HorizontalWide.MAP_CONTAINER_WIDTH
+			),
+			HEIGHT, new SetValue(
+				Original.MAP_CONTAINER_HEIGHT,
+				Vertical.MAP_CONTAINER_HEIGHT,
+				Horizontal.MAP_CONTAINER_HEIGHT,
+				HorizontalWide.MAP_CONTAINER_HEIGHT
+			)
+		)
+	),
+	//container for the minimap / compass
+	CLASSIC_MAP_MINIMAP(
+		Classic.COMPASS_PARENT,
+		Map.of(
+			X, new SetValue(
+				0,
+				Vertical.COMPASS_X,
+				Horizontal.COMPASS_X,
+				HorizontalWide.COMPASS_X
+			),
+			Y, new SetValue(
+				0,
+				Vertical.COMPASS_Y,
+				Horizontal.COMPASS_Y,
+				HorizontalWide.COMPASS_Y
+			),
+			WIDTH, new SetValue(
+				0,
+				CompactOrbsConstants.Layout.COMPASS_FRAME_SIZE
+			),
+			HEIGHT, new SetValue(
+				Original.MAP_CONTAINER_HEIGHT - 28,
+				CompactOrbsConstants.Layout.COMPASS_FRAME_SIZE
+			),
+			WIDTH_MODE, new SetValue(
+				WidgetSizeMode.MINUS,
+				WidgetSizeMode.ABSOLUTE
+			)
+		)
+	),
+	CLASSIC_ORBS_CONTAINER(
+		Classic.ORBS,
+		Map.of(
+			X, new SetValue(
+				0
+			),
+			Y, new SetValue(
+				10,
+				0
+			),
+			WIDTH, new SetValue(
+				Original.MAP_CONTAINER_WIDTH,
+				Vertical.MAP_CONTAINER_WIDTH,
+				Horizontal.MAP_CONTAINER_WIDTH,
+				HorizontalWide.MAP_CONTAINER_WIDTH
+			),
+			HEIGHT, new SetValue(
+				Original.MAP_CONTAINER_HEIGHT,
+				Vertical.MAP_CONTAINER_HEIGHT,
+				Horizontal.MAP_CONTAINER_HEIGHT,
+				HorizontalWide.MAP_CONTAINER_HEIGHT
+			)
+		)
+	),
+
+	//top level container
+	MODERN_MAP_CONTAINER(
+		Modern.MAP_CONTAINER,
+		Map.of(
+			WIDTH, new SetValue(
+				Original.MAP_CONTAINER_WIDTH,
+				Vertical.MAP_CONTAINER_WIDTH,
+				Horizontal.MAP_CONTAINER_WIDTH,
+				HorizontalWide.MAP_CONTAINER_WIDTH
+			),
+			HEIGHT, new SetValue(
+				Original.MAP_CONTAINER_HEIGHT,
+				Vertical.MAP_CONTAINER_HEIGHT,
+				Horizontal.MAP_CONTAINER_HEIGHT,
+				HorizontalWide.MAP_CONTAINER_HEIGHT
+			)
+		)
+	),
+	//container for the minimap / compass
+	MODERN_MAP_MINIMAP(
+		Modern.COMPASS_PARENT,
+		Map.of(
+			X, new SetValue(
+				0,
+				Vertical.COMPASS_X,
+				Horizontal.COMPASS_X,
+				HorizontalWide.COMPASS_X
+			),
+			Y, new SetValue(
+				0,
+				Vertical.COMPASS_Y,
+				Horizontal.COMPASS_Y,
+				HorizontalWide.COMPASS_Y
+			),
+			WIDTH, new SetValue(
+				0,
+				CompactOrbsConstants.Layout.COMPASS_FRAME_SIZE
+			),
+			HEIGHT, new SetValue(
+				Original.MAP_CONTAINER_HEIGHT - 28,
+				CompactOrbsConstants.Layout.COMPASS_FRAME_SIZE
+			),
+			WIDTH_MODE, new SetValue(
+				WidgetSizeMode.MINUS,
+				WidgetSizeMode.ABSOLUTE
+			)
+		)
+	),
+	MODERN_ORBS_CONTAINER(
+		Modern.ORBS,
+		Map.of(
+			X, new SetValue(
+				0
+			),
+			Y, new SetValue(
+				10,
+				0
+			),
+			WIDTH, new SetValue(
+				Original.MAP_CONTAINER_WIDTH,
+				Vertical.MAP_CONTAINER_WIDTH,
+				Horizontal.MAP_CONTAINER_WIDTH,
+				HorizontalWide.MAP_CONTAINER_WIDTH
+			),
+			HEIGHT, new SetValue(
+				Original.MAP_CONTAINER_HEIGHT,
+				Vertical.MAP_CONTAINER_HEIGHT,
+				Horizontal.MAP_CONTAINER_HEIGHT,
+				HorizontalWide.MAP_CONTAINER_HEIGHT
+			)
+		)
+	),
+
+	ORBS_UNIVERSE(Orb.UNIVERSE),
+
 	CLASSIC_NO_CLICK_0(Classic.MAP_NOCLICK_0),
 	CLASSIC_NO_CLICK_1(Classic.MAP_NOCLICK_1),
 	CLASSIC_NO_CLICK_2(Classic.MAP_NOCLICK_2),
@@ -48,7 +207,6 @@ public enum Minimap implements TargetWidget
 	CLASSIC_MINIMAP_MASK(Classic.MINIMAP_MASK),
 	CLASSIC_MINIMAP(Classic.MINIMAP),
 
-	//modern-resizable
 	MODERN_NO_CLICK_0(Modern.MAP_NOCLICK_0),
 	MODERN_NO_CLICK_1(Modern.MAP_NOCLICK_1),
 	MODERN_NO_CLICK_2(Modern.MAP_NOCLICK_2),
@@ -67,4 +225,22 @@ public enum Minimap implements TargetWidget
 		this(componentId, Map.of());
 	}
 
+	public static final TargetWidget[] CONTAINERS =
+		{
+			CLASSIC_MAP_CONTAINER, MODERN_MAP_CONTAINER,
+			CLASSIC_ORBS_CONTAINER, MODERN_ORBS_CONTAINER,
+			CLASSIC_MAP_MINIMAP, MODERN_MAP_MINIMAP
+		};
+
+	public static final TargetWidget[] COMPONENTS =
+		{
+			CLASSIC_NO_CLICK_0, MODERN_NO_CLICK_0,
+			CLASSIC_NO_CLICK_1, MODERN_NO_CLICK_1,
+			CLASSIC_NO_CLICK_2, MODERN_NO_CLICK_2,
+			CLASSIC_NO_CLICK_3, MODERN_NO_CLICK_3,
+			CLASSIC_NO_CLICK_4, MODERN_NO_CLICK_4,
+			CLASSIC_NO_CLICK_5, MODERN_NO_CLICK_5,
+			CLASSIC_MINIMAP, MODERN_MINIMAP,
+			CLASSIC_MINIMAP_MASK, MODERN_MINIMAP_MASK
+		};
 }
