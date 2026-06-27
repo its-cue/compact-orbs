@@ -23,7 +23,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.slot;
+package com.compactorbs.widget.layout.slot;
 
 import com.compactorbs.CompactOrbsConfig;
 import com.compactorbs.CompactOrbsConstants;

@@ -23,46 +23,19 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.offset.impl;
+package com.compactorbs.widget.layout.slot;
 
-import com.compactorbs.CompactOrbsManager;
-import com.compactorbs.widget.elements.Orbs;
-import com.compactorbs.widget.offset.OffsetTarget;
-import com.compactorbs.widget.slot.SlotManager;
+import com.compactorbs.widget.layout.slot.SlotManager.SlotLayoutMode;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 @Getter
-public class HPOrbOffset implements OffsetTarget
+@RequiredArgsConstructor
+public class SlotLayout
 {
-	@Override
-	public int xOffset(int x, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
-	{
-		if (!compactLayout)
-		{
-			return x;
-		}
+	//slot being referenced
+	public final Slot slot;
 
-		if (manager.getCurrentLayout().isHorizontal() || manager.getCurrentLayout().isHorizontalWide())
-		{
-			x = slotManager.applyHiddenXOffset(Orbs.HP_ORB_CONTAINER, x);
-		}
-
-		return x;
-	}
-
-	@Override
-	public int yOffset(int y, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
-	{
-		if (!compactLayout)
-		{
-			return y;
-		}
-
-		if (manager.getCurrentLayout().isVertical())
-		{
-			y = slotManager.applyHiddenYOffset(Orbs.HP_ORB_CONTAINER, y);
-		}
-
-		return y;
-	}
+	//layout the slot belongs to
+	public final SlotLayoutMode layout;
 }

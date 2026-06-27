@@ -23,21 +23,46 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.slot;
+package com.compactorbs.widget.layout.offset.impl;
 
-import com.compactorbs.CompactOrbsConfig;
-import com.compactorbs.CompactOrbsConfig.FilteredOrb;
-import java.util.function.Function;
+import com.compactorbs.CompactOrbsManager;
+import com.compactorbs.widget.elements.Orbs;
+import com.compactorbs.widget.layout.offset.OffsetTarget;
+import com.compactorbs.widget.layout.slot.SlotManager;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 @Getter
-@RequiredArgsConstructor
-public class SlotConfig
+public class SpecOrbOffset implements OffsetTarget
 {
-	//key for the given slot
-	private final String configKey;
+	@Override
+	public int xOffset(int x, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	{
+		if (!compactLayout)
+		{
+			return x;
+		}
 
-	//function to read the current orb from the config
-	private final Function<CompactOrbsConfig, FilteredOrb> getter;
+		if (manager.getCurrentLayout().isHorizontal() || manager.getCurrentLayout().isHorizontalWide())
+		{
+			x = slotManager.applyHiddenXOffset(Orbs.SPEC_ORB_CONTAINER, x);
+		}
+
+		return x;
+	}
+
+	@Override
+	public int yOffset(int y, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	{
+		if (!compactLayout)
+		{
+			return y;
+		}
+
+		if (manager.getCurrentLayout().isVertical())
+		{
+			y = slotManager.applyHiddenYOffset(Orbs.SPEC_ORB_CONTAINER, y);
+		}
+
+		return y;
+	}
 }

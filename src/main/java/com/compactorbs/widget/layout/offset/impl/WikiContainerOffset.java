@@ -23,14 +23,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.offset.impl;
+package com.compactorbs.widget.layout.offset.impl;
 
 import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.elements.Orbs;
-import com.compactorbs.widget.offset.OffsetTarget;
-import com.compactorbs.widget.slot.Slot;
-import com.compactorbs.widget.slot.SlotManager;
+import com.compactorbs.widget.layout.offset.OffsetTarget;
+import com.compactorbs.widget.layout.slot.Slot;
+import com.compactorbs.widget.layout.slot.SlotManager;
 import lombok.Getter;
 
 @Getter

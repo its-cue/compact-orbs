@@ -23,39 +23,28 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.offset.impl;
+package com.compactorbs.widget.layout.offset.impl;
 
-import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.elements.Orbs;
-import com.compactorbs.widget.offset.OffsetTarget;
-import com.compactorbs.widget.slot.SlotManager;
+import com.compactorbs.widget.layout.offset.OffsetTarget;
+import com.compactorbs.widget.layout.slot.SlotManager;
 import lombok.Getter;
 
 @Getter
-public class ActivityOrbOffset implements OffsetTarget
+public class PrayerOrbOffset implements OffsetTarget
 {
 	@Override
 	public int xOffset(int x, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
 		if (!compactLayout)
 		{
-			if (manager.isFixedMode())
-			{
-				return 0;
-			}
-
-			if (manager.isStoreOrbDisabled())
-			{
-				x = Layout.Original.STORE_ORB_X;
-			}
-
 			return x;
 		}
 
-		if (manager.getCurrentLayout().isHorizontal())
+		if (manager.getCurrentLayout().isHorizontal() || manager.getCurrentLayout().isHorizontalWide())
 		{
-			x = slotManager.applyHiddenXOffset(Orbs.ACTIVITY_ORB_CONTAINER, x);
+			x = slotManager.applyHiddenXOffset(Orbs.PRAYER_ORB_CONTAINER, x);
 		}
 
 		return x;
@@ -66,22 +55,12 @@ public class ActivityOrbOffset implements OffsetTarget
 	{
 		if (!compactLayout)
 		{
-			if (manager.isFixedMode())
-			{
-				return 50;
-			}
-
-			if (manager.isStoreOrbDisabled())
-			{
-				y = Layout.Original.STORE_ORB_Y;
-			}
-
 			return y;
 		}
 
 		if (manager.getCurrentLayout().isVertical())
 		{
-			y = slotManager.applyHiddenYOffset(Orbs.ACTIVITY_ORB_CONTAINER, y);
+			y = slotManager.applyHiddenYOffset(Orbs.PRAYER_ORB_CONTAINER, y);
 		}
 
 		return y;

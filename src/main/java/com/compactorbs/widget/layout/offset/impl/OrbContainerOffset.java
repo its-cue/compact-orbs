@@ -23,50 +23,69 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.offset;
+package com.compactorbs.widget.layout.offset.impl;
 
 import com.compactorbs.CompactOrbsManager;
-import com.compactorbs.widget.slot.SlotManager;
+import com.compactorbs.widget.layout.offset.OffsetTarget;
+import com.compactorbs.widget.layout.slot.SlotManager;
+import lombok.Getter;
 
-public interface OffsetTarget
+@Getter
+public class OrbContainerOffset implements OffsetTarget
 {
-	default int getOffsetX()
+	private int offsetX;
+	private int offsetY;
+	private int offsetWidth;
+	private int offsetHeight;
+
+	@Override
+	public int xOffset(int x, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		return 0;
+		offsetX = x;
+
+		if (!compact)
+		{
+			return offsetX;
+		}
+
+		if (manager.isVerticalRight())
+		{
+			offsetX += manager.getCurrentLayout().getRightOffset();
+		}
+
+		return offsetX;
 	}
 
-	default int getOffsetY()
+	@Override
+	public int yOffset(int y, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		return 0;
+		offsetY = y;
+
+		if (!compact)
+		{
+			return offsetY;
+		}
+
+		if (manager.isHorizontalBottom())
+		{
+			offsetY += manager.getCurrentLayout().getBottomOffset();
+		}
+
+		return offsetY;
 	}
 
-	default int getOffsetWidth()
+	@Override
+	public int widthOffset(int w, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		return 0;
+		offsetWidth = w;
+		return offsetWidth;
 	}
 
-	default int getOffsetHeight()
+	@Override
+	public int heightOffset(int h, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		return 0;
+		offsetHeight = h;
+		return offsetHeight;
 	}
 
-	default int xOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
-	{
-		return value;
-	}
-
-	default int yOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
-	{
-		return value;
-	}
-
-	default int widthOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
-	{
-		return value;
-	}
-
-	default int heightOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
-	{
-		return value;
-	}
 }

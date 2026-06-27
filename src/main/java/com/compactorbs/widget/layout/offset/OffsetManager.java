@@ -23,46 +23,39 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.offset.impl;
+package com.compactorbs.widget.layout.offset;
 
 import com.compactorbs.CompactOrbsManager;
-import com.compactorbs.widget.elements.Orbs;
-import com.compactorbs.widget.offset.OffsetTarget;
-import com.compactorbs.widget.slot.SlotManager;
-import lombok.Getter;
+import com.compactorbs.util.ValueKey;
+import com.compactorbs.widget.layout.slot.SlotManager;
+import net.runelite.api.widgets.Widget;
 
-@Getter
-public class RunOrbOffset implements OffsetTarget
+public class OffsetManager
 {
-	@Override
-	public int xOffset(int x, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	public static int getTargetOffset(Widget widget, ValueKey key, int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		if (!compactLayout)
+		Offsets offsets = Offsets.fromWidget(widget);
+		if (offsets == null)
 		{
-			return x;
+			return value;
 		}
 
-		if (manager.getCurrentLayout().isHorizontal() || manager.getCurrentLayout().isHorizontalWide())
-		{
-			x = slotManager.applyHiddenXOffset(Orbs.RUN_ORB_CONTAINER, x);
-		}
-
-		return x;
+		return getOffset(offsets.getOffset(), key, value, compactLayout, manager, slotManager);
 	}
 
-	@Override
-	public int yOffset(int y, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	private static int getOffset(OffsetTarget target, ValueKey key, int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		if (!compactLayout)
+		switch (key)
 		{
-			return y;
+			case X:
+				return target.xOffset(value, compactLayout, manager, slotManager);
+			case Y:
+				return target.yOffset(value, compactLayout, manager, slotManager);
+			case WIDTH:
+				return target.widthOffset(value, compactLayout, manager, slotManager);
+			case HEIGHT:
+				return target.heightOffset(value, compactLayout, manager, slotManager);
 		}
-
-		if (manager.getCurrentLayout().isVertical())
-		{
-			y = slotManager.applyHiddenYOffset(Orbs.RUN_ORB_CONTAINER, y);
-		}
-
-		return y;
+		return value;
 	}
 }

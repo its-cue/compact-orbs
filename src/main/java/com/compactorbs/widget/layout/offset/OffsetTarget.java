@@ -23,45 +23,50 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.offset.impl;
+package com.compactorbs.widget.layout.offset;
 
 import com.compactorbs.CompactOrbsManager;
-import com.compactorbs.widget.elements.Orbs;
-import com.compactorbs.widget.offset.OffsetTarget;
-import com.compactorbs.widget.slot.SlotManager;
-import lombok.Getter;
+import com.compactorbs.widget.layout.slot.SlotManager;
 
-@Getter
-public class StoreOrbOffset implements OffsetTarget
+public interface OffsetTarget
 {
-	@Override
-	public int xOffset(int x, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	default int getOffsetX()
 	{
-		if (!compactLayout)
-		{
-			return manager.isFixedMode() ? 0 : x;
-		}
-
-		if (manager.getCurrentLayout().isHorizontal())
-		{
-			x = slotManager.applyHiddenXOffset(Orbs.STORE_ORB_CONTAINER, x);
-		}
-		return x;
+		return 0;
 	}
 
-	@Override
-	public int yOffset(int y, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	default int getOffsetY()
 	{
-		if (!compactLayout)
-		{
-			return manager.isFixedMode() ? 83 : y;
-		}
+		return 0;
+	}
 
-		if (manager.getCurrentLayout().isVertical())
-		{
-			y = slotManager.applyHiddenYOffset(Orbs.STORE_ORB_CONTAINER, y);
-		}
+	default int getOffsetWidth()
+	{
+		return 0;
+	}
 
-		return y;
+	default int getOffsetHeight()
+	{
+		return 0;
+	}
+
+	default int xOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	{
+		return value;
+	}
+
+	default int yOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	{
+		return value;
+	}
+
+	default int widthOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	{
+		return value;
+	}
+
+	default int heightOffset(int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	{
+		return value;
 	}
 }

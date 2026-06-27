@@ -23,69 +23,21 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.offset.impl;
+package com.compactorbs.widget.layout.slot;
 
-import com.compactorbs.CompactOrbsManager;
-import com.compactorbs.widget.offset.OffsetTarget;
-import com.compactorbs.widget.slot.SlotManager;
+import com.compactorbs.CompactOrbsConfig;
+import com.compactorbs.CompactOrbsConfig.FilteredOrb;
+import java.util.function.Function;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 @Getter
-public class OrbContainerOffset implements OffsetTarget
+@RequiredArgsConstructor
+public class SlotConfig
 {
-	private int offsetX;
-	private int offsetY;
-	private int offsetWidth;
-	private int offsetHeight;
+	//key for the given slot
+	private final String configKey;
 
-	@Override
-	public int xOffset(int x, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
-	{
-		offsetX = x;
-
-		if (!compact)
-		{
-			return offsetX;
-		}
-
-		if (manager.isVerticalRight())
-		{
-			offsetX += manager.getCurrentLayout().getRightOffset();
-		}
-
-		return offsetX;
-	}
-
-	@Override
-	public int yOffset(int y, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
-	{
-		offsetY = y;
-
-		if (!compact)
-		{
-			return offsetY;
-		}
-
-		if (manager.isHorizontalBottom())
-		{
-			offsetY += manager.getCurrentLayout().getBottomOffset();
-		}
-
-		return offsetY;
-	}
-
-	@Override
-	public int widthOffset(int w, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
-	{
-		offsetWidth = w;
-		return offsetWidth;
-	}
-
-	@Override
-	public int heightOffset(int h, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
-	{
-		offsetHeight = h;
-		return offsetHeight;
-	}
-
+	//function to read the current orb from the config
+	private final Function<CompactOrbsConfig, FilteredOrb> getter;
 }

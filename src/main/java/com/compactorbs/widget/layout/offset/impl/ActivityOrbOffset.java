@@ -23,39 +23,67 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.offset;
+package com.compactorbs.widget.layout.offset.impl;
 
+import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsManager;
-import com.compactorbs.util.ValueKey;
-import com.compactorbs.widget.slot.SlotManager;
-import net.runelite.api.widgets.Widget;
+import com.compactorbs.widget.elements.Orbs;
+import com.compactorbs.widget.layout.offset.OffsetTarget;
+import com.compactorbs.widget.layout.slot.SlotManager;
+import lombok.Getter;
 
-public class OffsetManager
+@Getter
+public class ActivityOrbOffset implements OffsetTarget
 {
-	public static int getTargetOffset(Widget widget, ValueKey key, int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	@Override
+	public int xOffset(int x, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		Offsets offsets = Offsets.fromWidget(widget);
-		if (offsets == null)
+		if (!compactLayout)
 		{
-			return value;
+			if (manager.isFixedMode())
+			{
+				return 0;
+			}
+
+			if (manager.isStoreOrbDisabled())
+			{
+				x = Layout.Original.STORE_ORB_X;
+			}
+
+			return x;
 		}
 
-		return getOffset(offsets.getOffset(), key, value, compactLayout, manager, slotManager);
+		if (manager.getCurrentLayout().isHorizontal())
+		{
+			x = slotManager.applyHiddenXOffset(Orbs.ACTIVITY_ORB_CONTAINER, x);
+		}
+
+		return x;
 	}
 
-	private static int getOffset(OffsetTarget target, ValueKey key, int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	@Override
+	public int yOffset(int y, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		switch (key)
+		if (!compactLayout)
 		{
-			case X:
-				return target.xOffset(value, compactLayout, manager, slotManager);
-			case Y:
-				return target.yOffset(value, compactLayout, manager, slotManager);
-			case WIDTH:
-				return target.widthOffset(value, compactLayout, manager, slotManager);
-			case HEIGHT:
-				return target.heightOffset(value, compactLayout, manager, slotManager);
+			if (manager.isFixedMode())
+			{
+				return 50;
+			}
+
+			if (manager.isStoreOrbDisabled())
+			{
+				y = Layout.Original.STORE_ORB_Y;
+			}
+
+			return y;
 		}
-		return value;
+
+		if (manager.getCurrentLayout().isVertical())
+		{
+			y = slotManager.applyHiddenYOffset(Orbs.ACTIVITY_ORB_CONTAINER, y);
+		}
+
+		return y;
 	}
 }

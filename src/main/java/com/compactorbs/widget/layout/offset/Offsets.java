@@ -23,23 +23,23 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.offset;
+package com.compactorbs.widget.layout.offset;
 
 import com.compactorbs.widget.elements.Minimap;
 import com.compactorbs.widget.elements.Orbs;
-import com.compactorbs.widget.offset.impl.ActivityOrbOffset;
-import com.compactorbs.widget.offset.impl.HPOrbOffset;
-import com.compactorbs.widget.offset.impl.LogoutXOffset;
-import com.compactorbs.widget.offset.impl.MapContainerOffset;
-import com.compactorbs.widget.offset.impl.CompassOffset;
-import com.compactorbs.widget.offset.impl.OrbContainerOffset;
-import com.compactorbs.widget.offset.impl.PrayerOrbOffset;
-import com.compactorbs.widget.offset.impl.RunOrbOffset;
-import com.compactorbs.widget.offset.impl.SpecOrbOffset;
-import com.compactorbs.widget.offset.impl.StoreOrbOffset;
-import com.compactorbs.widget.offset.impl.WikiContainerOffset;
-import com.compactorbs.widget.offset.impl.WorldMapOffset;
-import com.compactorbs.widget.offset.impl.XPOrbOffset;
+import com.compactorbs.widget.layout.offset.impl.ActivityOrbOffset;
+import com.compactorbs.widget.layout.offset.impl.HPOrbOffset;
+import com.compactorbs.widget.layout.offset.impl.LogoutXOffset;
+import com.compactorbs.widget.layout.offset.impl.MapContainerOffset;
+import com.compactorbs.widget.layout.offset.impl.CompassOffset;
+import com.compactorbs.widget.layout.offset.impl.OrbContainerOffset;
+import com.compactorbs.widget.layout.offset.impl.PrayerOrbOffset;
+import com.compactorbs.widget.layout.offset.impl.RunOrbOffset;
+import com.compactorbs.widget.layout.offset.impl.SpecOrbOffset;
+import com.compactorbs.widget.layout.offset.impl.StoreOrbOffset;
+import com.compactorbs.widget.layout.offset.impl.WikiContainerOffset;
+import com.compactorbs.widget.layout.offset.impl.WorldMapOffset;
+import com.compactorbs.widget.layout.offset.impl.XPOrbOffset;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Getter;

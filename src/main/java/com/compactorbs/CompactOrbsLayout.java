@@ -26,7 +26,7 @@
 package com.compactorbs;
 
 import com.compactorbs.CompactOrbsConstants.Layout;
-import com.compactorbs.widget.slot.Slot;
+import com.compactorbs.widget.layout.slot.Slot;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;

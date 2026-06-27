@@ -23,7 +23,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.slot;
+package com.compactorbs.widget.layout.slot;
 
 import com.compactorbs.CompactOrbsConfig;
 import com.compactorbs.CompactOrbsConfig.FilteredOrb;
@@ -31,7 +31,7 @@ import com.compactorbs.CompactOrbsConstants.ConfigKeys;
 import com.compactorbs.widget.TargetWidget;
 import com.compactorbs.widget.elements.Compass;
 import com.compactorbs.widget.elements.Orbs;
-import com.compactorbs.widget.slot.SlotManager.SlotLayoutMode;
+import com.compactorbs.widget.layout.slot.SlotManager.SlotLayoutMode;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Getter;

@@ -23,16 +23,16 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.offset.impl;
+package com.compactorbs.widget.layout.offset.impl;
 
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.elements.Orbs;
-import com.compactorbs.widget.offset.OffsetTarget;
-import com.compactorbs.widget.slot.SlotManager;
+import com.compactorbs.widget.layout.offset.OffsetTarget;
+import com.compactorbs.widget.layout.slot.SlotManager;
 import lombok.Getter;
 
 @Getter
-public class SpecOrbOffset implements OffsetTarget
+public class RunOrbOffset implements OffsetTarget
 {
 	@Override
 	public int xOffset(int x, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
@@ -44,7 +44,7 @@ public class SpecOrbOffset implements OffsetTarget
 
 		if (manager.getCurrentLayout().isHorizontal() || manager.getCurrentLayout().isHorizontalWide())
 		{
-			x = slotManager.applyHiddenXOffset(Orbs.SPEC_ORB_CONTAINER, x);
+			x = slotManager.applyHiddenXOffset(Orbs.RUN_ORB_CONTAINER, x);
 		}
 
 		return x;
@@ -60,7 +60,7 @@ public class SpecOrbOffset implements OffsetTarget
 
 		if (manager.getCurrentLayout().isVertical())
 		{
-			y = slotManager.applyHiddenYOffset(Orbs.SPEC_ORB_CONTAINER, y);
+			y = slotManager.applyHiddenYOffset(Orbs.RUN_ORB_CONTAINER, y);
 		}
 
 		return y;

@@ -23,19 +23,45 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.slot;
+package com.compactorbs.widget.layout.offset.impl;
 
-import com.compactorbs.widget.slot.SlotManager.SlotLayoutMode;
+import com.compactorbs.CompactOrbsManager;
+import com.compactorbs.widget.elements.Orbs;
+import com.compactorbs.widget.layout.offset.OffsetTarget;
+import com.compactorbs.widget.layout.slot.SlotManager;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 @Getter
-@RequiredArgsConstructor
-public class SlotLayout
+public class StoreOrbOffset implements OffsetTarget
 {
-	//slot being referenced
-	public final Slot slot;
+	@Override
+	public int xOffset(int x, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	{
+		if (!compactLayout)
+		{
+			return manager.isFixedMode() ? 0 : x;
+		}
 
-	//layout the slot belongs to
-	public final SlotLayoutMode layout;
+		if (manager.getCurrentLayout().isHorizontal())
+		{
+			x = slotManager.applyHiddenXOffset(Orbs.STORE_ORB_CONTAINER, x);
+		}
+		return x;
+	}
+
+	@Override
+	public int yOffset(int y, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	{
+		if (!compactLayout)
+		{
+			return manager.isFixedMode() ? 83 : y;
+		}
+
+		if (manager.getCurrentLayout().isVertical())
+		{
+			y = slotManager.applyHiddenYOffset(Orbs.STORE_ORB_CONTAINER, y);
+		}
+
+		return y;
+	}
 }

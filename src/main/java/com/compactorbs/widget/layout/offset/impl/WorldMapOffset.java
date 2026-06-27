@@ -23,57 +23,81 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.offset.impl;
+package com.compactorbs.widget.layout.offset.impl;
 
 import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsManager;
-import com.compactorbs.widget.offset.OffsetTarget;
-import com.compactorbs.widget.slot.SlotManager;
+import com.compactorbs.widget.elements.Orbs;
+import com.compactorbs.widget.layout.offset.OffsetTarget;
+import com.compactorbs.widget.layout.slot.SlotManager;
 import lombok.Getter;
 
 @Getter
-public class LogoutXOffset implements OffsetTarget
+public class WorldMapOffset implements OffsetTarget
 {
+	private int getHiddenOffset()
+	{
+		//this will keep 1 pixel inside the container -
+		//enough to keep valid for hotkey use
+		return -29;
+	}
+
 	@Override
 	public int xOffset(int x, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		if (manager.hideLogoutX
-			&& (manager.showOverlayLogoutX() || manager.isMinimapOverlayEnabled())
-			&& !manager.isMinimapMinimized())
+		if (manager.hideWorldMap)
 		{
-			return -Layout.LOGOUT_X_WIDTH;
+			return getHiddenOffset();
 		}
 
 		if (!compactLayout)
 		{
-			return x;
+			return manager.isFixedMode() ? 10 : x;
 		}
 
 		if (manager.allowReordering())
 		{
-			if (manager.isVerticalRight())
-			{
-				x += manager.getCurrentLayout().getRightOffset();
-			}
-
 			if (manager.getCurrentLayout().isHorizontal())
 			{
 				if (manager.isCompassHidden())
 				{
-					if (manager.hideWorldMap && manager.isXpDropHidden())
-					{
-						x -= 23;
+					x += 10;
 
-						if (manager.isWikiHidden())
-						{
-							x -= 7;
-						}
+					if (manager.isWikiHidden())
+					{
+						x -= 6;
 					}
 				}
 
 				if (manager.isVerticalLeft())
 				{
 					x -= slotManager.getHiddenSize();
+				}
+			}
+
+			if (manager.getCurrentLayout().isHorizontalWide())
+			{
+				if (manager.isClassicResizable() || manager.hideLogoutX)
+				{
+					if (manager.isXpDropHidden())
+					{
+						if (manager.hideMinimapToggle())
+						{
+							x += Layout.TOGGLE_BUTTON_SIZE + 9;
+
+							if (manager.isWikiHidden())
+							{
+								x += 4;
+							}
+						}
+						else
+						{
+							if (manager.isWikiHidden())
+							{
+								x += Layout.TOGGLE_BUTTON_SIZE + 13;
+							}
+						}
+					}
 				}
 			}
 		}
@@ -84,44 +108,32 @@ public class LogoutXOffset implements OffsetTarget
 	@Override
 	public int yOffset(int y, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
+		if (manager.hideWorldMap)
+		{
+			return getHiddenOffset();
+		}
+
 		if (!compactLayout)
 		{
 			return y;
 		}
 
-		if (manager.isHorizontalBottom())
-		{
-			y += manager.getCurrentLayout().getBottomOffset();
-
-			if (manager.getCurrentLayout().isVertical())
-			{
-				y += slotManager.getHiddenSize();
-			}
-		}
-
 		if (manager.allowReordering())
 		{
+			if (manager.getCurrentLayout().isVertical())
+			{
+				y = slotManager.applyHiddenYOffset(Orbs.WORLD_MAP_CONTAINER, y);
+			}
+
 			if (manager.getCurrentLayout().isHorizontal())
 			{
 				if (manager.isCompassHidden())
 				{
-					y += 35;
+					y += 41;
 
-					if (manager.hideWorldMap && manager.isXpDropHidden())
+					if (manager.isWikiHidden())
 					{
-						y += 26;
-
-						if (manager.isWikiHidden())
-						{
-							y -= 7;
-						}
-					}
-				}
-				else
-				{
-					if (manager.hideWorldMap || manager.isXpDropHidden())
-					{
-						y += 19;
+						y -= 5;
 					}
 				}
 			}
