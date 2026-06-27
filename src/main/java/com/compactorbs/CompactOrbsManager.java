@@ -59,6 +59,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.Point;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
@@ -100,9 +101,10 @@ public class CompactOrbsManager
 
 	private int previousParentId = -1;
 
-	//reset shutdown flag for the world map orb
+	//flags for shutdown, otherwise synced to the corresponding config state
 	public boolean hideWorldMap;
 	public boolean hideLogoutX;
+	public boolean enableNoClickThrough;
 
 	//limit the warning message from potentially being spammy
 	public boolean hasSeenWikiWarning;
@@ -143,6 +145,7 @@ public class CompactOrbsManager
 			{
 				widgetManager.setHidden(Widgets.MinimapOverlay.UNIVERSE, true);
 				widgetManager.remapTargets(false, Script.FORCE_UPDATE, Orbs.values());
+				updateNoClickThrough();
 				setupMinimapContainer(false);
 				updateFixedMode = false;
 			}
@@ -169,9 +172,7 @@ public class CompactOrbsManager
 		}
 
 		updateCustomChildren(pendingChildrenUpdate || scriptId == Script.FORCE_UPDATE);
-
-		widgetManager.setTargetsNoClickthrough(config.enableNoClickthrough() && isCompactLayout(),
-			Orbs.HP_ORB_CONTAINER, Orbs.PRAYER_ORB_CONTAINER, Orbs.RUN_ORB_CONTAINER, Orbs.SPEC_ORB_CONTAINER);
+		updateNoClickThrough();
 	}
 
 	//update positions (used when toggling orb visibility)
@@ -201,44 +202,57 @@ public class CompactOrbsManager
 		pendingChildrenUpdate = false;
 		hideWorldMap = false;
 		hideLogoutX = false;
-
-		clearCustomChildren();
-		clearMinimapOverlayChildren();
+		enableNoClickThrough = false;
 
 		hideByConfigMap.clear();
 		hideByScriptMap.clear();
-
-		//set all orbs to visible
-		widgetManager.setTargetsHidden(false, Orbs.values());
-
-		updateWikiBannerVisibility(false);
-
 		slotManager.reset();
+		clearCustomChildren();
+		clearMinimapOverlayChildren();
 
+		resetVisibility();
+		resetPositioning();
+		resetNoClickThrough();
+
+		resetMinimapOverlayContainer();
+	}
+
+	private void resetVisibility()
+	{
+		widgetManager.setTargetsHidden(false, Orbs.values());
+		widgetManager.setTargetsHidden(false, Compass.values());
+		updateWikiBannerVisibility(false);
+	}
+
+	private void resetPositioning()
+	{
 		if (isFixedMode())
 		{
 			widgetManager.remapTargets(false, Script.FORCE_UPDATE, Orbs.WORLD_MAP_CONTAINER);
 		}
-
-		if (isMinimapHidden())
+		else if (isCompactLayout())
 		{
 			setupMinimapContainer(false);
 			setupOrbsContainer();
-
-			if (isCompassHidden())
-			{
-				widgetManager.setTargetsHidden(false, Compass.values());
-			}
-
-			widgetManager.remapTargets(false, Script.FORCE_UPDATE, Compass.values());
 		}
 
-		resetMinimapOverlayContainer();
-
 		widgetManager.remapTargets(false, Script.FORCE_UPDATE, Orbs.values());
+		widgetManager.remapTargets(false, Script.FORCE_UPDATE, Compass.values());
+	}
 
-		widgetManager.setTargetsNoClickthrough(false,
-			Orbs.HP_ORB_CONTAINER, Orbs.PRAYER_ORB_CONTAINER, Orbs.RUN_ORB_CONTAINER, Orbs.SPEC_ORB_CONTAINER);
+	private void resetNoClickThrough()
+	{
+		for (TargetWidget orb : Orbs.SWAPPABLE_ORBS)
+		{
+			//reset the orb layers noClickThrough
+			widgetManager.setNoClickThrough(orb.getComponentId(), false);
+
+			//reset the backing/buttons noClickThrough
+			handleVanillaNoClickThrough(orb, false);
+
+			//clear any proxy child that may be remaining
+			widgetManager.clearChildren(orb.getComponentId());
+		}
 	}
 
 	//toggle the minimap visibility, and update related widgets when using the custom toggle button
@@ -256,6 +270,7 @@ public class CompactOrbsManager
 				widgetManager.remapTargets(toggle, Script.FORCE_UPDATE, Compass.values());
 				widgetManager.remapTargets(toggle, Script.FORCE_UPDATE, Orbs.values());
 				widgetManager.setTargetsHidden(hiddenCondition, Compass.values());
+				updateNoClickThrough();
 			}
 		);
 	}
@@ -314,6 +329,105 @@ public class CompactOrbsManager
 		}
 	}
 
+	public void updateNoClickThrough()
+	{
+		boolean noClick = enableNoClickThrough || config.enableOrbSwapping();
+		boolean compact = isCompactLayout();
+
+		for (TargetWidget orb : Orbs.SWAPPABLE_ORBS)
+		{
+			widgetManager.setNoClickThrough(orb.getComponentId(), noClick && compact);
+
+			if (!compact)
+			{
+				handleVanillaNoClickThrough(orb, noClick);
+			}
+			else
+			{
+				widgetManager.clearChildren(orb.getComponentId());
+			}
+		}
+	}
+
+	//TODO
+	//in non-compact layouts, delegate the noClickThrough flag to the button widget instead of the layer/backing,
+	//since under certain configurations when orb swapping, it may prevent a click where they overlap
+	//if noClickThrough is enabled, and the button is hidden - create a noClick child in its place
+	private void handleVanillaNoClickThrough(TargetWidget target, boolean noClickThrough)
+	{
+		Widget layer = client.getWidget(target.getComponentId());
+		Widget backing = client.getWidget(Orbs.getBackingId(target));
+		Widget button = client.getWidget(Orbs.getButtonId(target));
+		if (layer == null || backing == null || button == null)
+		{
+			return;
+		}
+
+		widgetManager.setNoClickThrough(backing.getId(), !noClickThrough);
+		widgetManager.setNoClickThrough(button.getId(), noClickThrough);
+
+		if (!config.enableNoClickthrough() || !button.isHidden())
+		{
+			widgetManager.clearChildren(layer.getId());
+			return;
+		}
+
+		if (layer.getChild(0) == null)
+		{
+			Widget noClick = layer.createChild(0, WidgetType.LAYER);
+			noClick.setOriginalX(button.getOriginalX());
+			noClick.setOriginalY(button.getOriginalY());
+			noClick.setOriginalWidth(button.getOriginalWidth());
+			noClick.setOriginalHeight(button.getOriginalHeight());
+			noClick.setNoClickThrough(true);
+			noClick.revalidate();
+		}
+	}
+
+	//TODO - test if stale state can happen to the XP orb when hovering into the HP orb in safe mode (poisoned)
+	//orb swapping seems to have introduced a possible de-sync under certain configurations, where an orbs backing frame
+	//will remain in a hovered state when moving into another orbs bounds (overlapped) while triggering the graphic swapper script (44)
+	//before it applied the correct state to the previous orb - to resolve this, ignore non-orb related swaps and reset the stale
+	//backing sprite if it exists
+	// - test example: swap order [HP, SPEC, RUN, PRAY], default view
+	// - hovering RUN -> PRAY = never becomes stale
+	// - hovering PRAY -> RUN = can become stale
+	public void resolveOrbFrameMismatch()
+	{
+		if (isCompactLayout() || !config.enableOrbSwapping())
+		{
+			return;
+		}
+
+		final int id = client.getIntStack()[1] - 1;
+
+		if (!Orbs.isSwappableOrb(id))
+		{
+			return;
+		}
+
+		final Point mouse = client.getMouseCanvasPosition();
+
+		for (TargetWidget target : Orbs.SWAPPABLE_ORBS)
+		{
+			final Widget backing = client.getWidget(Orbs.getBackingId(target));
+			final Widget button = client.getWidget(Orbs.getButtonId(target));
+
+			if (backing == null || button == null)
+			{
+				continue;
+			}
+
+			final int spriteId = backing.getSpriteId();
+			final boolean hovering = button.getBounds().contains(mouse.getX(), mouse.getY());
+
+			if (!hovering && spriteId == Sprite.FRAME_HOVERED)
+			{
+				backing.setSpriteId(Sprite.FRAME);
+			}
+		}
+	}
+
 	//create the compass frame and toggle buttons, clearing them if the parent id changed,
 	//and only creating widgets if missing from the current parent
 	public void createCustomChildren()
@@ -343,10 +457,25 @@ public class CompactOrbsManager
 		minimapButton.setOpacity(Layout.OPACITY);
 		minimapButton.setHidden(false);
 		minimapButton.setHasListener(true);
-		minimapButton.setAction(0, getButtonMenuOp(ConfigKeys.MINIMAP));
+		minimapButton.setAction(Menu.TOGGLE_OVERLAY, "");
 		minimapButton.setOnOpListener(
 			(JavaScriptCallback) e ->
-				onMinimapToggle()
+			{
+				switch (e.getOp() - 1)
+				{
+					case Menu.ABOVE_WALK_HERE:
+					case Menu.BELOW_WALK_HERE:
+						onMinimapToggle();
+						break;
+
+					case Menu.TOGGLE_OVERLAY:
+						if (isCompactLayout())
+						{
+							configManager.setConfiguration(ConfigGroup.GROUP_NAME, ConfigKeys.ENABLE_MINIMAP_OVERLAY, !config.showMinimapInCompactView());
+						}
+						break;
+				}
+			}
 		);
 		minimapButton.setOnMouseOverListener(
 			(JavaScriptCallback) e ->
@@ -441,7 +570,7 @@ public class CompactOrbsManager
 		}
 	}
 
-	public void updateCompassFrameChild()
+	private void updateCompassFrameChild()
 	{
 		if (compassFrame == null)
 		{
@@ -469,6 +598,12 @@ public class CompactOrbsManager
 		widgetManager.updateValue(minimapButton::getOriginalX, minimapButton::setOriginalX, getMinimapButtonX());
 		widgetManager.updateValue(minimapButton::getOriginalY, minimapButton::setOriginalY, getMinimapButtonY());
 		minimapButton.revalidate();
+	}
+
+	private void updateMinimapOverlayToggleOp()
+	{
+		String op = getMenuOp(config.showMinimapInCompactView() ? Menu.PREFIX_HIDE : Menu.PREFIX_SHOW, "Detached Minimap");
+		minimapButton.setAction(Menu.TOGGLE_OVERLAY, isCompactLayout() && config.showToggleOnMinimapButton() ? op : "");
 	}
 
 	public void updateCompassToggleButton()
@@ -516,6 +651,7 @@ public class CompactOrbsManager
 	public void updateMinimapOverlayVisibility()
 	{
 		widgetManager.setHidden(Widgets.MinimapOverlay.UNIVERSE, hideMinimapOverlay());
+		updateMinimapOverlayToggleOp();
 	}
 
 	//set hooked layer back to default
@@ -770,7 +906,7 @@ public class CompactOrbsManager
 		return getMenuOp(action, target);
 	}
 
-	public void setMenuPriority(String key, Widget widget)
+	private void setMenuPriority(String key, Widget widget)
 	{
 		int index = Menu.ABOVE_WALK_HERE;
 		if (config.rightClickToggleButtons())
@@ -782,7 +918,7 @@ public class CompactOrbsManager
 		widget.setNoClickThrough(!config.rightClickToggleButtons());
 	}
 
-	String getMenuOp(String action, String target)
+	private String getMenuOp(String action, String target)
 	{
 		return action + " " + ColorUtil.wrapWithColorTag(target, Menu.COLOR);
 	}
@@ -869,6 +1005,11 @@ public class CompactOrbsManager
 	public boolean isWikiHidden()
 	{
 		return config.hideWiki();
+	}
+
+	public boolean shouldOffsetXpOrb()
+	{
+		return !isFixedMode() && (enableNoClickThrough || config.enableOrbSwapping());
 	}
 
 	public boolean hideMinimapToggle()
@@ -977,9 +1118,12 @@ public class CompactOrbsManager
 				case HORIZONTAL:
 					x = Layout.Horizontal.MAP_CONTAINER_WIDTH - Layout.TOGGLE_BUTTON_SIZE;
 
-					if (config.hideWiki() && !config.disableReordering())
+					if (allowReordering())
 					{
-						x -= 42;//wiki banner width + 2
+						if (isWikiHidden())
+						{
+							x -= 42;
+						}
 					}
 
 					if (isVerticalLeft())
@@ -990,7 +1134,7 @@ public class CompactOrbsManager
 					break;
 
 				case HORIZONTAL_WIDE:
-					x = Layout.HorizontalWide.MAP_CONTAINER_WIDTH - Layout.TOGGLE_BUTTON_SIZE - 6;
+					x = Layout.HorizontalWide.MAP_CONTAINER_WIDTH - Layout.TOGGLE_BUTTON_SIZE - 7;
 					break;
 			}
 		}
@@ -1040,7 +1184,7 @@ public class CompactOrbsManager
 					break;
 
 				case HORIZONTAL_WIDE:
-					y = Layout.HorizontalWide.MAP_CONTAINER_HEIGHT - Layout.TOGGLE_BUTTON_SIZE - 35;
+					y = Layout.HorizontalWide.MAP_CONTAINER_HEIGHT - Layout.TOGGLE_BUTTON_SIZE - 33;
 					break;
 			}
 		}
@@ -1066,7 +1210,7 @@ public class CompactOrbsManager
 		switch (getCurrentLayout())
 		{
 			case VERTICAL:
-				if (config.enableNoClickthrough())
+				if (enableNoClickThrough)
 				{
 					x += 1;
 				}
@@ -1075,10 +1219,20 @@ public class CompactOrbsManager
 			case HORIZONTAL:
 				x += 1;
 
-				if (isCompassHidden() && allowReordering())
+				if (allowReordering())
 				{
-					return getMinimapButtonX();
+					if (isCompassHidden())
+					{
+						if (isXpDropHidden() || hideWorldMap)
+						{
+							return getMinimapButtonX();
+						}
+					}
 				}
+				break;
+
+			case HORIZONTAL_WIDE:
+				x -= 2;
 				break;
 		}
 
@@ -1099,7 +1253,7 @@ public class CompactOrbsManager
 		switch (getCurrentLayout())
 		{
 			case VERTICAL:
-				if (config.enableNoClickthrough())
+				if (enableNoClickThrough)
 				{
 					y -= 2;
 				}
@@ -1107,6 +1261,22 @@ public class CompactOrbsManager
 				if (applyVerticalHeightOffset())
 				{
 					y -= 20;
+				}
+				break;
+
+			case HORIZONTAL:
+				if (allowReordering())
+				{
+					if (isCompassHidden())
+					{
+						if (isWikiHidden())
+						{
+							if (isXpDropHidden() || hideWorldMap)
+							{
+								return Layout.Horizontal.RUN_ORB_Y; //anchor y to the Run orb
+							}
+						}
+					}
 				}
 				break;
 

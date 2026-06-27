@@ -25,7 +25,7 @@
 
 package com.compactorbs.widget.offset.impl;
 
-import com.compactorbs.CompactOrbsConstants;
+import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.offset.OffsetTarget;
 import com.compactorbs.widget.slot.SlotManager;
@@ -41,7 +41,7 @@ public class LogoutXOffset implements OffsetTarget
 			&& (manager.showOverlayLogoutX() || manager.isMinimapOverlayEnabled())
 			&& !manager.isMinimapMinimized())
 		{
-			return -CompactOrbsConstants.Layout.LOGOUT_X_WIDTH;
+			return -Layout.LOGOUT_X_WIDTH;
 		}
 
 		if (!compactLayout)
@@ -49,15 +49,33 @@ public class LogoutXOffset implements OffsetTarget
 			return x;
 		}
 
-		if (manager.isVerticalRight())
+		if (manager.allowReordering())
 		{
-			x += manager.getCurrentLayout().getRightOffset();
-		}
+			if (manager.isVerticalRight())
+			{
+				x += manager.getCurrentLayout().getRightOffset();
+			}
 
-		if (manager.getCurrentLayout().isHorizontal()
-			&& manager.isVerticalLeft())
-		{
-			x -= slotManager.getHiddenSize();
+			if (manager.getCurrentLayout().isHorizontal())
+			{
+				if (manager.isCompassHidden())
+				{
+					if (manager.hideWorldMap && manager.isXpDropHidden())
+					{
+						x -= 23;
+
+						if (manager.isWikiHidden())
+						{
+							x -= 7;
+						}
+					}
+				}
+
+				if (manager.isVerticalLeft())
+				{
+					x -= slotManager.getHiddenSize();
+				}
+			}
 		}
 
 		return x;
@@ -81,14 +99,30 @@ public class LogoutXOffset implements OffsetTarget
 			}
 		}
 
-		if (manager.getCurrentLayout().isHorizontal())
+		if (manager.allowReordering())
 		{
-			if (manager.allowReordering())
+			if (manager.getCurrentLayout().isHorizontal())
 			{
-				if (manager.isXpDropHidden() || manager.hideWorldMap || manager.isCompassHidden())
+				if (manager.isCompassHidden())
 				{
-					y += 19 + (manager.isCompassHidden() ? 16 : 0);
+					y += 35;
 
+					if (manager.hideWorldMap && manager.isXpDropHidden())
+					{
+						y += 26;
+
+						if (manager.isWikiHidden())
+						{
+							y -= 7;
+						}
+					}
+				}
+				else
+				{
+					if (manager.hideWorldMap || manager.isXpDropHidden())
+					{
+						y += 19;
+					}
 				}
 			}
 		}

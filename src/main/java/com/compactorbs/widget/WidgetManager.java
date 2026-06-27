@@ -247,17 +247,9 @@ public class WidgetManager
 		widget.setHidden(hidden);
 	}
 
-	public void setTargetsNoClickthrough(boolean noClickthrough, TargetWidget... targets)
+	public void setNoClickThrough(int componentId, boolean noClickThrough)
 	{
-		for (TargetWidget target : targets)
-		{
-			setNoClickThrough(target, noClickthrough);
-		}
-	}
-
-	public void setNoClickThrough(TargetWidget target, boolean noClickThrough)
-	{
-		Widget widget = getTargetWidget(target);
+		Widget widget = client.getWidget(componentId);
 		if (widget == null)
 		{
 			return;

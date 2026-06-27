@@ -25,6 +25,7 @@
 
 package com.compactorbs.widget.offset.impl;
 
+import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.offset.OffsetTarget;
@@ -54,16 +55,50 @@ public class WorldMapOffset implements OffsetTarget
 			return manager.isFixedMode() ? 10 : x;
 		}
 
-		if (manager.getCurrentLayout().isHorizontal())
+		if (manager.allowReordering())
 		{
-			if (manager.isCompassHidden() && manager.allowReordering())
+			if (manager.getCurrentLayout().isHorizontal())
 			{
-				x += 10;
+				if (manager.isCompassHidden())
+				{
+					x += 10;
+
+					if (manager.isWikiHidden())
+					{
+						x -= 6;
+					}
+				}
+
+				if (manager.isVerticalLeft())
+				{
+					x -= slotManager.getHiddenSize();
+				}
 			}
 
-			if (manager.isVerticalLeft())
+			if (manager.getCurrentLayout().isHorizontalWide())
 			{
-				x -= slotManager.getHiddenSize();
+				if (manager.isClassicResizable() || manager.hideLogoutX)
+				{
+					if (manager.isXpDropHidden())
+					{
+						if (manager.hideMinimapToggle())
+						{
+							x += Layout.TOGGLE_BUTTON_SIZE + 9;
+
+							if (manager.isWikiHidden())
+							{
+								x += 4;
+							}
+						}
+						else
+						{
+							if (manager.isWikiHidden())
+							{
+								x += Layout.TOGGLE_BUTTON_SIZE + 13;
+							}
+						}
+					}
+				}
 			}
 		}
 
@@ -83,16 +118,24 @@ public class WorldMapOffset implements OffsetTarget
 			return y;
 		}
 
-		if (manager.getCurrentLayout().isVertical())
+		if (manager.allowReordering())
 		{
-			y = slotManager.applyHiddenYOffset(Orbs.WORLD_MAP_CONTAINER, y);
-		}
-
-		if (manager.getCurrentLayout().isHorizontal())
-		{
-			if (manager.isCompassHidden() && manager.allowReordering())
+			if (manager.getCurrentLayout().isVertical())
 			{
-				y += 41;
+				y = slotManager.applyHiddenYOffset(Orbs.WORLD_MAP_CONTAINER, y);
+			}
+
+			if (manager.getCurrentLayout().isHorizontal())
+			{
+				if (manager.isCompassHidden())
+				{
+					y += 41;
+
+					if (manager.isWikiHidden())
+					{
+						y -= 5;
+					}
+				}
 			}
 		}
 

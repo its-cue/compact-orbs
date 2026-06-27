@@ -25,6 +25,7 @@
 
 package com.compactorbs.widget.offset.impl;
 
+import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.offset.OffsetTarget;
@@ -39,7 +40,17 @@ public class ActivityOrbOffset implements OffsetTarget
 	{
 		if (!compactLayout)
 		{
-			return manager.isFixedMode() ? 0 : x;
+			if (manager.isFixedMode())
+			{
+				return 0;
+			}
+
+			if (manager.isStoreOrbDisabled())
+			{
+				x = Layout.Original.STORE_ORB_X;
+			}
+
+			return x;
 		}
 
 		if (manager.getCurrentLayout().isHorizontal())
@@ -55,7 +66,17 @@ public class ActivityOrbOffset implements OffsetTarget
 	{
 		if (!compactLayout)
 		{
-			return manager.isFixedMode() ? 50 : y;
+			if (manager.isFixedMode())
+			{
+				return 50;
+			}
+
+			if (manager.isStoreOrbDisabled())
+			{
+				y = Layout.Original.STORE_ORB_Y;
+			}
+
+			return y;
 		}
 
 		if (manager.getCurrentLayout().isVertical())

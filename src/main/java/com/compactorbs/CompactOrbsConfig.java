@@ -629,12 +629,24 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = ConfigKeys.ENABLE_LOGOUT_X_OVERLAY,
-		name = "- Show Logout X",
-		description = "Display a Logout X on the minimap overlay (only in modern-resizable)<br>"
-			+ "Requires: 'Show minimap in compact view'",
+		keyName = ConfigKeys.ENABLE_OVERLAY_TOGGLE_OPTION,
+		name = "Show toggle on the minimap button",
+		description = "Display a menu option on the minimap button that will toggle the detached minimap",
 		section = minimapOverlay,
 		position = 1
+	)
+	default boolean showToggleOnMinimapButton()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.ENABLE_LOGOUT_X_OVERLAY,
+		name = "Show Logout X",
+		description = "Display a Logout X on the minimap overlay (only in modern-resizable)<br>"
+			+ "Required: 'Show minimap in compact view'",
+		section = minimapOverlay,
+		position = 2
 	)
 	default boolean showOverlayLogoutX()
 	{

@@ -52,33 +52,46 @@ public class CompassOffset implements OffsetTarget
 			x += manager.getCurrentLayout().getRightOffset();
 		}
 
-		if (manager.getCurrentLayout().isVertical())
+		if (manager.allowReordering())
 		{
-			if (manager.allowReordering()
-				&& (manager.isClassicResizable() || manager.hideLogoutX)
-				&& manager.getCurrentLayout().isLastVisible(
-				Slot.WIKI_SLOT, slotManager.getHiddenCountAbove(Orbs.WIKI_ICON_CONTAINER)))
+			if (manager.getCurrentLayout().isVertical())
 			{
-				x += 18;
-			}
-		}
-
-		if (manager.getCurrentLayout().isHorizontal()
-			&& manager.isVerticalLeft())
-		{
-			x -= slotManager.getHiddenSize();
-		}
-
-		if (manager.getCurrentLayout().isHorizontalWide()
-			&& manager.isVerticalRight())
-		{
-			if (manager.hideWorldMap && manager.isWikiHidden() && manager.allowReordering())
-			{
-				x += 41;
-
-				if ((manager.hideLogoutX || manager.isClassicResizable()) && manager.hideMinimapToggle())
+				if ((manager.isClassicResizable() || manager.hideLogoutX)
+					&& manager.getCurrentLayout().isLastVisible(
+					Slot.WIKI_SLOT, slotManager.getHiddenCountAbove(Orbs.WIKI_ICON_CONTAINER)))
 				{
-					x += Layout.TOGGLE_BUTTON_SIZE;
+					x += 18;
+				}
+			}
+
+			if (manager.getCurrentLayout().isHorizontal()
+				&& manager.isVerticalLeft())
+			{
+				x -= slotManager.getHiddenSize();
+			}
+
+			if (manager.getCurrentLayout().isHorizontalWide()
+				&& manager.isVerticalRight())
+			{
+				if (manager.isClassicResizable() || manager.hideLogoutX)
+				{
+					if (manager.hideMinimapToggle() && (manager.isXpDropHidden() || manager.hideWorldMap))
+					{
+						x += Layout.TOGGLE_BUTTON_SIZE;
+					}
+
+					if (manager.isWikiHidden())
+					{
+						if (manager.isXpDropHidden())
+						{
+							x += 20;
+						}
+
+						if (manager.hideWorldMap)
+						{
+							x += 20;
+						}
+					}
 				}
 			}
 		}

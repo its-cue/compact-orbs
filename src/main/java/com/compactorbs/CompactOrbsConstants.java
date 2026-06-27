@@ -88,6 +88,7 @@ public class CompactOrbsConstants
 		public static final String HIDE_LOGOUT_X = "hideLogoutX";
 		public static final String HIDE_GRID = "hideGrid";
 		public static final String ENABLE_MINIMAP_OVERLAY = "enableMinimapOverlay";
+		public static final String ENABLE_OVERLAY_TOGGLE_OPTION = "enableOverlayToggleOption";
 		public static final String ENABLE_LOGOUT_X_OVERLAY = "enableLogoutXOverlay";
 
 		public static final class Wiki
@@ -140,8 +141,15 @@ public class CompactOrbsConstants
 		//trigger remapping without the need for a valid scriptId
 		public static final int FORCE_UPDATE = -1;
 
+		//script that swaps a graphic with another, ex: for orb frame hovering
+		public static final int GRAPHIC_SWAPPER = 44;
+
 		//minimap overlay script for initial setup
 		public static final int BUFF_BAR_CONTENT_UPDATE = 4730;
+
+		//scripts related to noclickthrough updating
+		public static final int ORBS_UPDATE_HEALTH = 446;
+		public static final int ORBS_UPDATE_SPECENERGY = 2069;
 
 		//relevant orb update scripts
 		public static final int TOPLEVEL_REDRAW = ScriptID.TOPLEVEL_REDRAW;
@@ -328,12 +336,12 @@ public class CompactOrbsConstants
 			public static final int WORLD_MAP_Y = 0;
 
 			public static final int WIKI_ICON_X = 162;
-			public static final int WIKI_ICON_Y = 29;
+			public static final int WIKI_ICON_Y = 31;
 
 			public static final int LOGOUT_X = 200;
 			public static final int LOGOUT_Y = 2;
 
-			public static final int COMPASS_X = Original.COMPASS_X + 72;
+			public static final int COMPASS_X = Original.COMPASS_X + 76;
 			public static final int COMPASS_Y = 1;
 		}
 
@@ -394,10 +402,15 @@ public class CompactOrbsConstants
 		//menu index priority
 		public static final int ABOVE_WALK_HERE = 0;
 		public static final int BELOW_WALK_HERE = 5;
+		public static final int TOGGLE_OVERLAY = 6;
 	}
 
 	public static final class Sprite
 	{
+		//orb related sprites
+		public static final int FRAME = SpriteID.OrbFrame.FRAME;
+		public static final int FRAME_HOVERED = SpriteID.OrbFrame.FRAME_HOVERED;
+
 		//minimap overlay sprites
 		public static final int COMPASS_MASK = SpriteID.RESIZE_COMPASS_MASK;
 		public static final int MINIMAP_MASK = SpriteID.RESIZE_MAP_MASK;

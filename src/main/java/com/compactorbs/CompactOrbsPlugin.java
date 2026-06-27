@@ -36,10 +36,10 @@ import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
 import com.compactorbs.CompactOrbsConstants.Widgets.Orb;
 import com.compactorbs.widget.WidgetManager;
 import com.compactorbs.widget.elements.Orbs;
-import com.compactorbs.widget.overlay.MinimapOverlay;
 import com.compactorbs.widget.slot.Slot;
 import com.compactorbs.widget.slot.SlotLayout;
 import com.compactorbs.widget.slot.SlotManager;
+import com.compactorbs.widget.overlay.MinimapOverlay;
 import com.google.inject.Provides;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -114,6 +114,7 @@ public class CompactOrbsPlugin extends Plugin
 		manager.updateFixedMode = true;
 		manager.hideWorldMap = config.hideWorld();
 		manager.hideLogoutX = config.hideLogout();
+		manager.enableNoClickThrough = config.enableNoClickthrough();
 
 		clientThread.invoke(() ->
 		{
@@ -162,6 +163,10 @@ public class CompactOrbsPlugin extends Plugin
 
 		switch (scriptId)
 		{
+			case Script.GRAPHIC_SWAPPER:
+				manager.resolveOrbFrameMismatch();
+				break;
+
 			case Script.TOPLEVEL_REDRAW:
 				//check for an active cutscene
 				manager.pendingChildrenUpdate = manager.isCutsceneActive();
@@ -184,6 +189,14 @@ public class CompactOrbsPlugin extends Plugin
 
 			case Script.WIKI_ICON_INIT:
 				manager.updateWikiBannerVisibility(config.hideWiki());
+				break;
+
+			case Script.ORBS_UPDATE_HEALTH:
+			case Script.ORBS_UPDATE_SPECENERGY:
+				if (!manager.isCompactLayout())
+				{
+					manager.updateNoClickThrough();
+				}
 				break;
 
 			case Script.WORLD_MAP_UPDATE:
@@ -275,8 +288,10 @@ public class CompactOrbsPlugin extends Plugin
 		if (slotLayout != null)
 		{
 			clientThread.invokeLater(() ->
-				slotManager.applySlotSwap(slotLayout.getSlot(), slotLayout.getLayout())
-			);
+			{
+				slotManager.applySlotSwap(slotLayout.getSlot(), slotLayout.getLayout());
+				manager.updateNoClickThrough();
+			});
 			return;
 		}
 
@@ -290,6 +305,7 @@ public class CompactOrbsPlugin extends Plugin
 				break;
 
 			case ConfigKeys.MINIMAP_BUTTON_PLACEMENT:
+			case ConfigKeys.ENABLE_OVERLAY_TOGGLE_OPTION:
 				clientThread.invokeLater(manager::updateMinimapToggleButton);
 				break;
 
@@ -297,19 +313,23 @@ public class CompactOrbsPlugin extends Plugin
 				clientThread.invokeLater(() -> manager.updateCustomChildren(true));
 				break;
 
-			case ConfigKeys.ENABLE_NO_CLICKTHROUGH:
-				clientThread.invokeLater(() ->
-				{
-					widgetManager.setTargetsNoClickthrough(config.enableNoClickthrough() && manager.isCompactLayout(),
-						Orbs.HP_ORB_CONTAINER, Orbs.PRAYER_ORB_CONTAINER, Orbs.RUN_ORB_CONTAINER, Orbs.SPEC_ORB_CONTAINER);
-
-					manager.updateCompassToggleButton();
-				});
-				break;
-
-			//update all slots
 			case ConfigKeys.ENABLE_ORB_SWAPPING:
 				clientThread.invoke(() -> slotManager.generateSlots(true));
+			case ConfigKeys.ENABLE_NO_CLICKTHROUGH:
+				if (key.equals(ConfigKeys.ENABLE_NO_CLICKTHROUGH))
+				{
+					manager.enableNoClickThrough = config.enableNoClickthrough();
+				}
+
+				clientThread.invokeLater(() ->
+				{
+					manager.updateNoClickThrough();
+					manager.updateCompassToggleButton();
+					if (!manager.isCompactLayout())
+					{
+						widgetManager.remapTarget(Orbs.XP_DROPS_CONTAINER, manager.isCompactLayout());
+					}
+				});
 				break;
 
 			case ConfigKeys.ENABLE_MINIMAP_OVERLAY:

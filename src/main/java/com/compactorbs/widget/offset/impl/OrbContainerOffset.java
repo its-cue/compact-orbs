@@ -33,35 +33,59 @@ import lombok.Getter;
 @Getter
 public class OrbContainerOffset implements OffsetTarget
 {
+	private int offsetX;
+	private int offsetY;
+	private int offsetWidth;
+	private int offsetHeight;
+
 	@Override
 	public int xOffset(int x, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
 	{
+		offsetX = x;
+
 		if (!compact)
 		{
-			return x;
+			return offsetX;
 		}
 
 		if (manager.isVerticalRight())
 		{
-			x += manager.getCurrentLayout().getRightOffset();
+			offsetX += manager.getCurrentLayout().getRightOffset();
 		}
 
-		return x;
+		return offsetX;
 	}
 
 	@Override
 	public int yOffset(int y, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
 	{
+		offsetY = y;
+
 		if (!compact)
 		{
-			return y;
+			return offsetY;
 		}
 
 		if (manager.isHorizontalBottom())
 		{
-			y += manager.getCurrentLayout().getBottomOffset();
+			offsetY += manager.getCurrentLayout().getBottomOffset();
 		}
 
-		return y;
+		return offsetY;
 	}
+
+	@Override
+	public int widthOffset(int w, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
+	{
+		offsetWidth = w;
+		return offsetWidth;
+	}
+
+	@Override
+	public int heightOffset(int h, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
+	{
+		offsetHeight = h;
+		return offsetHeight;
+	}
+
 }
