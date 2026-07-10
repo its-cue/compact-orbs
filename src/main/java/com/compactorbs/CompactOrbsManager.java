@@ -667,6 +667,7 @@ public class CompactOrbsManager
 		if (configChanged)
 		{
 			handleLogoutXHiddenState(true);
+			updateOverlayLogoutX();
 		}
 	}
 
