@@ -54,6 +54,7 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.PluginChanged;
+import net.runelite.client.events.ProfileChanged;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -382,6 +383,12 @@ public class CompactOrbsPlugin extends Plugin
 			//world map and wiki require revalidation because of the containers position mode change, works for now (TODO)
 			widgetManager.revalidate(Orbs.WORLD_MAP_CONTAINER, Orbs.WIKI_ICON_CONTAINER);
 		});
+	}
+
+	@Subscribe
+	public void onProfileChanged(ProfileChanged event)
+	{
+		manager.updateConfig();
 	}
 
 	@Subscribe

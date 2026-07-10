@@ -612,7 +612,10 @@ public class CompactOrbsManager
 	private void updateMinimapOverlayToggleOp()
 	{
 		String op = getMenuOp(config.showMinimapInCompactView() ? Menu.PREFIX_HIDE : Menu.PREFIX_SHOW, "Detached Minimap");
-		minimapButton.setAction(Menu.TOGGLE_OVERLAY, isCompactLayout() && config.showToggleOnMinimapButton() ? op : "");
+		if (minimapButton != null)
+		{
+			minimapButton.setAction(Menu.TOGGLE_OVERLAY, isCompactLayout() && config.showToggleOnMinimapButton() ? op : "");
+		}
 	}
 
 	public void updateCompassToggleButton()
