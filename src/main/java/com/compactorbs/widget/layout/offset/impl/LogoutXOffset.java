@@ -51,7 +51,7 @@ public class LogoutXOffset implements OffsetTarget
 
 		if (manager.allowReordering())
 		{
-			if (manager.isVerticalRight())
+			if (manager.isAnchorRight())
 			{
 				x += manager.getCurrentLayout().getRightOffset();
 			}
@@ -71,7 +71,7 @@ public class LogoutXOffset implements OffsetTarget
 					}
 				}
 
-				if (manager.isVerticalLeft())
+				if (manager.isAnchorLeft())
 				{
 					x -= slotManager.getHiddenSize();
 				}
@@ -89,9 +89,9 @@ public class LogoutXOffset implements OffsetTarget
 			return y;
 		}
 
-		if (manager.isHorizontalBottom())
+		if (manager.isAnchorBottom())
 		{
-			y += manager.getCurrentLayout().getBottomOffset();
+			y += manager.getCurrentLayout().getBottomOffset() - manager.clampVerticalY();
 
 			if (manager.getCurrentLayout().isVertical())
 			{

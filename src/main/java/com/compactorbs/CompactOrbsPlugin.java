@@ -64,8 +64,8 @@ import net.runelite.client.util.HotkeyListener;
 @PluginDescriptor(
 	name = "Compact Orbs",
 	description = "Minimize the minimap and reposition the orbs into a compact view.",
-	tags = {"compact", "orbs", "layout", "hide", "minimap", "resizable", "classic", "modern", "world", "map", "wiki", "swap", "overlay"},
-	conflicts = {"Fixed Resizable Hybrid", "Orb Hider", "Minimap Hider"}
+	tags = {"compact", "orbs", "layout", "hide", "minimap", "resizable", "classic", "modern", "world", "map", "wiki", "swap", "overlay", "orb", "fixed"},
+	conflicts = {"Fixed Resizable Hybrid", "Orb Hider", "Minimap Hider", "Movable Orbs"}
 )
 public class CompactOrbsPlugin extends Plugin
 {
@@ -102,6 +102,7 @@ public class CompactOrbsPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
+		manager.updateConfig();
 		overlayManager.add(minimapOverlay);
 		keyManager.registerKeyListener(hotkeyListener);
 		manager.registerOrbToggleEntries();
@@ -139,6 +140,12 @@ public class CompactOrbsPlugin extends Plugin
 		keyManager.unregisterKeyListener(hotkeyListener);
 
 		clientThread.invoke(manager::reset);
+	}
+
+	@Provides
+	CompactOrbsConfig provideConfig(ConfigManager configManager)
+	{
+		return configManager.getConfig(CompactOrbsConfig.class);
 	}
 
 	@Subscribe
@@ -299,8 +306,8 @@ public class CompactOrbsPlugin extends Plugin
 		{
 			case ConfigKeys.MINIMAP:
 			case ConfigKeys.COMPASS:
-			case ConfigKeys.HOTKEY_TOGGLE:
-			case ConfigKeys.HOTKEY_MINIMAP:
+			case ConfigKeys.HOTKEY_KEYBIND:
+			case ConfigKeys.HOTKEY_TOGGLE_OPTION:
 				//do nothing (prevent default behaviour)
 				break;
 
@@ -333,27 +340,19 @@ public class CompactOrbsPlugin extends Plugin
 				break;
 
 			case ConfigKeys.ENABLE_MINIMAP_OVERLAY:
-				clientThread.invokeLater(() -> manager.updateMinimapOverlayVisibility());
+				clientThread.invokeLater(() -> manager.updateMinimapOverlayVisibility(true));
 				break;
 
 			case ConfigKeys.ENABLE_LOGOUT_X_OVERLAY:
-				clientThread.invokeLater(() ->
-				{
-					if (!config.showMinimapInCompactView())
-					{
-						return;
-					}
-
-					manager.handleLogoutXHiddenState(true);
-				});
+				clientThread.invokeLater(() -> manager.handleLogoutXHiddenState(true));
 				break;
 
 			case ConfigKeys.ORB_LAYOUT:
+			case ConfigKeys.VERTICAL_Y_ADJUSTMENT:
 			case ConfigKeys.MINIMAP_TOGGLE_BUTTON:
 			case ConfigKeys.COMPASS_TOGGLE_BUTTON:
 			case ConfigKeys.HORIZONTAL_ANCHOR:
 			case ConfigKeys.VERTICAL_ANCHOR:
-			case ConfigKeys.ENABLE_VERTICAL_HEIGHT_OFFSET:
 				clientThread.invokeLater(() ->
 				{
 					manager.updateLayout();
@@ -399,35 +398,41 @@ public class CompactOrbsPlugin extends Plugin
 		clientThread.invokeLater(() -> manager.init(Script.FORCE_UPDATE));
 	}
 
-	private final HotkeyListener hotkeyListener = new HotkeyListener(() -> config.toggleButtonHotkey())
+	private final HotkeyListener hotkeyListener = new HotkeyListener(() -> config.hotkeyKeybind())
 	{
 		@Override
 		public void hotkeyPressed()
 		{
-			//prevent hotkey in fixed mode
-			if (manager.isFixedMode())
+			if (!manager.isFixedMode())
 			{
-				return;
+				switch (config.toggleOption())
+				{
+					case MINIMAP:
+						clientThread.invokeLater(manager::onMinimapToggle);
+						break;
+
+					case MINIMAP_BUTTON:
+						manager.saveConfig(ConfigKeys.MINIMAP_TOGGLE_BUTTON, !config.hideMinimapToggle());
+						break;
+
+					case COMPASS_BUTTON:
+						manager.saveConfig(ConfigKeys.COMPASS_TOGGLE_BUTTON, !config.hideCompassToggle());
+						break;
+
+					case BOTH_BUTTONS:
+						boolean hidden = !(config.hideMinimapToggle() || config.hideCompassToggle());
+
+						manager.saveConfig(ConfigKeys.MINIMAP_TOGGLE_BUTTON, hidden);
+						manager.saveConfig(ConfigKeys.COMPASS_TOGGLE_BUTTON, hidden);
+						break;
+
+					case DETACHED_MINIMAP:
+						manager.saveConfig(ConfigKeys.ENABLE_MINIMAP_OVERLAY, !config.showMinimapInCompactView());
+						break;
+				}
 			}
 
-			if (config.minimapHotkey())
-			{
-				clientThread.invokeLater(manager::onMinimapToggle);
-				return;
-			}
-
-			boolean hidden = !(config.hideMinimapToggle() || config.hideCompassToggle());
-
-			configManager.setConfiguration(GROUP_NAME, ConfigKeys.MINIMAP_TOGGLE_BUTTON, hidden);
-			configManager.setConfiguration(GROUP_NAME, ConfigKeys.COMPASS_TOGGLE_BUTTON, hidden);
-
-			clientThread.invokeLater(() -> manager.updateCustomChildren(true));
 		}
 	};
 
-	@Provides
-	CompactOrbsConfig provideConfig(ConfigManager configManager)
-	{
-		return configManager.getConfig(CompactOrbsConfig.class);
-	}
 }

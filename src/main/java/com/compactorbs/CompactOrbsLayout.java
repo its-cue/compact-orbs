@@ -54,7 +54,7 @@ public enum CompactOrbsLayout
 		List.of(Slot.ACTIVITY_SLOT, Slot.PRAYER_SLOT, Slot.SPEC_SLOT)
 	),
 	HORIZONTAL_WIDE(
-		"Horizontal (Wide)",
+		"Horizontal-Wide",
 		Layout.HorizontalWide.LAYOUT_ID,
 		0,
 		Layout.Original.MAP_CONTAINER_HEIGHT - Layout.HorizontalWide.MAP_CONTAINER_HEIGHT,

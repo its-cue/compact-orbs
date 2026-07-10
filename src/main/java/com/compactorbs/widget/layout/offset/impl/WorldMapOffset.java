@@ -69,7 +69,7 @@ public class WorldMapOffset implements OffsetTarget
 					}
 				}
 
-				if (manager.isVerticalLeft())
+				if (manager.isAnchorLeft())
 				{
 					x -= slotManager.getHiddenSize();
 				}
@@ -110,7 +110,13 @@ public class WorldMapOffset implements OffsetTarget
 	{
 		if (manager.hideWorldMap)
 		{
-			return getHiddenOffset();
+			y = getHiddenOffset();
+
+			if (manager.clampVerticalY() > manager.getCurrentLayout().getBottomOffset())
+			{
+				y -= manager.getCurrentLayout().getBottomOffset() - manager.clampVerticalY();
+			}
+			return y;
 		}
 
 		if (!compactLayout)

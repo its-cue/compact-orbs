@@ -48,7 +48,7 @@ public class OrbContainerOffset implements OffsetTarget
 			return offsetX;
 		}
 
-		if (manager.isVerticalRight())
+		if (manager.isAnchorRight())
 		{
 			offsetX += manager.getCurrentLayout().getRightOffset();
 		}
@@ -66,9 +66,9 @@ public class OrbContainerOffset implements OffsetTarget
 			return offsetY;
 		}
 
-		if (manager.isHorizontalBottom())
+		if (manager.isAnchorBottom())
 		{
-			offsetY += manager.getCurrentLayout().getBottomOffset();
+			offsetY += manager.getCurrentLayout().getBottomOffset() - manager.clampVerticalY();
 		}
 
 		return offsetY;

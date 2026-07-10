@@ -47,7 +47,7 @@ public class WikiContainerOffset implements OffsetTarget
 		if (manager.allowReordering())
 		{
 			if (manager.getCurrentLayout().isHorizontal()
-				&& manager.isVerticalLeft())
+				&& manager.isAnchorLeft())
 			{
 				x -= slotManager.getHiddenSize();
 			}
@@ -81,7 +81,7 @@ public class WikiContainerOffset implements OffsetTarget
 		{
 			y = slotManager.applyHiddenYOffset(Orbs.WIKI_ICON_CONTAINER, y);
 
-			if (manager.isHorizontalTop()
+			if (manager.isAnchorTop()
 				&& manager.allowReordering()
 				&& manager.getCurrentLayout().isLastVisible(Slot.WIKI_SLOT, slotManager.getHiddenCountAbove(Orbs.WIKI_ICON_CONTAINER)))
 			{

@@ -23,61 +23,50 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.layout.offset.impl;
+package com.compactorbs.util;
 
-import com.compactorbs.CompactOrbsManager;
-import com.compactorbs.widget.layout.offset.OffsetTarget;
-import com.compactorbs.widget.layout.slot.SlotManager;
-import lombok.Getter;
+import static com.compactorbs.CompactOrbsConstants.ConfigGroup.GROUP_NAME;
+import java.util.function.Function;
+import lombok.extern.slf4j.Slf4j;
+import net.runelite.client.config.ConfigManager;
 
-@Getter
-public class MapContainerOffset implements OffsetTarget
+@Slf4j
+public class MigrateConfig<T, R>
 {
-	@Override
-	public int widthOffset(int w, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
+	private final String oldKey;
+	private final String newKey;
+	private final Class<T> type;
+	private final Function<T, R> transform;
+
+	public MigrateConfig(String oldKey, String newKey, Class<T> type, Function<T, R> transform)
 	{
-		if (!compact)
-		{
-			return w;
-		}
-
-		if (manager.isAnchorRight())
-		{
-			w += manager.getCurrentLayout().getRightOffset();
-		}
-
-		if ((manager.getCurrentLayout().isHorizontal())
-			&& manager.isAnchorLeft())
-		{
-			w -= slotManager.getHiddenSize();
-		}
-
-		return w;
+		this.oldKey = oldKey;
+		this.newKey = newKey;
+		this.type = type;
+		this.transform = transform;
 	}
 
-	@Override
-	public int heightOffset(int h, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
+	public boolean write(ConfigManager configManager)
 	{
-		if (!compact)
+		T value = configManager.getConfiguration(GROUP_NAME, oldKey, type);
+		if (value == null)
 		{
-			return h;
+			return false;
 		}
 
-		if (manager.isAnchorBottom())
+		R result = transform.apply(value);
+		if (result != null)
 		{
-			h += manager.getCurrentLayout().getBottomOffset();
+			log.debug("Migrating config key: {}.{}={} -> {}={}", GROUP_NAME, oldKey, value, newKey, result);
+			configManager.setConfiguration(GROUP_NAME, newKey, result);
 		}
+		return true;
+	}
 
-		if (manager.getCurrentLayout().isVertical())
-		{
-			if (manager.isAnchorTop())
-			{
-				h -= slotManager.getHiddenSize();
-			}
-		}
-
-		return h;
+	public void unset(ConfigManager configManager)
+	{
+		log.debug("Removing old config key: {}.{}", GROUP_NAME, oldKey);
+		configManager.unsetConfiguration(GROUP_NAME, oldKey);
 	}
 }
-
 

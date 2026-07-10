@@ -47,7 +47,7 @@ public class XPOrbOffset implements OffsetTarget
 		{
 			if (manager.getCurrentLayout().isHorizontal())
 			{
-				if (manager.isVerticalLeft())
+				if (manager.isAnchorLeft())
 				{
 					x -= slotManager.getHiddenSize();
 				}
@@ -154,16 +154,14 @@ public class XPOrbOffset implements OffsetTarget
 
 			if (manager.getCurrentLayout().isHorizontalWide())
 			{
-				if (manager.isVerticalRight())
+				if (manager.isCompassHidden() ||
+					manager.isClassicResizable() ||
+					manager.hideWorldMap ||
+					manager.hideLogoutX)
 				{
-					if (manager.isCompassHidden() ||
-						manager.isClassicResizable() ||
-						manager.hideWorldMap ||
-						manager.hideLogoutX)
-					{
-						y -= Layout.TOGGLE_BUTTON_SIZE - 5;
-					}
+					y -= Layout.TOGGLE_BUTTON_SIZE - 5;
 				}
+
 			}
 		}
 

@@ -38,6 +38,7 @@ public class CompactOrbsConstants
 	public static final class ConfigGroup
 	{
 		public static final String GROUP_NAME = "compactorbs";
+		public static final int CONFIG_VERSION = 1;
 
 		public static final class Wiki
 		{
@@ -52,20 +53,21 @@ public class CompactOrbsConstants
 
 	public static final class ConfigKeys
 	{
+		public static final String CONFIG_VERSION = "configVersion";
 		public static final String MINIMAP = "hideMinimap";
 		public static final String COMPASS = "hideCompass";
-		public static final String HOTKEY_TOGGLE = "hotkeyToggle";
-		public static final String HOTKEY_MINIMAP = "hotkeyMinimap";
+		public static final String HOTKEY_KEYBIND = "hotkeyKeybind";
+		public static final String HOTKEY_TOGGLE_OPTION = "hotkeyToggleOption";
 		public static final String MINIMAP_TOGGLE_BUTTON = "hideMinimapButton";
 		public static final String COMPASS_TOGGLE_BUTTON = "hideCompassButton";
 		public static final String RIGHT_CLICK_TOGGLE_BUTTONS = "rightClickToggleButtons";
 		public static final String MINIMAP_BUTTON_PLACEMENT = "minimapButtonPlacement";
 		public static final String ORB_LAYOUT = "orbLayout";
-		public static final String HORIZONTAL_ANCHOR = "horizontalPosition";
-		public static final String VERTICAL_ANCHOR = "verticalPosition";
+		public static final String VERTICAL_ANCHOR = "verticalAnchor";
+		public static final String HORIZONTAL_ANCHOR = "horizontalAnchor";
+		public static final String VERTICAL_Y_ADJUSTMENT = "verticalYAdjustment";
 		public static final String DISABLE_REORDERING = "disableReordering";
 		public static final String LEAVE_EMPTY_SPACE = "leaveEmptySpace";
-		public static final String ENABLE_VERTICAL_HEIGHT_OFFSET = "enableVerticalHeightOffset";
 		public static final String ENABLE_NO_CLICKTHROUGH = "enableNoClickthrough";
 		public static final String ENABLE_ORB_SWAPPING = "enableOrbSwapping";
 		public static final String HP_ORB_SLOT = "hpOrbSlot";
@@ -367,7 +369,7 @@ public class CompactOrbsConstants
 		public static final int BELOW_MAP_MINIMAP_BUTTON_X = 120;
 		public static final int BELOW_MAP_MINIMAP_BUTTON_Y = 155;
 
-		public static final int BELOW_X_MINIMAP_BUTTON_x = DEFAULT_MINIMAP_BUTTON_X;
+		public static final int BELOW_X_MINIMAP_BUTTON_X = DEFAULT_MINIMAP_BUTTON_X;
 		public static final int BELOW_X_MINIMAP_BUTTON_Y = 15;
 
 		//toggle button dimensions

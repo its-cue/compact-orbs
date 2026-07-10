@@ -36,11 +36,12 @@ import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
 import net.runelite.client.config.Keybind;
+import net.runelite.client.config.Range;
 
 @ConfigGroup(GROUP_NAME)
 public interface CompactOrbsConfig extends Config
 {
-	enum VerticalAnchor
+	enum HorizontalAnchor
 	{
 		LEFT, RIGHT;
 
@@ -55,7 +56,7 @@ public interface CompactOrbsConfig extends Config
 		}
 	}
 
-	enum HorizontalAnchor
+	enum VerticalAnchor
 	{
 		TOP, BOTTOM;
 
@@ -97,10 +98,20 @@ public interface CompactOrbsConfig extends Config
 		DEFAULT(Layout.DEFAULT_MINIMAP_BUTTON_X, Layout.DEFAULT_MINIMAP_BUTTON_Y),
 		ABOVE_XP(Layout.ABOVE_XP_MINIMAP_BUTTON_X, Layout.ABOVE_XP_MINIMAP_BUTTON_Y),
 		BELOW_MAP(Layout.BELOW_MAP_MINIMAP_BUTTON_X, Layout.BELOW_MAP_MINIMAP_BUTTON_Y),
-		BELOW_X(Layout.BELOW_X_MINIMAP_BUTTON_x, Layout.BELOW_X_MINIMAP_BUTTON_Y);
+		BELOW_X(Layout.BELOW_X_MINIMAP_BUTTON_X, Layout.BELOW_X_MINIMAP_BUTTON_Y);
 
 		private final int x;
 		private final int y;
+	}
+
+	@Getter
+	enum HotkeyOptions
+	{
+		MINIMAP_BUTTON,
+		COMPASS_BUTTON,
+		BOTH_BUTTONS,
+		MINIMAP,
+		DETACHED_MINIMAP
 	}
 
 	@ConfigItem(
@@ -135,11 +146,11 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.MINIMAP_BUTTON_PLACEMENT,
 		name = "Toggle location",
-		description = "Change the location of the minimap toggle button when the minimap is visible <br>" +
-			"DEFAULT: bottom right, below the minimap <br>" +
-			"ABOVE_XP: above the XP drops orb <br>" +
-			"BELOW_MAP: centered below the minimap, next to the Store orb <br>" +
-			"BELOW_X: right below where the Logout X would be"
+		description = "Select where the minimap toggle button should be while not in compact view <br>" +
+			"-Default: bottom right corner, below the minimap <br>" +
+			"-Above Xp: above the Xp orb <br>" +
+			"-Below Map: next to the Store orb, centered below the minimap <br>" +
+			"-Below X: slightly below the Logout-X"
 		,
 		section = compact,
 		position = 1
@@ -151,8 +162,8 @@ public interface CompactOrbsConfig extends Config
 
 	@ConfigItem(
 		keyName = ConfigKeys.MINIMAP_TOGGLE_BUTTON,
-		name = "Hide minimap button",
-		description = "Toggle the visibility of the toggle button for the minimap",
+		name = "Disable the minimap button",
+		description = "Hide/show the minimap toggle button",
 		section = compact,
 		position = 2
 	)
@@ -163,8 +174,8 @@ public interface CompactOrbsConfig extends Config
 
 	@ConfigItem(
 		keyName = ConfigKeys.COMPASS_TOGGLE_BUTTON,
-		name = "Hide compass button",
-		description = "Toggle the visibility of the toggle button for the compass",
+		name = "Disable the compass button",
+		description = "Hide/show the compass toggle button",
 		section = compact,
 		position = 3
 	)
@@ -175,8 +186,8 @@ public interface CompactOrbsConfig extends Config
 
 	@ConfigItem(
 		keyName = ConfigKeys.RIGHT_CLICK_TOGGLE_BUTTONS,
-		name = "Right click toggle buttons",
-		description = "Makes the toggle buttons right click, rather than left click (requires menu click)",
+		name = "Right click the toggle buttons",
+		description = "Deprioritizes the toggle menu action so it requires a right click",
 		section = compact,
 		position = 4
 	)
@@ -187,11 +198,11 @@ public interface CompactOrbsConfig extends Config
 
 	@ConfigItem(
 		keyName = ConfigKeys.ORB_LAYOUT,
-		name = "Layout",
-		description = "Choose a compact layout <br>"
-			+ " -Vertical: default layout, data orbs stacked vertically <br>"
-			+ " -Horizontal: data orbs in a 2x2 grid, with remaining orbs & compass trailing <br>"
-			+ " -Horizontal (Wide): data orbs lined up in 1 row, with remaining orbs & compass above <br>",
+		name = "Current Layout",
+		description = "The visible layout in compact view <br>" +
+			"-Vertical: orbs stacked vertically & split between 2 columns (default) <br>" +
+			"-Horizontal: orbs stacked and split between 2 rows horizontally <br>" +
+			"-Horizontal-Wide: data orbs aligned to 1 row with remaining orbs/compass stacked above horizontally",
 		section = compact,
 		position = 5
 	)
@@ -201,41 +212,48 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = ConfigKeys.HORIZONTAL_ANCHOR,
-		name = "Horizontal anchor",
-		description = "Snap/shift orbs to the top or bottom of the minimap container <br>"
-			+ "with reordering enabled, orbs will shift towards the snap direction",
+		keyName = ConfigKeys.VERTICAL_ANCHOR,
+		name = "Vertical anchor",
+		description = "Snaps the layout and reorders orbs based on the selected anchor point",
 		section = compact,
 		position = 6
 	)
-	default HorizontalAnchor horizontalAnchor()
+	default VerticalAnchor verticalAnchor()
 	{
-		return HorizontalAnchor.BOTTOM;
+		return VerticalAnchor.BOTTOM;
 	}
 
 	@ConfigItem(
-		keyName = ConfigKeys.VERTICAL_ANCHOR,
-		name = "Vertical anchor",
-		description = "Snap orbs to the left or right of the minimap container <br>"
-			+ "with reordering enabled, orbs will shift towards the snap direction",
+		keyName = ConfigKeys.HORIZONTAL_ANCHOR,
+		name = "Horizontal anchor",
+		description = "Snaps the layout and reorders orbs based on the selected anchor point",
 		section = compact,
 		position = 7
 	)
-	default VerticalAnchor verticalAnchor()
+	default HorizontalAnchor horizontalAnchor()
 	{
-		return VerticalAnchor.RIGHT;
+		return HorizontalAnchor.RIGHT;
+	}
+
+	@Range(min = 0, max = 200)
+	@ConfigItem(
+		keyName = ConfigKeys.VERTICAL_Y_ADJUSTMENT,
+		name = "Vertical offset",
+		description = "Adjust the layouts vertical position from the Bottom anchor point by the set value",
+		section = compact,
+		position = 8
+	)
+	default int verticalYAdjustment()
+	{
+		return 0;
 	}
 
 	@ConfigItem(
 		keyName = ConfigKeys.DISABLE_REORDERING,
 		name = "Disable orb reordering",
-		description = "Prevents the automatic reordering of visible orbs filling gaps left by hidden orbs <br>"
-			+ "Vertical-LEFT: will reorder orbs from right to left <br>"
-			+ "Vertical-RIGHT: will reorder orbs from left to right <br>"
-			+ "Horizontal-TOP: will reorder orbs from top to bottom <br>"
-			+ "Horizontal-BOTTOM: will reorder orbs from bottom to top <br>",
+		description = "Disable reordering logic tied to orb visibility",
 		section = compact,
-		position = 8
+		position = 9
 	)
 	default boolean disableReordering()
 	{
@@ -245,9 +263,9 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.LEAVE_EMPTY_SPACE,
 		name = "Leave empty space",
-		description = "Preserves the empty space between reordered orbs, and non-reordered UI elements, for a `floating` effect",
+		description = "Leaves empty space where orbs were moved instead of shifting other elements to fill the gap",
 		section = compact,
-		position = 9
+		position = 10
 	)
 	default boolean leaveEmptySpace()
 	{
@@ -255,22 +273,9 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = ConfigKeys.ENABLE_VERTICAL_HEIGHT_OFFSET,
-		name = "Enable Vertical height offset",
-		description = "Adjusts the Vertical layouts height when the compass is hidden (requires Logout X to be hidden when in modern-resizable)",
-		section = compact,
-		position = 10
-	)
-	default boolean enableVerticalHeightOffset()
-	{
-		return false;
-	}
-
-	@ConfigItem(
 		keyName = ConfigKeys.ENABLE_NO_CLICKTHROUGH,
 		name = "Prevent orb clickthrough",
-		description = "Prevent clicking through the Hp, Prayer, Run, and Special orbs<br>"
-			+ "NOTE: Will slightly increase the bounds of the non-clickable space around the orb",
+		description = "Prevents clicks through the data orbs (slightly increases the non-clickable space around them)",
 		section = compact,
 		position = 11
 	)
@@ -288,28 +293,33 @@ public interface CompactOrbsConfig extends Config
 	String hotkey = "hotkey";
 
 	@ConfigItem(
-		keyName = ConfigKeys.HOTKEY_TOGGLE,
-		name = "Hotkey",
-		description = "Configurable hotkey that hides/shows the toggle-button eyes, or the minimap (with `Toggle minimap via Hotkey` enabled) <br>"
-			+ "default: shift + insert",
+		keyName = ConfigKeys.HOTKEY_KEYBIND,
+		name = "Keybind",
+		description = "Keybind used to toggle the option below <br>" +
+			"-Warning: should use a modifier (e.g. Shift, Ctrl, Alt)",
 		section = hotkey,
 		position = 0
 	)
-	default Keybind toggleButtonHotkey()
+	default Keybind hotkeyKeybind()
 	{
 		return new Keybind(KeyEvent.VK_INSERT, KeyEvent.SHIFT_DOWN_MASK);
 	}
 
 	@ConfigItem(
-		keyName = ConfigKeys.HOTKEY_MINIMAP,
-		name = "Toggle minimap via Hotkey",
-		description = "Repurpose the Hotkey to toggle the visibility of the minimap, without the use of the toggle button",
+		keyName = ConfigKeys.HOTKEY_TOGGLE_OPTION,
+		name = "Select toggle",
+		description = "Select what the hotkey will hide/show <br>" +
+			"-Minimap button: the minimap toggle button <br>" +
+			"-Compass button: the compass toggle button <br>" +
+			"-Both Buttons: both the toggle buttons  <br>" +
+			"-Minimap: the minimap (toggling between compact view) <br>" +
+			"-Detached Minimap: the detached minimap when in compact view",
 		section = hotkey,
 		position = 1
 	)
-	default boolean minimapHotkey()
+	default HotkeyOptions toggleOption()
 	{
-		return false;
+		return HotkeyOptions.BOTH_BUTTONS;
 	}
 
 	@ConfigSection(
@@ -323,7 +333,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.ENABLE_ORB_SWAPPING,
 		name = "Enable orb swapping",
-		description = "Allow orb swapping via slot configuration",
+		description = "Swap orbs based on the config below",
 		section = swapping,
 		position = 0
 	)
@@ -336,7 +346,7 @@ public interface CompactOrbsConfig extends Config
 		keyName = "",
 		name = "Compact slots:",
 		description = "Slot order when in compact-view <br>" +
-			"Note: each slot must contain a unique orb (otherwise slots will be reset)",
+			"-Warning: each slot must contain a unique orb (otherwise slots will be reset)",
 		section = swapping,
 		position = 1
 	)
@@ -406,8 +416,8 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = "",
 		name = "Vanilla slots:",
-		description = "Slot order when not in compact-view <br>" +
-			"Note: each slot must contain a unique orb (otherwise slots will be reset)",
+		description = "Slot order when the minimap is visible (supports Fixed mode) <br>" +
+			"-Warning: each slot must contain a unique orb (otherwise slots will be reset)",
 		section = swapping,
 		position = 7
 	)
@@ -474,7 +484,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.HIDE_HP,
 		name = "Hide Hp",
-		description = "Toggle visibility of the HP orb",
+		description = "Hide/show the Hp orb",
 		section = visibility,
 		position = 0
 	)
@@ -486,7 +496,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.HIDE_PRAYER,
 		name = "Hide Prayer",
-		description = "Toggle visibility of the Prayer orb",
+		description = "Hide/show the Prayer orb",
 		section = visibility,
 		position = 1
 	)
@@ -498,7 +508,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.HIDE_RUN,
 		name = "Hide Run",
-		description = "Toggle visibility of the Run energy orb",
+		description = "Hide/show the Run orb",
 		section = visibility,
 		position = 2
 	)
@@ -510,7 +520,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.HIDE_SPEC,
 		name = "Hide Special",
-		description = "Toggle visibility of the Special attack energy orb",
+		description = "Hide/show the Special orb",
 		section = visibility,
 		position = 3
 	)
@@ -522,7 +532,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.HIDE_XP,
 		name = "Hide XP",
-		description = "Toggle visibility of the XP drops orb",
+		description = "Hide/show the Xp orb",
 		section = visibility,
 		position = 4
 	)
@@ -534,8 +544,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.HIDE_WORLD,
 		name = "Hide World Map",
-		description = "Toggle the visibility of the World Map <br>"
-			+ " Will retain hotkey functionality 'Ctrl + M', if in-game setting is enabled",
+		description = "Hide/show the World map",
 		section = visibility,
 		position = 5
 	)
@@ -547,8 +556,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.HIDE_STORE,
 		name = "Hide Store",
-		description = "Toggle the visibility of the Store orb<br>" +
-			"Note: the in-game setting must be enabled",
+		description = "Hide/show the Store orb (should reflect the in-game setting)",
 		section = visibility,
 		position = 6
 	)
@@ -560,8 +568,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.HIDE_ACTIVITY,
 		name = "Hide Activity Advisor",
-		description = "Toggle the visibility of the Activity Advisor orb<br>" +
-			"Note: the in-game setting must be enabled",
+		description = "Hide/show the Activity Advisor orb (should reflect the in-game setting)",
 		section = visibility,
 		position = 7
 	)
@@ -573,8 +580,8 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.HIDE_WIKI,
 		name = "Hide Wiki banner",
-		description = "Toggle the visibility of the Wiki banner<br>" +
-			"Note: won't work if the `Wiki` plugin is enabled with `Show wiki button under minimap`",
+		description = "Hide/show the Wiki banner (should reflect the in-game setting) <br>" +
+			"Warning: if enabled, the Wiki plugins banner will also be hidden regardless of the plugins own config",
 		section = visibility,
 		position = 8
 	)
@@ -585,8 +592,8 @@ public interface CompactOrbsConfig extends Config
 
 	@ConfigItem(
 		keyName = ConfigKeys.HIDE_LOGOUT_X,
-		name = "Hide Logout X",
-		description = "Toggle the visibility of the Logout-X when in resizable-modern display mode",
+		name = "Hide Logout-X",
+		description = "Hide/show the Logout-X (only in resizable-modern)",
 		section = visibility,
 		position = 9
 	)
@@ -597,8 +604,8 @@ public interface CompactOrbsConfig extends Config
 
 	@ConfigItem(
 		keyName = ConfigKeys.HIDE_GRID,
-		name = "Hide Grid Master",
-		description = "Toggle the visibility of the Grid Master orb (temporary game-mode)",
+		name = "Hide Grid Master (Legacy)",
+		description = "Hide/show the Grid Master orb (temporary game-mode)",
 		section = visibility,
 		position = 10
 	)
@@ -609,7 +616,7 @@ public interface CompactOrbsConfig extends Config
 
 	@ConfigSection(
 		name = "Minimap Overlay",
-		description = "Experimental",
+		description = "Options for the detached minimap",
 		closedByDefault = true,
 		position = 99
 	)
@@ -618,8 +625,8 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.ENABLE_MINIMAP_OVERLAY,
 		name = "Show minimap in compact view",
-		description = "Display a separate minimap overlay, only during compact view <br>"
-			+ "NOTE: overlay functions identically to the Vanilla minimap (will NOT show overlays, marked tiles, names, etc.)",
+		description = "Show a functional minimap that is detached from the orbs while in compact view <br>" +
+			"Warning: this minimap is not supported by plugins that display overlays on the minimap (names, marker tiles, lines, etc.)",
 		section = minimapOverlay,
 		position = 0
 	)
@@ -631,7 +638,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.ENABLE_OVERLAY_TOGGLE_OPTION,
 		name = "Show toggle on the minimap button",
-		description = "Display a menu option on the minimap button that will toggle the detached minimap",
+		description = "Display an option on the minimap button to hide/show the detached minimap",
 		section = minimapOverlay,
 		position = 1
 	)
@@ -642,9 +649,8 @@ public interface CompactOrbsConfig extends Config
 
 	@ConfigItem(
 		keyName = ConfigKeys.ENABLE_LOGOUT_X_OVERLAY,
-		name = "Show Logout X",
-		description = "Display a Logout X on the minimap overlay (only in modern-resizable)<br>"
-			+ "Required: 'Show minimap in compact view'",
+		name = "Show Logout-X",
+		description = "Show a functional Logout-X on the detached minimap (only in resizable-modern) <br>",
 		section = minimapOverlay,
 		position = 2
 	)

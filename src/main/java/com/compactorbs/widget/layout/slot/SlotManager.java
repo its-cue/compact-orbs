@@ -195,16 +195,6 @@ public class SlotManager
 	{
 		int total = 0;
 
-		if (manager.applyVerticalHeightOffset() && manager.getCurrentLayout().isVertical())
-		{
-			total = 20;
-
-			if (config.hideCompassToggle())
-			{
-				total = 35;
-			}
-		}
-
 		for (int index = 0; index < targetIndex; index++)
 		{
 			TargetWidget orbInSlot = getCurrentSlots().get(columnOrRow.get(index));
@@ -318,11 +308,11 @@ public class SlotManager
 	{
 		if (manager.allowReordering())
 		{
-			if (manager.isHorizontalTop())
+			if (manager.isAnchorTop())
 			{
 				return hiddenAboveOffset(target, y);
 			}
-			else if (manager.isHorizontalBottom())
+			else if (manager.isAnchorBottom())
 			{
 				return hiddenBelowOffset(target, y);
 			}
@@ -335,11 +325,11 @@ public class SlotManager
 	{
 		if (manager.allowReordering())
 		{
-			if (manager.isVerticalLeft())
+			if (manager.isAnchorLeft())
 			{
 				return hiddenAboveOffset(target, x);
 			}
-			else if (manager.isVerticalRight())
+			else if (manager.isAnchorRight())
 			{
 				return hiddenBelowOffset(target, x);
 			}

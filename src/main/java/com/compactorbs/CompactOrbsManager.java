@@ -25,7 +25,10 @@
 
 package com.compactorbs;
 
+import com.compactorbs.CompactOrbsConfig.HorizontalAnchor;
+import com.compactorbs.CompactOrbsConfig.HotkeyOptions;
 import com.compactorbs.CompactOrbsConfig.TogglePlacement;
+import com.compactorbs.CompactOrbsConfig.VerticalAnchor;
 import com.compactorbs.CompactOrbsConstants.ConfigGroup;
 import com.compactorbs.CompactOrbsConstants.ConfigKeys;
 import com.compactorbs.CompactOrbsConstants.Enum;
@@ -36,10 +39,10 @@ import com.compactorbs.CompactOrbsConstants.Sprite;
 import com.compactorbs.CompactOrbsConstants.VarPlayer;
 import com.compactorbs.CompactOrbsConstants.Varbit;
 import com.compactorbs.CompactOrbsConstants.VarbitValue;
-import com.compactorbs.CompactOrbsConstants.Widgets;
 import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
 import com.compactorbs.CompactOrbsConstants.Widgets.MinimapOverlay;
 import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
+import com.compactorbs.util.MigrateConfig;
 import com.compactorbs.widget.TargetWidget;
 import com.compactorbs.widget.WidgetManager;
 import com.compactorbs.widget.elements.Compass;
@@ -52,6 +55,7 @@ import com.compactorbs.widget.layout.slot.SlotManager;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -72,6 +76,7 @@ import net.runelite.client.chat.ChatMessageBuilder;
 import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.config.Keybind;
 import net.runelite.client.util.ColorUtil;
 
 @Slf4j
@@ -143,7 +148,7 @@ public class CompactOrbsManager
 		{
 			if (updateFixedMode)
 			{
-				widgetManager.setHidden(Widgets.MinimapOverlay.UNIVERSE, true);
+				widgetManager.setHidden(MinimapOverlay.UNIVERSE, true);
 				widgetManager.remapTargets(false, Script.FORCE_UPDATE, Orbs.values());
 				updateNoClickThrough();
 				setupMinimapContainer(false);
@@ -285,6 +290,7 @@ public class CompactOrbsManager
 			config::hideCompass,
 			t ->
 			{
+				setupMinimapContainer(true);
 				widgetManager.remapTargets(remapCondition, Script.FORCE_UPDATE, Compass.values());
 				widgetManager.remapTargets(remapCondition, Script.FORCE_UPDATE, Orbs.values());
 				widgetManager.setTargetsHidden(toggle, Compass.values());
@@ -295,7 +301,7 @@ public class CompactOrbsManager
 	private void executeToggle(String key, Supplier<Boolean> getter, Consumer<Boolean> actions)
 	{
 		boolean toggle = !Boolean.TRUE.equals(getter.get());
-		configManager.setConfiguration(ConfigGroup.GROUP_NAME, key, toggle);
+		saveConfig(key, toggle);
 
 		clientThread.invoke(() ->
 		{
@@ -471,7 +477,7 @@ public class CompactOrbsManager
 					case Menu.TOGGLE_OVERLAY:
 						if (isCompactLayout())
 						{
-							configManager.setConfiguration(ConfigGroup.GROUP_NAME, ConfigKeys.ENABLE_MINIMAP_OVERLAY, !config.showMinimapInCompactView());
+							saveConfig(ConfigKeys.ENABLE_MINIMAP_OVERLAY, !config.showMinimapInCompactView());
 						}
 						break;
 				}
@@ -563,7 +569,7 @@ public class CompactOrbsManager
 			updateCompassToggleButton();
 
 			//treat minimap overlay as 'custom'
-			updateMinimapOverlayVisibility();
+			updateMinimapOverlayVisibility(false);
 
 			//clear update flag
 			pendingChildrenUpdate = false;
@@ -595,6 +601,9 @@ public class CompactOrbsManager
 		{
 			setMenuPriority(ConfigKeys.MINIMAP, minimapButton);
 		}
+
+		updateMinimapOverlayToggleOp();
+
 		widgetManager.updateValue(minimapButton::getOriginalX, minimapButton::setOriginalX, getMinimapButtonX());
 		widgetManager.updateValue(minimapButton::getOriginalY, minimapButton::setOriginalY, getMinimapButtonY());
 		minimapButton.revalidate();
@@ -647,11 +656,15 @@ public class CompactOrbsManager
 		overlayLogoutXIcon = null;
 	}
 
-	//update visibility of the minimap overlay
-	public void updateMinimapOverlayVisibility()
+	public void updateMinimapOverlayVisibility(boolean configChanged)
 	{
-		widgetManager.setHidden(Widgets.MinimapOverlay.UNIVERSE, hideMinimapOverlay());
+		widgetManager.setHidden(MinimapOverlay.UNIVERSE, hideMinimapOverlay());
 		updateMinimapOverlayToggleOp();
+
+		if (configChanged)
+		{
+			handleLogoutXHiddenState(true);
+		}
 	}
 
 	//set hooked layer back to default
@@ -665,7 +678,7 @@ public class CompactOrbsManager
 	//@enabled - for startup/shutdown behaviour
 	public void configureMinimapOverlayContainer(boolean enabled)
 	{
-		Widget parent = client.getWidget(Widgets.MinimapOverlay.UNIVERSE);
+		Widget parent = client.getWidget(MinimapOverlay.UNIVERSE);
 		if (parent == null)
 		{
 			return;
@@ -936,8 +949,13 @@ public class CompactOrbsManager
 
 	public boolean isClassicResizable()
 	{
+		Widget parent = widgetManager.getCurrentParent();
+		if (parent == null)
+		{
+			return false;
+		}
 
-		return widgetManager.getCurrentParent().getId() != Modern.ORBS;
+		return parent.getId() != Modern.ORBS;
 	}
 
 	public boolean isLoggedIn()
@@ -950,36 +968,24 @@ public class CompactOrbsManager
 		return !isFixedMode() && isMinimapHidden() && !isMinimapMinimized();
 	}
 
-	public boolean isVerticalLeft()
+	public boolean isAnchorLeft()
 	{
-		return config.verticalAnchor().isLeft();
+		return config.horizontalAnchor().isLeft();
 	}
 
-	public boolean isVerticalRight()
+	public boolean isAnchorRight()
 	{
-		return config.verticalAnchor().isRight();
+		return config.horizontalAnchor().isRight();
 	}
 
-	public boolean isHorizontalBottom()
+	public boolean isAnchorTop()
 	{
-		return config.horizontalAnchor().isBottom();
+		return config.verticalAnchor().isTop();
 	}
 
-	public boolean isHorizontalTop()
+	public boolean isAnchorBottom()
 	{
-		return config.horizontalAnchor().isTop();
-	}
-
-	public boolean applyVerticalHeightOffset()
-	{
-		if (isHorizontalTop() && isCompassHidden() && allowReordering())
-		{
-			if (hideLogoutX || isClassicResizable())
-			{
-				return config.enableVerticalHeightOffset() && allowReordering();
-			}
-		}
-		return false;
+		return config.verticalAnchor().isBottom();
 	}
 
 	public boolean allowReordering()
@@ -1063,12 +1069,10 @@ public class CompactOrbsManager
 			//which felt bad during a toggle event
 			client.runScript(Script.TOPLEVEL_SIDE_CUSTOMIZE, Enum.TOPLEVEL_COMPONENTS);
 		}
-		else
+
+		if (hideLogoutX && (!showOverlayLogoutX() || !isMinimapOverlayEnabled()))
 		{
-			if (hideLogoutX && (!showOverlayLogoutX() || !isMinimapOverlayEnabled()))
-			{
-				widgetManager.setTargetsHidden(true, Orbs.LOGOUT_X_STONE, Orbs.LOGOUT_X_ICON);
-			}
+			widgetManager.setTargetsHidden(true, Orbs.LOGOUT_X_STONE, Orbs.LOGOUT_X_ICON);
 		}
 	}
 
@@ -1103,6 +1107,51 @@ public class CompactOrbsManager
 		return client.getVarbitValue(Varbit.CUTSCENE_STATUS) == VarbitValue.CUTSCENE_ACTIVE;
 	}
 
+	public int clampVerticalY()
+	{
+		int y = 0;
+		int limit = 0;
+
+		if (isAnchorBottom())
+		{
+			y += config.verticalYAdjustment();
+
+			switch (getCurrentLayout())
+			{
+				case VERTICAL:
+					if (isCompassHidden() && (hideLogoutX || isClassicResizable()))
+					{
+						limit = 24;
+
+						if (config.hideCompassToggle())
+						{
+							limit += 15;
+						}
+					}
+
+					if (y > limit)
+					{
+						y = limit;
+					}
+					break;
+
+				case HORIZONTAL:
+					if (hideLogoutX || isClassicResizable() || allowReordering() && hideWorldMap)
+					{
+						limit = 16;
+					}
+				case HORIZONTAL_WIDE:
+					if (y > getCurrentLayout().getBottomOffset() + limit)
+					{
+						y = getCurrentLayout().getBottomOffset() + limit;
+					}
+					break;
+			}
+		}
+
+		return y;
+	}
+
 	private int getMinimapButtonX()
 	{
 		int x = config.minimapTogglePlacement().getX();
@@ -1126,7 +1175,7 @@ public class CompactOrbsManager
 						}
 					}
 
-					if (isVerticalLeft())
+					if (isAnchorLeft())
 					{
 						int offset = slotManager.getHiddenSize();
 						x -= offset;
@@ -1162,7 +1211,7 @@ public class CompactOrbsManager
 					y = slotManager.applyHiddenYOffset(Orbs.WIKI_ICON_CONTAINER,
 						Layout.Vertical.MAP_CONTAINER_HEIGHT - Layout.TOGGLE_BUTTON_SIZE);
 
-					if (isHorizontalTop()
+					if (isAnchorTop()
 						&& allowReordering())
 					{
 						if (getCurrentLayout().isLastVisible(Slot.WIKI_SLOT, slotManager.getHiddenCountAbove(Orbs.WIKI_ICON_CONTAINER)))
@@ -1195,6 +1244,14 @@ public class CompactOrbsManager
 				&& config.hideStore())
 			{
 				y -= 5;
+			}
+
+			if (config.minimapTogglePlacement() == TogglePlacement.ABOVE_XP)
+			{
+				if (shouldOffsetXpOrb())
+				{
+					y -= 2;
+				}
 			}
 		}
 
@@ -1236,7 +1293,7 @@ public class CompactOrbsManager
 				break;
 		}
 
-		if (isVerticalRight())
+		if (isAnchorRight())
 		{
 			x -= getCurrentLayout().getRightOffset();
 		}
@@ -1256,11 +1313,6 @@ public class CompactOrbsManager
 				if (enableNoClickThrough)
 				{
 					y -= 2;
-				}
-
-				if (applyVerticalHeightOffset())
-				{
-					y -= 20;
 				}
 				break;
 
@@ -1284,9 +1336,9 @@ public class CompactOrbsManager
 				return getMinimapButtonY();
 		}
 
-		if (isHorizontalBottom())
+		if (isAnchorBottom())
 		{
-			y -= getCurrentLayout().getBottomOffset();
+			y -= getCurrentLayout().getBottomOffset() - clampVerticalY();
 		}
 
 		return y;
@@ -1407,7 +1459,7 @@ public class CompactOrbsManager
 		SlotConfig entry = key.getSlotConfigMap().get(layout);
 		if (entry != null && entry.getConfigKey() != null)
 		{
-			configManager.setConfiguration(ConfigGroup.GROUP_NAME, entry.getConfigKey(), value);
+			saveConfig(entry.getConfigKey(), value);
 		}
 	}
 
@@ -1467,5 +1519,103 @@ public class CompactOrbsManager
 			.type(ChatMessageType.CONSOLE)
 			.runeLiteFormattedMessage(input)
 			.build());
+	}
+
+	public <T> void saveConfig(String key, T value)
+	{
+		configManager.setConfiguration(ConfigGroup.GROUP_NAME, key, value);
+	}
+
+	public void updateConfig()
+	{
+		Integer version = configManager.getConfiguration(
+			ConfigGroup.GROUP_NAME, ConfigKeys.CONFIG_VERSION, Integer.class);
+
+		if (version == null)
+		{
+			version = 0;
+		}
+
+		if (version < ConfigGroup.CONFIG_VERSION)
+		{
+			migrateConfigs(
+				new MigrateConfig<>(
+					"hotkeyToggle",
+					ConfigKeys.HOTKEY_KEYBIND,
+					Keybind.class,
+					Function.identity()
+				),
+				new MigrateConfig<>(
+					"hotkeyMinimap",
+					ConfigKeys.HOTKEY_TOGGLE_OPTION,
+					Boolean.class,
+					enabled ->
+					{
+						if (enabled)
+						{
+							return HotkeyOptions.MINIMAP;
+						}
+						return null;
+					}
+				),
+				new MigrateConfig<>(
+					"verticalPosition",
+					ConfigKeys.HORIZONTAL_ANCHOR,
+					HorizontalAnchor.class,
+					HorizontalAnchor::name
+				),
+				new MigrateConfig<>(
+					"horizontalPosition",
+					ConfigKeys.VERTICAL_ANCHOR,
+					VerticalAnchor.class,
+					VerticalAnchor::name
+				),
+				new MigrateConfig<>(
+					"enableVerticalHeightOffset",
+					ConfigKeys.VERTICAL_Y_ADJUSTMENT,
+					Boolean.class,
+					enabled ->
+					{
+						if (enabled && getCurrentLayout().isVertical())
+						{
+							//max offset possible from the old config
+							return 35;
+						}
+						return null;
+					})
+			);
+
+			removeOldConfigs();
+
+			saveConfig(ConfigKeys.CONFIG_VERSION, ConfigGroup.CONFIG_VERSION);
+		}
+	}
+
+	private void migrateConfigs(MigrateConfig<?, ?>... configs)
+	{
+		for (MigrateConfig<?, ?> config : configs)
+		{
+			if (config.write(configManager))
+			{
+				config.unset(configManager);
+			}
+		}
+	}
+
+	private static final String[] REMOVED_KEYS = {
+		//removed in 1.1 (d2f5247)
+		"hideToggle",
+
+		//removed in 1.7.5 (e60c595)
+		"enableWorldMapOverlay",
+		"enableXPDropOverlay"
+	};
+
+	private void removeOldConfigs()
+	{
+		for (String key : REMOVED_KEYS)
+		{
+			configManager.unsetConfiguration(ConfigGroup.GROUP_NAME, key);
+		}
 	}
 }
