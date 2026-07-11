@@ -112,7 +112,8 @@ public class WorldMapOffset implements OffsetTarget
 		{
 			y = getHiddenOffset();
 
-			if (manager.clampVerticalY() > manager.getCurrentLayout().getBottomOffset())
+			if (manager.isCompactLayout() &&
+				manager.clampVerticalY() > manager.getCurrentLayout().getBottomOffset())
 			{
 				y -= manager.getCurrentLayout().getBottomOffset() - manager.clampVerticalY();
 			}

@@ -47,6 +47,7 @@ import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.ScriptPostFired;
+import net.runelite.api.events.ScriptPreFired;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.client.callback.ClientThread;
@@ -222,6 +223,22 @@ public class CompactOrbsPlugin extends Plugin
 					manager.init(scriptId);
 				}
 				break;
+		}
+	}
+
+	@Subscribe
+	public void onScriptPreFired(ScriptPreFired event)
+	{
+		if (event.getScriptId() == Script.TOOLTIP_MOUSE_RELEASE)
+		{
+			int tooltipId = client.getIntStack()[2];
+			if (tooltipId == Orb.WORLD_MAP_TOOLTIP)
+			{
+				if (manager.isCompactLayout() || manager.hideWorldMap)
+				{
+					widgetManager.setHidden(Orb.WORLD_MAP_TOOLTIP, true);
+				}
+			}
 		}
 	}
 

@@ -159,6 +159,7 @@ public class CompactOrbsConstants
 		public static final int TOPLEVEL_SIDEBUTTON_OP = 914;
 		public static final int TOPLEVEL_SIDE_CUSTOMIZE = 919;
 		public static final int WORLD_MAP_UPDATE = 1700;
+		public static final int TOOLTIP_MOUSE_RELEASE = 837;
 		public static final int STORE_ORB_UPDATE = 2396;
 		public static final int ACTIVITY_ORB_UPDATE = 2480;
 		public static final int WIKI_ICON_INIT = 3304;
@@ -452,6 +453,7 @@ public class CompactOrbsConstants
 			public static final int WIKI_CONTAINER_VANILLA = InterfaceID.Orbs.WIKI_ICON;
 			public static final int WIKI_ICON_VANILLA = InterfaceID.Orbs.WIKI_ICON_GRAPHIC;
 			public static final int WORLD_MAP = InterfaceID.Orbs.ORB_WORLDMAP;
+			public static final int WORLD_MAP_TOOLTIP = InterfaceID.Orbs.TOOLTIP;
 		}
 
 		//fixed mode widget ids
