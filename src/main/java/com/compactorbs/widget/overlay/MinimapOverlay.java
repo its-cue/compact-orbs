@@ -118,19 +118,6 @@ public class MinimapOverlay extends Overlay
 		return new Dimension(widget.getWidth(), widget.getHeight());
 	}
 
-	//returns true if overlay bounds matches widget bounds
-	public boolean hasUpdatedBounds()
-	{
-		final Widget widget = client.getWidget(componentId);
-		if (widget == null)
-		{
-			return false;
-		}
-
-		final Rectangle overlay = getBounds();
-		return overlay.equals(widget.getBounds());
-	}
-
 	private Rectangle getParentBounds(final Widget widget)
 	{
 		if (widget == null)

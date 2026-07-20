@@ -33,7 +33,7 @@ import com.compactorbs.CompactOrbsConstants.ConfigGroup;
 import com.compactorbs.CompactOrbsConstants.ConfigKeys;
 import com.compactorbs.CompactOrbsConstants.Enum;
 import com.compactorbs.CompactOrbsConstants.Layout;
-import com.compactorbs.CompactOrbsConstants.Menu;
+import com.compactorbs.CompactOrbsConstants.MenuOp;
 import com.compactorbs.CompactOrbsConstants.Script;
 import com.compactorbs.CompactOrbsConstants.Sprite;
 import com.compactorbs.CompactOrbsConstants.VarPlayer;
@@ -63,6 +63,9 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.Menu;
+import net.runelite.api.MenuAction;
+import net.runelite.api.MenuEntry;
 import net.runelite.api.Point;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.JavaScriptCallback;
@@ -227,6 +230,7 @@ public class CompactOrbsManager
 		widgetManager.setTargetsHidden(false, Orbs.values());
 		widgetManager.setTargetsHidden(false, Compass.values());
 		updateWikiBannerVisibility(false);
+		widgetManager.setTargetsHidden(hideStonesAndIcons(), Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
 	}
 
 	private void resetPositioning()
@@ -272,6 +276,10 @@ public class CompactOrbsManager
 			{
 				setupMinimapContainer(toggle);
 				setupOrbsContainer();
+				if (!isClassicResizable())
+				{
+					updateLogoutX();
+				}
 				widgetManager.remapTargets(toggle, Script.FORCE_UPDATE, Compass.values());
 				widgetManager.remapTargets(toggle, Script.FORCE_UPDATE, Orbs.values());
 				widgetManager.setTargetsHidden(hiddenCondition, Compass.values());
@@ -463,25 +471,10 @@ public class CompactOrbsManager
 		minimapButton.setOpacity(Layout.OPACITY);
 		minimapButton.setHidden(false);
 		minimapButton.setHasListener(true);
-		minimapButton.setAction(Menu.TOGGLE_OVERLAY, "");
+		minimapButton.setAction(0, buildToggleOp(isMinimapHidden(), MenuOp.MINIMAP_OP));
 		minimapButton.setOnOpListener(
 			(JavaScriptCallback) e ->
-			{
-				switch (e.getOp() - 1)
-				{
-					case Menu.ABOVE_WALK_HERE:
-					case Menu.BELOW_WALK_HERE:
-						onMinimapToggle();
-						break;
-
-					case Menu.TOGGLE_OVERLAY:
-						if (isCompactLayout())
-						{
-							saveConfig(ConfigKeys.ENABLE_MINIMAP_OVERLAY, !config.showMinimapInCompactView());
-						}
-						break;
-				}
-			}
+				onMinimapToggle()
 		);
 		minimapButton.setOnMouseOverListener(
 			(JavaScriptCallback) e ->
@@ -506,7 +499,7 @@ public class CompactOrbsManager
 		compassButton.setOpacity(Layout.OPACITY);
 		compassButton.setHidden(false);
 		compassButton.setHasListener(true);
-		compassButton.setAction(0, getButtonMenuOp(ConfigKeys.COMPASS));
+		compassButton.setAction(0, buildToggleOp(isCompassHidden(), MenuOp.COMPASS_OP));
 		compassButton.setOnOpListener(
 			(JavaScriptCallback) e ->
 				onCompassToggle()
@@ -584,7 +577,6 @@ public class CompactOrbsManager
 		}
 
 		compassFrame.setHidden(!isMinimapHidden() || isCompassHidden() || isMinimapMinimized());
-		compassFrame.revalidate();
 	}
 
 	public void updateMinimapToggleButton()
@@ -594,27 +586,19 @@ public class CompactOrbsManager
 			return;
 		}
 
-		minimapButton.setSpriteId(getSpriteId(!isMinimapHidden()));
 		minimapButton.setHidden(hideCustomToggles() || config.hideMinimapToggle());
 
 		if (!config.hideMinimapToggle())
 		{
-			setMenuPriority(ConfigKeys.MINIMAP, minimapButton);
-		}
-
-		updateMinimapOverlayToggleOp();
-
-		widgetManager.updateValue(minimapButton::getOriginalX, minimapButton::setOriginalX, getMinimapButtonX());
-		widgetManager.updateValue(minimapButton::getOriginalY, minimapButton::setOriginalY, getMinimapButtonY());
-		minimapButton.revalidate();
-	}
-
-	private void updateMinimapOverlayToggleOp()
-	{
-		String op = getMenuOp(config.showMinimapInCompactView() ? Menu.PREFIX_HIDE : Menu.PREFIX_SHOW, "Detached Minimap");
-		if (minimapButton != null)
-		{
-			minimapButton.setAction(Menu.TOGGLE_OVERLAY, isCompactLayout() && config.showToggleOnMinimapButton() ? op : "");
+			minimapButton.setSpriteId(getSpriteId(!isMinimapHidden()));
+			if (!config.rightClickToggleButtons())
+			{
+				minimapButton.setAction(0, buildToggleOp(isMinimapHidden(), MenuOp.MINIMAP_OP));
+			}
+			minimapButton.setNoClickThrough(!config.rightClickToggleButtons());
+			widgetManager.updateValue(minimapButton::getOriginalX, minimapButton::setOriginalX, getMinimapButtonX());
+			widgetManager.updateValue(minimapButton::getOriginalY, minimapButton::setOriginalY, getMinimapButtonY());
+			minimapButton.revalidate();
 		}
 	}
 
@@ -625,16 +609,20 @@ public class CompactOrbsManager
 			return;
 		}
 
-		compassButton.setSpriteId(getSpriteId(!isCompassHidden()));
 		compassButton.setHidden((hideCustomToggles() || config.hideCompassToggle()) || !isMinimapHidden());
 
 		if (!config.hideCompassToggle())
 		{
-			setMenuPriority(ConfigKeys.COMPASS, compassButton);
+			compassButton.setSpriteId(getSpriteId(!isCompassHidden()));
+			if (!config.rightClickToggleButtons())
+			{
+				compassButton.setAction(0, buildToggleOp(isCompassHidden(), MenuOp.COMPASS_OP));
+			}
+			compassButton.setNoClickThrough(!config.rightClickToggleButtons());
+			widgetManager.updateValue(compassButton::getOriginalX, compassButton::setOriginalX, getCompassButtonX());
+			widgetManager.updateValue(compassButton::getOriginalY, compassButton::setOriginalY, getCompassButtonY());
+			compassButton.revalidate();
 		}
-		widgetManager.updateValue(compassButton::getOriginalX, compassButton::setOriginalX, getCompassButtonX());
-		widgetManager.updateValue(compassButton::getOriginalY, compassButton::setOriginalY, getCompassButtonY());
-		compassButton.revalidate();
 	}
 
 	//clear any created children and reset previous parent id
@@ -662,12 +650,12 @@ public class CompactOrbsManager
 	public void updateMinimapOverlayVisibility(boolean configChanged)
 	{
 		widgetManager.setHidden(MinimapOverlay.UNIVERSE, hideMinimapOverlay());
-		updateMinimapOverlayToggleOp();
 
 		if (configChanged)
 		{
-			handleLogoutXHiddenState(true);
-			updateOverlayLogoutX();
+			updateLogoutX();
+			updateLogoutXPosition();
+			updateLogoutXOverlay();
 		}
 	}
 
@@ -680,7 +668,7 @@ public class CompactOrbsManager
 
 	//initial setup for the minimap overlay
 	//@enabled - for startup/shutdown behaviour
-	public void configureMinimapOverlayContainer(boolean enabled)
+	private void configureMinimapOverlayContainer(boolean enabled)
 	{
 		Widget parent = client.getWidget(MinimapOverlay.UNIVERSE);
 		if (parent == null)
@@ -714,9 +702,9 @@ public class CompactOrbsManager
 	}
 
 	//create necessary widgets for the minimap overlay
-	public void createMinimapOverlayChildren()
+	private void createMinimapOverlayChildren()
 	{
-		Widget parent = client.getWidget(MinimapOverlay.UNIVERSE);
+		final Widget parent = client.getWidget(MinimapOverlay.UNIVERSE);
 		if (parent == null)
 		{
 			return;
@@ -724,7 +712,7 @@ public class CompactOrbsManager
 
 		for (int index = 0; index < Layout.MinimapOverlay.NO_CLICK_Y.length; index++)
 		{
-			Widget minimapNoClick = parent.createChild(-1, WidgetType.LAYER);
+			final Widget minimapNoClick = parent.createChild(-1, WidgetType.LAYER);
 			minimapNoClick.setOriginalX(0);
 			minimapNoClick.setOriginalY(Layout.MinimapOverlay.NO_CLICK_Y[index]);
 			minimapNoClick.setOriginalWidth(Layout.MinimapOverlay.NO_CLICK_WIDTH[index]);
@@ -735,9 +723,9 @@ public class CompactOrbsManager
 			minimapNoClick.revalidate();
 		}
 
-		int compassX = Layout.Original.COMPASS_X - (Layout.Original.MAP_CONTAINER_WIDTH - Layout.MinimapOverlay.CONTAINER_WIDTH);
+		final int compassX = Layout.Original.COMPASS_X - (Layout.Original.MAP_CONTAINER_WIDTH - Layout.MinimapOverlay.CONTAINER_WIDTH);
 
-		Widget compass = parent.createChild(-1, WidgetType.GRAPHIC);
+		final Widget compass = parent.createChild(-1, WidgetType.GRAPHIC);
 		compass.setContentType(Layout.MinimapOverlay.COMPASS_CONTENT);
 		compass.setSpriteId(Sprite.COMPASS_MASK);
 		compass.setOriginalX(compassX);
@@ -748,14 +736,14 @@ public class CompactOrbsManager
 		compass.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP);
 		compass.revalidate();
 
-		Widget compassLayer = parent.createChild(-1, WidgetType.LAYER);
+		final Widget compassLayer = parent.createChild(-1, WidgetType.LAYER);
 		compassLayer.setOriginalX(compassX);
 		compassLayer.setOriginalY(Layout.Original.COMPASS_Y);
 		compassLayer.setOriginalWidth(Layout.COMPASS_SIZE);
 		compassLayer.setOriginalHeight(Layout.COMPASS_SIZE);
 		compassLayer.revalidate();
 
-		Widget compassNoClick = compassLayer.createChild(-1, WidgetType.TEXT);
+		final Widget compassNoClick = compassLayer.createChild(-1, WidgetType.TEXT);
 		compassNoClick.setXPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
 		compassNoClick.setYPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
 		compassNoClick.setWidthMode(WidgetSizeMode.MINUS);
@@ -764,7 +752,7 @@ public class CompactOrbsManager
 		compassNoClick.setNoClickThrough(true);
 		compassNoClick.revalidate();
 
-		Widget compassMenuOp = compassLayer.createChild(-1, WidgetType.TEXT);
+		final Widget compassMenuOp = compassLayer.createChild(-1, WidgetType.TEXT);
 		compassMenuOp.setXPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
 		compassMenuOp.setYPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
 		compassMenuOp.setWidthMode(WidgetSizeMode.MINUS);
@@ -775,7 +763,7 @@ public class CompactOrbsManager
 		compassMenuOp.setVarTransmitTrigger(VarPlayer.MAP_FLAGS_CACHED);
 		compassMenuOp.revalidate();
 
-		Widget minimap = parent.createChild(-1, WidgetType.GRAPHIC);
+		final Widget minimap = parent.createChild(-1, WidgetType.GRAPHIC);
 		minimap.setContentType(Layout.MinimapOverlay.MINIMAP_CONTENT);
 		minimap.setSpriteId(Sprite.MINIMAP_MASK);
 		minimap.setOriginalX(Layout.Original.MINIMAP_X);
@@ -786,7 +774,7 @@ public class CompactOrbsManager
 		minimap.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP);
 		minimap.revalidate();
 
-		Widget minimapFrame = parent.createChild(-1, WidgetType.GRAPHIC);
+		final Widget minimapFrame = parent.createChild(-1, WidgetType.GRAPHIC);
 		minimapFrame.setSpriteId(Sprite.MINIMAP_FRAME);
 		minimapFrame.setOriginalWidth(Layout.MinimapOverlay.CONTAINER_WIDTH);
 		minimapFrame.setOriginalHeight(Layout.MinimapOverlay.CONTAINER_HEIGHT);
@@ -803,28 +791,8 @@ public class CompactOrbsManager
 		overlayLogoutXStone.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP);
 		overlayLogoutXStone.setHidden(hideOverlayLogoutX());
 		overlayLogoutXStone.setHasListener(true);
-		overlayLogoutXStone.setOnOpListener(
-			(JavaScriptCallback) e ->
-			{
-				switch (e.getOp())
-				{
-					case 1: //Logout
-						int SIDE_PANEL_LOGOUT = 10;
-						client.runScript(Script.TOPLEVEL_SIDEBUTTON_OP, e.getOp(), Enum.TOPLEVEL_COMPONENTS, SIDE_PANEL_LOGOUT);
-						break;
-
-					case 2: //World switcher
-						Widget w = client.getWidget(InterfaceID.Worldswitcher.BUTTONS);
-						if (w == null)
-						{
-							client.openWorldHopper();
-						}
-						break;
-				}
-			}
-			//Script.TOPLEVEL_SIDEBUTTON_OP, Script.OPINDEX0, Enum.TOPLEVEL_COMPONENTS, 10
-		);
-		widgetManager.syncMenuOp(overlayLogoutXStone, Modern.LOGOUT_X_STONE);
+		overlayLogoutXStone.setAction(0, MenuOp.LOGOUT_OP);
+		overlayLogoutXStone.setOnOpListener(Script.TOPLEVEL_SIDEBUTTON_OP, Script.OPINDEX0, Enum.TOPLEVEL_COMPONENTS, 10);
 		widgetManager.syncSprite(overlayLogoutXStone, Modern.LOGOUT_X_STONE);
 		overlayLogoutXStone.revalidate();
 
@@ -841,34 +809,21 @@ public class CompactOrbsManager
 		overlayLogoutXIcon.revalidate();
 	}
 
-	public void updateOverlayLogoutX()
+	public void setupMinimapOverlay()
 	{
-		if (overlayLogoutXStone == null || overlayLogoutXIcon == null)
+		configureMinimapOverlayContainer(true);
+		clientThread.invokeLater(() ->
 		{
-			return;
-		}
-
-		widgetManager.syncSprite(overlayLogoutXStone, Modern.LOGOUT_X_STONE);
-		widgetManager.syncMenuOp(overlayLogoutXStone, Modern.LOGOUT_X_STONE);
-
-		if (!hideOverlayLogoutX())
-		{
-			widgetManager.syncHidden(overlayLogoutXStone, Modern.LOGOUT_X_STONE);
-			widgetManager.syncHidden(overlayLogoutXIcon, Modern.LOGOUT_X_ICON);
-		}
-		else
-		{
-			if (!overlayLogoutXStone.isHidden())
+			if (pendingMinimapOverlayChildren)
 			{
-				overlayLogoutXStone.setHidden(true);
+				createMinimapOverlayChildren();
+				pendingMinimapOverlayChildren = false;
+				return true;
 			}
-
-			if (!overlayLogoutXIcon.isHidden())
-			{
-				overlayLogoutXIcon.setHidden(true);
-			}
-		}
+			return false;
+		});
 	}
+
 
 	public void updateWikiBannerVisibility(boolean hidden)
 	{
@@ -912,32 +867,76 @@ public class CompactOrbsManager
 		return hidden ? Sprite.VISIBLE : Sprite.HIDDEN;
 	}
 
-	private String getButtonMenuOp(String key)
+	private String buildToggleOp(boolean hidden, String target)
 	{
-		final boolean isMinimap = ConfigKeys.MINIMAP.equals(key);
-		final boolean isHidden = isMinimap ? isMinimapHidden() : isCompassHidden();
-
-		String target = isMinimap ? Menu.SUFFIX_MINIMAP : Menu.SUFFIX_COMPASS;
-		String action = isHidden ? Menu.PREFIX_SHOW : Menu.PREFIX_HIDE;
-
-		return getMenuOp(action, target);
+		return buildMenuOp(hidden ? MenuOp.SHOW : MenuOp.HIDE, target);
 	}
 
-	private void setMenuPriority(String key, Widget widget)
+	private String buildMenuOp(String action, String target)
 	{
-		int index = Menu.ABOVE_WALK_HERE;
-		if (config.rightClickToggleButtons())
+		return action + " " + ColorUtil.wrapWithColorTag(target, MenuOp.COLOR);
+	}
+
+	public void addCustomMenuEntries(MenuEntry entry)
+	{
+		if (entry.getType() != MenuAction.CC_OP)
 		{
-			index = Menu.BELOW_WALK_HERE;
+			return;
 		}
-		widget.setAction(index == Menu.ABOVE_WALK_HERE ? Menu.BELOW_WALK_HERE : Menu.ABOVE_WALK_HERE, "");
-		widget.setAction(index, getButtonMenuOp(key));
-		widget.setNoClickThrough(!config.rightClickToggleButtons());
-	}
 
-	private String getMenuOp(String action, String target)
-	{
-		return action + " " + ColorUtil.wrapWithColorTag(target, Menu.COLOR);
+		Menu menu = client.getMenu();
+		Widget widget = entry.getWidget();
+		if (widget == null)
+		{
+			return;
+		}
+
+		if (widget == overlayLogoutXStone)
+		{
+			menu.createMenuEntry(1)
+				.setOption(MenuOp.WORLD_SWITCHER_OP)
+				.setDeprioritized(false)
+				.setType(MenuAction.RUNELITE)
+				.onClick(e ->
+				{
+					Widget w = client.getWidget(InterfaceID.Worldswitcher.BUTTONS);
+					if (w == null)
+					{
+						client.openWorldHopper();
+					}
+				});
+		}
+		else if (widget == minimapButton)
+		{
+			if (config.rightClickToggleButtons())
+			{
+				entry
+					.setOption(buildToggleOp(isMinimapHidden(), MenuOp.MINIMAP_OP))
+					.setType(MenuAction.CC_OP_LOW_PRIORITY)
+					.setDeprioritized(true);
+			}
+
+			if (isCompactLayout() && config.showToggleOnMinimapButton())
+			{
+				menu.createMenuEntry(-2)
+					.setOption(buildToggleOp(!config.showMinimapInCompactView(), MenuOp.DETACHED_OP))
+					.setDeprioritized(config.rightClickToggleButtons())
+					.setType(MenuAction.RUNELITE_LOW_PRIORITY)
+					.onClick(e ->
+						saveConfig(ConfigKeys.ENABLE_MINIMAP_OVERLAY, !config.showMinimapInCompactView())
+					);
+			}
+		}
+		else if (widget == compassButton)
+		{
+			if (isCompactLayout() && config.rightClickToggleButtons())
+			{
+				entry
+					.setOption(buildToggleOp(isCompassHidden(), MenuOp.COMPASS_OP))
+					.setDeprioritized(true);
+
+			}
+		}
 	}
 
 	public CompactOrbsLayout getCurrentLayout()
@@ -1042,42 +1041,77 @@ public class CompactOrbsManager
 		return config.showMinimapInCompactView();
 	}
 
-	public boolean hideOverlayLogoutX()
-	{
-		if (widgetManager.getCurrentParent() == null)
-		{
-			return true;
-		}
-
-		return isClassicResizable() || !config.showOverlayLogoutX();
-	}
-
-	public boolean showOverlayLogoutX()
-	{
-		return config.showOverlayLogoutX();
-	}
-
-	public void handleLogoutXHiddenState(boolean configChanged)
+	//prevent unintended state changes for the logout-x since it is treated as a side icon/stone, i.e. don't unhide when it should be hidden
+	public void updateLogoutX()
 	{
 		if (isFixedMode() || isMinimapMinimized())
 		{
 			return;
 		}
 
-		if (configChanged)
-		{
-			widgetManager.remapTargets(isCompactLayout(), Script.FORCE_UPDATE, Orbs.LOGOUT_X_STONE, Orbs.LOGOUT_X_ICON);
+		boolean hidden = hideLogoutX && !isOverlayLogoutVisible() || hideStonesAndIcons();
 
-			//only reliable way i could come up with to prevent stale hidden state for each logout x
-			//could always just let the scripts handle the update, but it would need to be triggered
-			//which felt bad during a toggle event
-			client.runScript(Script.TOPLEVEL_SIDE_CUSTOMIZE, Enum.TOPLEVEL_COMPONENTS);
+		widgetManager.setTargetsHidden(hidden, Orbs.LOGOUT_X_STONE, Orbs.LOGOUT_X_ICON);
+	}
+
+	//offset the logout-x instead of using the hidden-flag (similarly to the world map) when the overlays
+	//logout-x is visible (retaining the FPS/Ping status offset so it doesn't block the overlays logout-x)
+	public void updateLogoutXPosition()
+	{
+		if (isFixedMode() || isMinimapMinimized())
+		{
+			return;
 		}
 
-		if (hideLogoutX && (!showOverlayLogoutX() || !isMinimapOverlayEnabled()))
+		widgetManager.remapTargets(isCompactLayout(), Script.FORCE_UPDATE, Orbs.LOGOUT_X_STONE, Orbs.LOGOUT_X_ICON);
+	}
+
+	public void updateLogoutXOverlay()
+	{
+		if (overlayLogoutXStone == null || overlayLogoutXIcon == null)
 		{
-			widgetManager.setTargetsHidden(true, Orbs.LOGOUT_X_STONE, Orbs.LOGOUT_X_ICON);
+			return;
 		}
+
+		widgetManager.syncSprite(overlayLogoutXStone, Modern.LOGOUT_X_STONE);
+
+		overlayLogoutXStone.setHidden(hideOverlayLogoutX());
+		overlayLogoutXIcon.setHidden(hideOverlayLogoutX());
+	}
+
+	//restrict the overlays logout-x visibility to the same conditions as the original
+	private boolean hideOverlayLogoutX()
+	{
+		if (widgetManager.getCurrentParent() == null)
+		{
+			return true;
+		}
+
+		return !config.showOverlayLogoutX() || isClassicResizable() || hideStonesAndIcons();
+	}
+
+	//similar to how the cs2 script hides/shows the logout-x by referencing the containers hidden state
+	private boolean hideStonesAndIcons()
+	{
+		Widget w = client.getWidget(isClassicResizable() ? Classic.SIDE_TOP : Modern.SIDE_MOVABLE);
+		if (w == null)
+		{
+			return false;
+		}
+
+		return w.isHidden();
+	}
+
+	//use offset-hiding instead of using the hidden-flag for the logout-x
+	public boolean offsetLogoutX()
+	{
+		return isOverlayLogoutVisible() && !isMinimapMinimized();
+	}
+
+	boolean isOverlayLogoutVisible()
+	{
+		return isCompactLayout() &&
+			isMinimapOverlayEnabled() && config.showOverlayLogoutX();
 	}
 
 	public boolean isActivityOrbDisabled()
@@ -1195,7 +1229,7 @@ public class CompactOrbsManager
 		{
 			//offset when store is hidden, and minimap is visible
 			if (config.minimapTogglePlacement() == TogglePlacement.BELOW_MAP
-				&& config.hideStore())
+				&& config.hideStore() && !isStoreOrbDisabled())
 			{
 				x -= 33;
 			}
@@ -1245,7 +1279,7 @@ public class CompactOrbsManager
 		{
 			//offset when store is hidden and minimap is visible
 			if (config.minimapTogglePlacement() == TogglePlacement.BELOW_MAP
-				&& config.hideStore())
+				&& config.hideStore() && !isStoreOrbDisabled())
 			{
 				y -= 5;
 			}
@@ -1434,7 +1468,8 @@ public class CompactOrbsManager
 
 			case ConfigKeys.HIDE_LOGOUT_X:
 				hideLogoutX = config.hideLogout();
-				handleLogoutXHiddenState(true);
+				updateLogoutX();
+				updateLogoutXPosition();
 				break;
 
 			default:

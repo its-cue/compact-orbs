@@ -25,11 +25,13 @@
 
 package com.compactorbs;
 
+import com.compactorbs.CompactOrbsConfig.TogglePlacement;
 import com.compactorbs.CompactOrbsConstants.ConfigGroup;
 import static com.compactorbs.CompactOrbsConstants.ConfigGroup.GROUP_NAME;
 import com.compactorbs.CompactOrbsConstants.ConfigKeys;
 import com.compactorbs.CompactOrbsConstants.Script;
 import com.compactorbs.CompactOrbsConstants.Varbit;
+import com.compactorbs.CompactOrbsConstants.Widgets;
 import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
 import com.compactorbs.CompactOrbsConstants.Widgets.Fixed;
 import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
@@ -45,7 +47,9 @@ import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.MenuEntry;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.ScriptPreFired;
 import net.runelite.api.events.VarbitChanged;
@@ -125,11 +129,11 @@ public class CompactOrbsPlugin extends Plugin
 
 			if (manager.isLoggedIn())
 			{
-				manager.handleLogoutXHiddenState(false);
+				manager.updateLogoutX();
 
 				manager.init(Script.FORCE_UPDATE);
 				manager.setupOrbsContainer();
-				manager.configureMinimapOverlayContainer(true);
+				manager.setupMinimapOverlay();
 			}
 		});
 	}
@@ -182,18 +186,8 @@ public class CompactOrbsPlugin extends Plugin
 
 			case Script.TOPLEVEL_SUBCHANGE:
 			case Script.TOPLEVEL_SIDE_CUSTOMIZE:
-				manager.handleLogoutXHiddenState(false);
-				manager.updateOverlayLogoutX();
-				break;
-
-			case Script.BUFF_BAR_CONTENT_UPDATE:
-				if (minimapOverlay.hasUpdatedBounds() && manager.pendingMinimapOverlayChildren)
-				{
-					log.debug("[StatBoostsHud] is ready for the minimap overlay children");
-
-					manager.pendingMinimapOverlayChildren = false;
-					clientThread.invokeLater(manager::createMinimapOverlayChildren);
-				}
+				manager.updateLogoutX();
+				manager.updateLogoutXOverlay();
 				break;
 
 			case Script.WIKI_ICON_INIT:
@@ -229,15 +223,14 @@ public class CompactOrbsPlugin extends Plugin
 	@Subscribe
 	public void onScriptPreFired(ScriptPreFired event)
 	{
-		if (event.getScriptId() == Script.TOOLTIP_MOUSE_RELEASE)
+		if (event.getScriptId() == Orbs.WORLD_MAP_TOOLTIP.getScriptId())
 		{
-			int tooltipId = client.getIntStack()[2];
-			if (tooltipId == Orb.WORLD_MAP_TOOLTIP)
+			int id = client.getIntStack()[2];
+			int tooltipId = Orbs.WORLD_MAP_TOOLTIP.getComponentId();
+			if (id == tooltipId)
 			{
-				if (manager.isCompactLayout() || manager.hideWorldMap)
-				{
-					widgetManager.setHidden(Orb.WORLD_MAP_TOOLTIP, true);
-				}
+				boolean hidden = manager.isCompactLayout() || manager.hideWorldMap;
+				widgetManager.setHidden(tooltipId, hidden);
 			}
 		}
 	}
@@ -259,6 +252,10 @@ public class CompactOrbsPlugin extends Plugin
 				if (manager.allowReordering())
 				{
 					widgetManager.remapTargets(manager.isCompactLayout(), Script.FORCE_UPDATE, Orbs.values());
+					if (config.minimapTogglePlacement() == TogglePlacement.BELOW_MAP)
+					{
+						manager.updateMinimapToggleButton();
+					}
 				}
 				break;
 		}
@@ -278,7 +275,10 @@ public class CompactOrbsPlugin extends Plugin
 			case Classic.ORBS >> 16:
 			case Modern.ORBS >> 16:
 				manager.init(Script.FORCE_UPDATE);
-				manager.configureMinimapOverlayContainer(true);
+				break;
+
+			case Widgets.MinimapOverlay.UNIVERSE >> 16:
+				manager.setupMinimapOverlay();
 				break;
 		}
 	}
@@ -362,7 +362,12 @@ public class CompactOrbsPlugin extends Plugin
 				break;
 
 			case ConfigKeys.ENABLE_LOGOUT_X_OVERLAY:
-				clientThread.invokeLater(() -> manager.handleLogoutXHiddenState(true));
+				clientThread.invokeLater(() ->
+				{
+					manager.updateLogoutX();
+					manager.updateLogoutXPosition();
+					manager.updateLogoutXOverlay();
+				});
 				break;
 
 			case ConfigKeys.ORB_LAYOUT:
@@ -387,6 +392,12 @@ public class CompactOrbsPlugin extends Plugin
 				});
 				break;
 		}
+	}
+
+	@Subscribe
+	public void onMenuEntryAdded(MenuEntryAdded event)
+	{
+		manager.addCustomMenuEntries(event.getMenuEntry());
 	}
 
 	@Override

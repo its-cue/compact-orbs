@@ -146,9 +146,6 @@ public class CompactOrbsConstants
 		//script that swaps a graphic with another, ex: for orb frame hovering
 		public static final int GRAPHIC_SWAPPER = 44;
 
-		//minimap overlay script for initial setup
-		public static final int BUFF_BAR_CONTENT_UPDATE = 4730;
-
 		//scripts related to noclickthrough updating
 		public static final int ORBS_UPDATE_HEALTH = 446;
 		public static final int ORBS_UPDATE_SPECENERGY = 2069;
@@ -389,23 +386,18 @@ public class CompactOrbsConstants
 		public static final int OPACITY_HOVER = 130;
 	}
 
-	public static final class Menu
+	public static final class MenuOp
 	{
-		//prefix menu options for the toggle buttons
-		public static final String PREFIX_SHOW = "Show";
-		public static final String PREFIX_HIDE = "Hide";
-
-		//suffix menu options for the toggle buttons
-		public static final String SUFFIX_MINIMAP = "Minimap";
-		public static final String SUFFIX_COMPASS = "Compass";
-
-		//suffix menu color for the toggle buttons
+		public static final String SHOW = "Show";
+		public static final String HIDE = "Hide";
 		public static final Color COLOR = JagexColors.MENU_TARGET;
 
-		//menu index priority
-		public static final int ABOVE_WALK_HERE = 0;
-		public static final int BELOW_WALK_HERE = 5;
-		public static final int TOGGLE_OVERLAY = 6;
+		public static final String MINIMAP_OP = "Minimap";
+		public static final String DETACHED_OP = "Detached " + MINIMAP_OP;
+		public static final String COMPASS_OP = "Compass";
+
+		public static final String LOGOUT_OP = "Logout";
+		public static final String WORLD_SWITCHER_OP = "World switcher";
 	}
 
 	public static final class Sprite
@@ -478,6 +470,7 @@ public class CompactOrbsConstants
 			public static final int COMPASS = InterfaceID.ToplevelOsrsStretch.MAP_MINIMAP_GRAPHIC6;
 			public static final int COMPASS_OPTIONS = InterfaceID.ToplevelOsrsStretch.COMPASSCLICK;
 			public static final int COMPASS_PARENT = InterfaceID.ToplevelOsrsStretch.MAP_MINIMAP;
+			public static final int SIDE_TOP = InterfaceID.ToplevelOsrsStretch.SIDE_TOP;
 		}
 
 		//modern-resizable widget ids
@@ -498,6 +491,7 @@ public class CompactOrbsConstants
 			public static final int COMPASS_PARENT = InterfaceID.ToplevelPreEoc.MAP_MINIMAP;
 			public static final int LOGOUT_X_ICON = InterfaceID.ToplevelPreEoc.ICON10;
 			public static final int LOGOUT_X_STONE = InterfaceID.ToplevelPreEoc.STONE10;
+			public static final int SIDE_MOVABLE = InterfaceID.ToplevelPreEoc.SIDE_MOVABLE;
 		}
 	}
 }

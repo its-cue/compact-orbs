@@ -38,7 +38,6 @@ import com.compactorbs.widget.layout.offset.OffsetManager;
 import com.compactorbs.widget.layout.slot.Slot;
 import com.compactorbs.widget.layout.slot.SlotManager;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 import javax.inject.Inject;
@@ -220,20 +219,18 @@ public class WidgetManager
 			return;
 		}
 
-		widget.setHidden(hidden);
+		setSelfHidden(widget, hidden);
 
-		//specifically for compass menu options (could be others?)
 		if (widget.getChildren() != null)
 		{
 			for (Widget child : widget.getChildren())
 			{
 				if (child != null)
 				{
-					child.setHidden(hidden);
+					setSelfHidden(child, hidden);
 				}
 			}
 		}
-
 	}
 
 	public void setHidden(int componentId, boolean hidden)
@@ -244,7 +241,19 @@ public class WidgetManager
 			return;
 		}
 
-		widget.setHidden(hidden);
+		setSelfHidden(widget, hidden);
+	}
+
+	public void setSelfHidden(Widget widget, boolean hidden)
+	{
+		if (hidden && !widget.isSelfHidden())
+		{
+			widget.setHidden(true);
+		}
+		else if (!hidden && widget.isSelfHidden())
+		{
+			widget.setHidden(false);
+		}
 	}
 
 	public void setNoClickThrough(int componentId, boolean noClickThrough)
@@ -328,42 +337,6 @@ public class WidgetManager
 		}
 	}
 
-	public void syncMenuOp(Widget target, int componentId)
-	{
-		if (target == null)
-		{
-			return;
-		}
-
-		Widget widget = client.getWidget(componentId);
-		if (widget == null)
-		{
-			return;
-		}
-
-		String[] actions = widget.getActions();
-		if (actions == null)
-		{
-			return;
-		}
-
-		String[] targetActions = target.getActions();
-
-		for (int i = 0; i < actions.length; i++)
-		{
-			String action = null;
-			if (targetActions != null && i < targetActions.length)
-			{
-				action = targetActions[i];
-			}
-
-			if (!Objects.equals(action, actions[i]))
-			{
-				target.setAction(i, actions[i]);
-			}
-		}
-	}
-
 	public void syncSprite(Widget target, int componentId)
 	{
 		if (target == null)
@@ -381,26 +354,6 @@ public class WidgetManager
 		if (target.getSpriteId() != spriteId)
 		{
 			target.setSpriteId(spriteId);
-		}
-	}
-
-	public void syncHidden(Widget target, int componentId)
-	{
-		if (target == null)
-		{
-			return;
-		}
-
-		Widget widget = client.getWidget(componentId);
-		if (widget == null)
-		{
-			return;
-		}
-
-		boolean hidden = widget.isSelfHidden();
-		if (target.isHidden() != hidden)
-		{
-			target.setHidden(hidden);
 		}
 	}
 

@@ -194,6 +194,11 @@ public enum Orbs implements TargetWidget
 			)
 		)
 	),
+	WORLD_MAP_TOOLTIP(
+		Orb.WORLD_MAP_TOOLTIP,
+		Script.TOOLTIP_MOUSE_RELEASE,
+		Map.of()
+	),
 	WIKI_ICON_CONTAINER(
 		Orb.WIKI_ICON,
 		Script.WIKI_ICON_UPDATE,
