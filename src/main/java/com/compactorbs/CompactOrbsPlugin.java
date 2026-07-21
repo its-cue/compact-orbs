@@ -47,7 +47,6 @@ import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
-import net.runelite.api.MenuEntry;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.ScriptPostFired;
@@ -376,11 +375,7 @@ public class CompactOrbsPlugin extends Plugin
 			case ConfigKeys.COMPASS_TOGGLE_BUTTON:
 			case ConfigKeys.HORIZONTAL_ANCHOR:
 			case ConfigKeys.VERTICAL_ANCHOR:
-				clientThread.invokeLater(() ->
-				{
-					manager.updateLayout();
-					manager.setupOrbsContainer();
-				});
+				clientThread.invokeLater(() -> manager.updateLayout(manager.isCompactLayout()));
 				break;
 
 			//orb visibility
@@ -388,49 +383,41 @@ public class CompactOrbsPlugin extends Plugin
 				clientThread.invokeLater(() ->
 				{
 					manager.updateOrbByConfig(event.getKey());
-					manager.updateLayout();
+					manager.updateLayout(manager.isCompactLayout());
 				});
 				break;
 		}
 	}
 
-	@Subscribe
-	public void onMenuEntryAdded(MenuEntryAdded event)
-	{
-		manager.addCustomMenuEntries(event.getMenuEntry());
-	}
-
 	@Override
 	public void resetConfiguration()
 	{
-		clientThread.invokeLater(() ->
-		{
-			manager.hasSeenWikiWarning = false;
-			manager.init(Script.FORCE_UPDATE);
-			manager.setupOrbsContainer();
-			//world map and wiki require revalidation because of the containers position mode change, works for now (TODO)
-			widgetManager.revalidate(Orbs.WORLD_MAP_CONTAINER, Orbs.WIKI_ICON_CONTAINER);
-		});
+		clientThread.invokeLater(() -> manager.updateLayout(manager.isCompactLayout()));
 	}
 
 	@Subscribe
 	public void onProfileChanged(ProfileChanged event)
 	{
 		manager.updateConfig();
+		clientThread.invokeLater(() -> manager.updateLayout(manager.isCompactLayout()));
 	}
 
 	@Subscribe
 	public void onPluginChanged(PluginChanged event)
 	{
 		String plugin = event.getPlugin().getName();
-
 		if (!plugin.equalsIgnoreCase(ConfigGroup.Wiki.GROUP_NAME))
 		{
 			return;
 		}
 
-		//rebuild layout if the wiki plugin is turned on or off
-		clientThread.invokeLater(() -> manager.init(Script.FORCE_UPDATE));
+		clientThread.invokeLater(() -> manager.updateLayout(manager.isCompactLayout()));
+	}
+
+	@Subscribe
+	public void onMenuEntryAdded(MenuEntryAdded event)
+	{
+		manager.addCustomMenuEntries(event.getMenuEntry());
 	}
 
 	private final HotkeyListener hotkeyListener = new HotkeyListener(() -> config.hotkeyKeybind())

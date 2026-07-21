@@ -183,25 +183,29 @@ public class CompactOrbsManager
 		updateNoClickThrough();
 	}
 
-	//update positions (used when toggling orb visibility)
-	public void updateLayout()
+	public void updateLayout(boolean compact)
 	{
-		if (widgetManager.getCurrentParent() == null)
+		if (isFixedMode())
 		{
+			widgetManager.setHidden(MinimapOverlay.UNIVERSE, true);
+			widgetManager.remapTargets(false, Script.FORCE_UPDATE, Orbs.values());
+			updateNoClickThrough();
+			setupMinimapContainer(false);
 			return;
 		}
 
-		if (isCompactLayout())
+		setupMinimapContainer(compact);
+		setupOrbsContainer();
+		if (!isClassicResizable())
 		{
-			setupMinimapContainer(true);
-			widgetManager.remapTargets(true, Script.FORCE_UPDATE, Compass.values());
-			widgetManager.remapTargets(true, Script.FORCE_UPDATE, Orbs.values());
-
-			updateCompassFrameChild();
-			updateCompassToggleButton();
+			updateLogoutX();
+			updateLogoutXPosition();
 		}
-
-		updateMinimapToggleButton();
+		widgetManager.remapTargets(compact, Script.FORCE_UPDATE, Compass.values());
+		widgetManager.remapTargets(compact, Script.FORCE_UPDATE, Orbs.values());
+		widgetManager.setTargetsHidden((compact && isCompassHidden()), Compass.values());
+		updateCustomChildren(true);
+		updateNoClickThrough();
 	}
 
 	public void reset()
@@ -529,6 +533,7 @@ public class CompactOrbsManager
 			compassFrame.setSpriteId(Sprite.COMPASS_FRAME);
 			compassFrame.setOpacity(Layout.OPACITY);
 			compassFrame.setHidden(false);
+			compassFrame.revalidate();
 		}
 
 		//prevent de-sync
