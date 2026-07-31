@@ -23,61 +23,23 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.layout.offset.impl;
+package com.compactorbs.widget.layout;
 
-import com.compactorbs.CompactOrbsManager;
-import com.compactorbs.widget.layout.offset.OffsetTarget;
-import com.compactorbs.widget.layout.slot.SlotManager;
-import lombok.Getter;
+import com.compactorbs.widget.TargetWidget;
+import java.util.function.Supplier;
 
-@Getter
-public class MapContainerOffset implements OffsetTarget
+public final class OrbToggle
 {
-	@Override
-	public int widthOffset(int w, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
+	public final String key;
+	public final Supplier<Boolean> hidden;
+	public final String name;
+	public final TargetWidget[] targets;
+
+	public OrbToggle(String key, Supplier<Boolean> hidden, String name, TargetWidget[] targets)
 	{
-		if (!compact)
-		{
-			return w;
-		}
-
-		if (manager.isAnchorRight() && !manager.getCurrentLayout().isCustom())
-		{
-			w += manager.getCurrentLayout().getRightOffset();
-		}
-
-		if ((manager.getCurrentLayout().isHorizontal())
-			&& manager.isAnchorLeft())
-		{
-			w -= slotManager.getHiddenSize();
-		}
-
-		return w;
-	}
-
-	@Override
-	public int heightOffset(int h, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
-	{
-		if (!compact)
-		{
-			return h;
-		}
-
-		if (manager.isAnchorBottom() && !manager.getCurrentLayout().isCustom())
-		{
-			h += manager.getCurrentLayout().getBottomOffset();
-		}
-
-		if (manager.getCurrentLayout().isVertical())
-		{
-			if (manager.isAnchorTop())
-			{
-				h -= slotManager.getHiddenSize();
-			}
-		}
-
-		return h;
+		this.key = key;
+		this.hidden = hidden;
+		this.name = name;
+		this.targets = targets;
 	}
 }
-
-

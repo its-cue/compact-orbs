@@ -25,6 +25,7 @@
 
 package com.compactorbs.widget.layout.offset.impl;
 
+import com.compactorbs.CompactOrbsConfig.TogglePlacement;
 import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.elements.Orbs;
@@ -34,35 +35,41 @@ import com.compactorbs.widget.layout.slot.SlotManager;
 import lombok.Getter;
 
 @Getter
-public class WikiContainerOffset implements OffsetTarget
+public class MinimapButtonOffset implements OffsetTarget
 {
 	@Override
 	public int xOffset(int x, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
 		if (!compactLayout)
 		{
-			return manager.isFixedMode() ? 8 : x;
-		}
+			x = manager.getTogglePlacement().getX();
 
-		if (manager.allowReordering() && !manager.isEditingLayout)
-		{
-			if (manager.getCurrentLayout().isHorizontal()
-				&& manager.isAnchorLeft())
+			if (manager.allowReordering() && !manager.isEditingLayout)
 			{
-				x -= slotManager.getHiddenSize();
+				if (manager.getTogglePlacement() == TogglePlacement.BELOW_MAP
+					&& manager.isStoreHidden() && !manager.isStoreOrbDisabled())
+				{
+					x -= 33;
+				}
 			}
 
-			if (manager.getCurrentLayout().isHorizontalWide())
-			{
-				if (manager.hideMinimapToggle())
-				{
-					x += Layout.TOGGLE_BUTTON_SIZE;
+			return x;
+		}
 
-					if (manager.isXpDropHidden() || manager.hideWorldMap)
-					{
-						x += 9;
-					}
+		if (manager.getCurrentLayout().isHorizontal())
+		{
+			if (manager.allowReordering() && !manager.isEditingLayout)
+			{
+				if (manager.isWikiHidden())
+				{
+					x -= 42;
 				}
+			}
+
+			if (manager.isAnchorLeft())
+			{
+				int offset = slotManager.getHiddenSize();
+				x -= offset;
 			}
 		}
 
@@ -74,19 +81,49 @@ public class WikiContainerOffset implements OffsetTarget
 	{
 		if (!compactLayout)
 		{
-			return manager.isFixedMode() ? 135 : y;
+			y = manager.getTogglePlacement().getY();
+
+			if (!manager.isEditingLayout)
+			{
+				//offset when store is hidden and minimap is visible
+				if (manager.allowReordering() &&
+					manager.getTogglePlacement() == TogglePlacement.BELOW_MAP
+					&& manager.isStoreHidden() && !manager.isStoreOrbDisabled())
+				{
+					y -= 5;
+				}
+
+				if (manager.getTogglePlacement() == TogglePlacement.ABOVE_XP)
+				{
+					if (manager.shouldOffsetXpOrb())
+					{
+						y -= 2;
+					}
+				}
+			}
+
+			return y;
 		}
 
 		if (manager.getCurrentLayout().isVertical())
 		{
-			y = slotManager.applyHiddenYOffset(Orbs.WIKI_ICON_CONTAINER, y);
+			y = slotManager.applyHiddenYOffset(Orbs.WIKI_ICON_CONTAINER,
+				Layout.Vertical.MAP_CONTAINER_HEIGHT - Layout.TOGGLE_BUTTON_SIZE);
 
 			if (manager.allowReordering() && !manager.isEditingLayout)
 			{
-				if (manager.isAnchorTop()
-					&& manager.getCurrentLayout().isLastVisible(Slot.WIKI_SLOT, slotManager.getHiddenCountAbove(Orbs.WIKI_ICON_CONTAINER)))
+				if (manager.isAnchorTop())
 				{
-					y += 3;
+					if (manager.getCurrentLayout().isLastVisible(Slot.WIKI_SLOT, slotManager.getHiddenCountAbove(Orbs.WIKI_ICON_CONTAINER)))
+					{
+						y += 4;
+					}
+
+					if (manager.isWikiHidden() && !manager.isClassicResizable() && !manager.hideLogoutX
+						&& slotManager.getHiddenCountAbove(Orbs.WIKI_ICON_CONTAINER) >= manager.getCurrentLayout().getGroup(Slot.WIKI_SLOT).indexOf(Slot.WIKI_SLOT))
+					{
+						y -= 14;
+					}
 				}
 			}
 		}

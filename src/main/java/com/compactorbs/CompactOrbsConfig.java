@@ -108,8 +108,6 @@ public interface CompactOrbsConfig extends Config
 	enum HotkeyOptions
 	{
 		MINIMAP_BUTTON,
-		COMPASS_BUTTON,
-		BOTH_BUTTONS,
 		MINIMAP,
 		DETACHED_MINIMAP
 	}
@@ -173,23 +171,11 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = ConfigKeys.COMPASS_TOGGLE_BUTTON,
-		name = "Disable the compass button",
-		description = "Hide/show the compass toggle button",
-		section = compact,
-		position = 3
-	)
-	default boolean hideCompassToggle()
-	{
-		return false;
-	}
-
-	@ConfigItem(
 		keyName = ConfigKeys.RIGHT_CLICK_TOGGLE_BUTTONS,
-		name = "Right click the toggle buttons",
+		name = "Right click the minimap button",
 		description = "Deprioritizes the toggle menu action so it requires a right click",
 		section = compact,
-		position = 4
+		position = 3
 	)
 	default boolean rightClickToggleButtons()
 	{
@@ -204,7 +190,7 @@ public interface CompactOrbsConfig extends Config
 			"-Horizontal: orbs stacked and split between 2 rows horizontally <br>" +
 			"-Horizontal-Wide: data orbs aligned to 1 row with remaining orbs/compass stacked above horizontally",
 		section = compact,
-		position = 5
+		position = 4
 	)
 	default CompactOrbsLayout layout()
 	{
@@ -216,7 +202,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Vertical anchor",
 		description = "Snaps the layout and reorders orbs based on the selected anchor point",
 		section = compact,
-		position = 6
+		position = 5
 	)
 	default VerticalAnchor verticalAnchor()
 	{
@@ -228,7 +214,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Horizontal anchor",
 		description = "Snaps the layout and reorders orbs based on the selected anchor point",
 		section = compact,
-		position = 7
+		position = 6
 	)
 	default HorizontalAnchor horizontalAnchor()
 	{
@@ -241,7 +227,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Vertical offset",
 		description = "Adjust the layouts vertical position from the Bottom anchor point by the set value",
 		section = compact,
-		position = 8
+		position = 7
 	)
 	default int verticalYAdjustment()
 	{
@@ -253,7 +239,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Disable orb reordering",
 		description = "Disable reordering logic tied to orb visibility",
 		section = compact,
-		position = 9
+		position = 8
 	)
 	default boolean disableReordering()
 	{
@@ -265,7 +251,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Leave empty space",
 		description = "Leaves empty space where orbs were moved instead of shifting other elements to fill the gap",
 		section = compact,
-		position = 10
+		position = 9
 	)
 	default boolean leaveEmptySpace()
 	{
@@ -277,7 +263,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Prevent orb clickthrough",
 		description = "Prevents clicks through the data orbs (slightly increases the non-clickable space around them)",
 		section = compact,
-		position = 11
+		position = 10
 	)
 	default boolean enableNoClickthrough()
 	{
@@ -310,8 +296,6 @@ public interface CompactOrbsConfig extends Config
 		name = "Select toggle",
 		description = "Select what the hotkey will hide/show <br>" +
 			"-Minimap button: the minimap toggle button <br>" +
-			"-Compass button: the compass toggle button <br>" +
-			"-Both Buttons: both the toggle buttons  <br>" +
 			"-Minimap: the minimap (toggling between compact view) <br>" +
 			"-Detached Minimap: the detached minimap when in compact view",
 		section = hotkey,
@@ -319,7 +303,7 @@ public interface CompactOrbsConfig extends Config
 	)
 	default HotkeyOptions toggleOption()
 	{
-		return HotkeyOptions.BOTH_BUTTONS;
+		return HotkeyOptions.MINIMAP_BUTTON;
 	}
 
 	@ConfigSection(

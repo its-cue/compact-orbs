@@ -47,13 +47,13 @@ public class LogoutXOffset implements OffsetTarget
 			return x;
 		}
 
-		if (manager.allowReordering())
+		if (manager.isAnchorRight() && !manager.getCurrentLayout().isCustom())
 		{
-			if (manager.isAnchorRight())
-			{
-				x += manager.getCurrentLayout().getRightOffset();
-			}
+			x += manager.getCurrentLayout().getRightOffset();
+		}
 
+		if (manager.allowReordering() && !manager.isEditingLayout)
+		{
 			if (manager.getCurrentLayout().isHorizontal())
 			{
 				if (manager.isCompassHidden())
@@ -87,7 +87,7 @@ public class LogoutXOffset implements OffsetTarget
 			return y;
 		}
 
-		if (manager.isAnchorBottom())
+		if (manager.isAnchorBottom() && !manager.getCurrentLayout().isCustom())
 		{
 			y += manager.getCurrentLayout().getBottomOffset() - manager.clampVerticalY();
 
@@ -97,7 +97,7 @@ public class LogoutXOffset implements OffsetTarget
 			}
 		}
 
-		if (manager.allowReordering())
+		if (manager.allowReordering() && !manager.isEditingLayout)
 		{
 			if (manager.getCurrentLayout().isHorizontal())
 			{

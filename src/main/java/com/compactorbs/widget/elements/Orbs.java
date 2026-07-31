@@ -53,6 +53,13 @@ public enum Orbs implements TargetWidget
 {
 	XP_DROPS_CONTAINER(
 		Orb.XP_DROPS,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
 		Map.of(
 			X, new SetValue(
 				Original.XP_DROPS_X,
@@ -70,6 +77,13 @@ public enum Orbs implements TargetWidget
 	),
 	HP_ORB_CONTAINER(
 		Orb.HP_ORB,
+		-1,
+		-1,
+		Orb.HP_ORB_BACKING,
+		Orb.HP_ORB_INDICATOR,
+		Orb.HP_ORB_BUTTON,
+		Orb.HP_ORB_ICON,
+		Orb.HP_ORB_EMPTY,
 		Map.of(
 			X, new SetValue(
 				Original.HP_ORB_X,
@@ -87,6 +101,13 @@ public enum Orbs implements TargetWidget
 	),
 	PRAYER_ORB_CONTAINER(
 		Orb.PRAY_ORB,
+		-1,
+		-1,
+		Orb.PRAY_ORB_BACKING,
+		Orb.PRAY_ORB_INDICATOR,
+		Orb.PRAY_ORB_BUTTON,
+		Orb.PRAY_ORB_ICON,
+		Orb.PRAY_ORB_EMPTY,
 		Map.of(
 			X, new SetValue(
 				Original.PRAYER_ORB_X,
@@ -104,6 +125,13 @@ public enum Orbs implements TargetWidget
 	),
 	RUN_ORB_CONTAINER(
 		Orb.RUN_ORB,
+		-1,
+		-1,
+		Orb.RUN_ORB_BACKING,
+		Orb.RUN_ORB_INDICATOR,
+		Orb.RUN_ORB_BUTTON,
+		Orb.RUN_ORB_ICON,
+		Orb.RUN_ORB_EMPTY,
 		Map.of(
 			X, new SetValue(
 				Original.RUN_ORB_X,
@@ -121,6 +149,13 @@ public enum Orbs implements TargetWidget
 	),
 	SPEC_ORB_CONTAINER(
 		Orb.SPEC_ORB,
+		-1,
+		-1,
+		Orb.SPEC_ORB_BACKING,
+		Orb.SPEC_ORB_INDICATOR,
+		Orb.SPEC_ORB_BUTTON,
+		Orb.SPEC_ORB_ICON,
+		Orb.SPEC_ORB_EMPTY,
 		Map.of(
 			X, new SetValue(
 				Original.SPEC_ORB_X,
@@ -138,7 +173,13 @@ public enum Orbs implements TargetWidget
 	),
 	STORE_ORB_CONTAINER(
 		Orb.STORE_ORB,
+		-1,
 		Script.STORE_ORB_UPDATE,
+		Orb.STORE_ORB_BACKING,
+		Orb.STORE_ORB_INDICATOR,
+		-1,
+		Orb.STORE_ORB_ICON,
+		-1,
 		Map.of(
 			X, new SetValue(
 				Original.STORE_ORB_X,
@@ -156,7 +197,13 @@ public enum Orbs implements TargetWidget
 	),
 	ACTIVITY_ORB_CONTAINER(
 		Orb.ACTIVITY_ORB,
+		-1,
 		Script.ACTIVITY_ORB_UPDATE,
+		Orb.ACTIVITY_ORB_BACKING,
+		Orb.ACTIVITY_ORB_INDICATOR,
+		-1,
+		Orb.ACTIVITY_ORB_ICON,
+		-1,
 		Map.of(
 			X, new SetValue(
 				Original.ACTIVITY_ORB_X,
@@ -174,7 +221,13 @@ public enum Orbs implements TargetWidget
 	),
 	WORLD_MAP_CONTAINER(
 		Orb.WORLD_MAP,
+		-1,
 		Script.WORLD_MAP_UPDATE,
+		Orb.WORLD_MAP_BACKING,
+		-1,
+		-1,
+		Orb.WORLD_MAP_ICON,
+		-1,
 		Map.of(
 			X, new SetValue(
 				Original.WORLD_MAP_X,
@@ -196,12 +249,24 @@ public enum Orbs implements TargetWidget
 	),
 	WORLD_MAP_TOOLTIP(
 		Orb.WORLD_MAP_TOOLTIP,
+		-1,
 		Script.TOOLTIP_MOUSE_RELEASE,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
 		Map.of()
 	),
 	WIKI_ICON_CONTAINER(
 		Orb.WIKI_ICON,
+		-1,
 		Script.WIKI_ICON_UPDATE,
+		-1,
+		-1,
+		Orb.WIKI_ICON_VANILLA,
+		-1,
+		-1,
 		Map.of(
 			X, new SetValue(
 				Original.WIKI_ICON_X,
@@ -226,8 +291,14 @@ public enum Orbs implements TargetWidget
 		)
 	),
 	WIKI_PLUGIN_ICON(
-		Orb.WIKI_ICON, 0,
+		Orb.WIKI_ICON,
+		0,
 		Script.WIKI_ICON_UPDATE,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
 		Map.of(
 			X_POSITION_MODE, new SetValue(
 				WidgetPositionMode.ABSOLUTE_CENTER,
@@ -241,7 +312,13 @@ public enum Orbs implements TargetWidget
 	),
 	WIKI_VANILLA_CONTAINER(
 		Orb.WIKI_CONTAINER_VANILLA,
+		-1,
 		Script.WIKI_ICON_UPDATE,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
 		Map.of(
 			HEIGHT, new SetValue(
 				Original.WIKI_HEIGHT - 10,
@@ -259,7 +336,13 @@ public enum Orbs implements TargetWidget
 	),
 	WIKI_VANILLA_ICON(
 		Orb.WIKI_ICON_VANILLA,
+		-1,
 		Script.WIKI_ICON_UPDATE,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
 		Map.of(
 			X_POSITION_MODE, new SetValue(
 				WidgetPositionMode.ABSOLUTE_CENTER,
@@ -273,6 +356,13 @@ public enum Orbs implements TargetWidget
 	),
 	LOGOUT_X_ICON(
 		Modern.LOGOUT_X_ICON,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
 		Map.of(
 			X, new SetValue(
 				Original.LOGOUT_X,
@@ -294,6 +384,13 @@ public enum Orbs implements TargetWidget
 	),
 	LOGOUT_X_STONE(
 		Modern.LOGOUT_X_STONE,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
+		-1,
 		Map.of(
 			X, new SetValue(
 				Original.LOGOUT_X,
@@ -313,9 +410,16 @@ public enum Orbs implements TargetWidget
 			)
 		)
 	),
+	//TODO?
 	GRID_MASTER_ORB_CONTAINER(
-		Orb.UNIVERSE, 0,
+		Orb.UNIVERSE,
+		0,
+		-1,
 		Script.GRID_MASTER_ORB_UPDATE,
+		-1,
+		-1,
+		-1,
+		-1,
 		Map.of(
 			X, new SetValue(
 				Original.ACTIVITY_ORB_X,
@@ -332,19 +436,16 @@ public enum Orbs implements TargetWidget
 		)
 	);
 
-	private final int componentId, arrayId, scriptId;
+	private final int componentId;
+	private final int arrayId;
+	private final int scriptId;
+	private final int backingId;
+	private final int indicatorId;
+	private final int buttonId;
+	private final int iconId;
+	private final int emptyId;
 
 	private final Map<ValueKey, SetValue> valueMap;
-
-	Orbs(int componentId, int scriptId, Map<ValueKey, SetValue> valueMap)
-	{
-		this(componentId, -1, scriptId, valueMap);
-	}
-
-	Orbs(int componentId, Map<ValueKey, SetValue> valueMap)
-	{
-		this(componentId, -1, -1, valueMap);
-	}
 
 	public static final Set<Orbs> SWAPPABLE_ORBS = EnumSet.of(
 		HP_ORB_CONTAINER,
@@ -365,13 +466,15 @@ public enum Orbs implements TargetWidget
 		return false;
 	}
 
-	public static int getBackingId(TargetWidget target)
+	@Override
+	public boolean isLogoutX()
 	{
-		return target.getComponentId() + 1;
+		return this == LOGOUT_X_STONE || this == LOGOUT_X_ICON;
 	}
 
-	public static int getButtonId(TargetWidget target)
+	@Override
+	public boolean isWiki()
 	{
-		return target.getComponentId() + 2;
+		return this == WIKI_ICON_CONTAINER;
 	}
 }

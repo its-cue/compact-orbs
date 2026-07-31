@@ -23,61 +23,35 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.layout.offset.impl;
+package com.compactorbs.widget.layout.edit;
 
-import com.compactorbs.CompactOrbsManager;
-import com.compactorbs.widget.layout.offset.OffsetTarget;
-import com.compactorbs.widget.layout.slot.SlotManager;
+import com.compactorbs.widget.TargetWidget;
 import lombok.Getter;
+import lombok.Setter;
+import net.runelite.api.widgets.Widget;
 
 @Getter
-public class MapContainerOffset implements OffsetTarget
+public class Binding
 {
-	@Override
-	public int widthOffset(int w, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
+	private final Widget handler;
+	private final TargetWidget modern;
+	private final TargetWidget classic;
+	private final TargetWidget related;
+
+	@Setter
+	private boolean hidden;
+
+	public Binding(Widget handler, TargetWidget modern, TargetWidget classic, TargetWidget related, boolean hidden)
 	{
-		if (!compact)
-		{
-			return w;
-		}
-
-		if (manager.isAnchorRight() && !manager.getCurrentLayout().isCustom())
-		{
-			w += manager.getCurrentLayout().getRightOffset();
-		}
-
-		if ((manager.getCurrentLayout().isHorizontal())
-			&& manager.isAnchorLeft())
-		{
-			w -= slotManager.getHiddenSize();
-		}
-
-		return w;
+		this.handler = handler;
+		this.modern = modern;
+		this.classic = classic;
+		this.related = related;
+		this.hidden = hidden;
 	}
 
-	@Override
-	public int heightOffset(int h, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
+	public TargetWidget get(boolean isClassic)
 	{
-		if (!compact)
-		{
-			return h;
-		}
-
-		if (manager.isAnchorBottom() && !manager.getCurrentLayout().isCustom())
-		{
-			h += manager.getCurrentLayout().getBottomOffset();
-		}
-
-		if (manager.getCurrentLayout().isVertical())
-		{
-			if (manager.isAnchorTop())
-			{
-				h -= slotManager.getHiddenSize();
-			}
-		}
-
-		return h;
+		return (isClassic && classic != null) ? classic : modern;
 	}
 }
-
-

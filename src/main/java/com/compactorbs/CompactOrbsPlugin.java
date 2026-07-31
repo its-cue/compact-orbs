@@ -29,6 +29,7 @@ import com.compactorbs.CompactOrbsConfig.TogglePlacement;
 import com.compactorbs.CompactOrbsConstants.ConfigGroup;
 import static com.compactorbs.CompactOrbsConstants.ConfigGroup.GROUP_NAME;
 import com.compactorbs.CompactOrbsConstants.ConfigKeys;
+import static com.compactorbs.CompactOrbsConstants.Layout.EDIT_MODE_HIDDEN_OPACITY;
 import com.compactorbs.CompactOrbsConstants.Script;
 import com.compactorbs.CompactOrbsConstants.Varbit;
 import com.compactorbs.CompactOrbsConstants.Widgets;
@@ -37,16 +38,22 @@ import com.compactorbs.CompactOrbsConstants.Widgets.Fixed;
 import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
 import com.compactorbs.CompactOrbsConstants.Widgets.Orb;
 import com.compactorbs.widget.WidgetManager;
+import com.compactorbs.widget.elements.Compass;
 import com.compactorbs.widget.elements.Orbs;
+import com.compactorbs.widget.layout.EditLayout;
+import com.compactorbs.widget.layout.edit.drag.DragListener;
+import com.compactorbs.widget.layout.edit.drag.DragState;
 import com.compactorbs.widget.layout.slot.Slot;
 import com.compactorbs.widget.layout.slot.SlotLayout;
 import com.compactorbs.widget.layout.slot.SlotManager;
 import com.compactorbs.widget.overlay.MinimapOverlay;
 import com.google.inject.Provides;
+import java.awt.event.KeyEvent;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.ScriptPostFired;
@@ -59,11 +66,12 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.PluginChanged;
 import net.runelite.client.events.ProfileChanged;
+import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
+import net.runelite.client.input.MouseManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
-import net.runelite.client.util.HotkeyListener;
 
 @Slf4j
 @PluginDescriptor(
@@ -72,7 +80,7 @@ import net.runelite.client.util.HotkeyListener;
 	tags = {"compact", "orbs", "layout", "hide", "minimap", "resizable", "classic", "modern", "world", "map", "wiki", "swap", "overlay", "orb", "fixed"},
 	conflicts = {"Fixed Resizable Hybrid", "Orb Hider", "Minimap Hider", "Movable Orbs"}
 )
-public class CompactOrbsPlugin extends Plugin
+public class CompactOrbsPlugin extends Plugin implements KeyListener
 {
 	@Inject
 	private Client client;
@@ -104,12 +112,25 @@ public class CompactOrbsPlugin extends Plugin
 	@Inject
 	private SlotManager slotManager;
 
+	@Inject
+	private EditLayout editLayout;
+
+	@Inject
+	private DragListener dragListener;
+
+	@Inject
+	private DragState dragState;
+
+	@Inject
+	private MouseManager mouseManager;
+
 	@Override
 	protected void startUp() throws Exception
 	{
 		manager.updateConfig();
 		overlayManager.add(minimapOverlay);
-		keyManager.registerKeyListener(hotkeyListener);
+		keyManager.registerKeyListener(this);
+		mouseManager.registerMouseListener(dragListener);
 		manager.registerOrbToggleEntries();
 
 		if (!manager.isLoggedIn())
@@ -117,6 +138,7 @@ public class CompactOrbsPlugin extends Plugin
 			manager.initialLoginPending = true;
 		}
 
+		manager.isEditingLayout = false;
 		manager.updateFixedMode = true;
 		manager.hideWorldMap = config.hideWorld();
 		manager.hideLogoutX = config.hideLogout();
@@ -141,9 +163,8 @@ public class CompactOrbsPlugin extends Plugin
 	protected void shutDown() throws Exception
 	{
 		overlayManager.remove(minimapOverlay);
-
-		keyManager.unregisterKeyListener(hotkeyListener);
-
+		keyManager.unregisterKeyListener(this);
+		mouseManager.unregisterMouseListener(dragListener);
 		clientThread.invoke(manager::reset);
 	}
 
@@ -151,6 +172,29 @@ public class CompactOrbsPlugin extends Plugin
 	CompactOrbsConfig provideConfig(ConfigManager configManager)
 	{
 		return configManager.getConfig(CompactOrbsConfig.class);
+	}
+
+	@Subscribe
+	public void onClientTick(ClientTick event)
+	{
+		//don't check for drag events unless layout editing is enabled
+		if (!manager.isEditingLayout)
+		{
+			return;
+		}
+
+		//gated by client.getDraggedWidget(), with actual changes only if the dragged widget is expected
+		dragListener.updateDrag();
+
+		//onWidgetDrag works, but is finicky
+		//ex: moving a widget to 0,0 in bounds, then release the mouse to stop the drag (position updated)
+		//grab and drag the same widget, with it's ending position the same as it was before (no change)
+		//onWidgetDrag event will not fire -> which would potentially leave things stale (indicators/position)
+		//TODO - still unsure if it's just the implementation...
+		if (client.getMouseCurrentButton() == 0 && dragState.wasDragging)
+		{
+			dragListener.finalizeDrag();
+		}
 	}
 
 	@Subscribe
@@ -173,17 +217,45 @@ public class CompactOrbsPlugin extends Plugin
 	{
 		int scriptId = event.getScriptId();
 
+		//prevent unwanted changes while in edit-mode
+		if (manager.isEditingLayout &&
+			(scriptId == Script.TOPLEVEL_REDRAW ||
+				scriptId == Script.PROC_TOPLEVEL_SUBCHANGE ||
+				scriptId == Script.TOPLEVEL_SIDE_CUSTOMIZE ||
+				scriptId == Script.WIKI_ICON_INIT ||
+				scriptId == Script.WORLD_MAP_UPDATE ||
+				scriptId == Script.WIKI_ICON_UPDATE ||
+				scriptId == Script.STORE_ORB_UPDATE ||
+				scriptId == Script.ACTIVITY_ORB_UPDATE))
+		{
+			manager.updateLayout(manager.isCompactLayout());
+
+			widgetManager.setTargetsHidden(false, Compass.values());
+			if (manager.isCompactLayout())
+			{
+				manager.compassFrame.setHidden(false);
+			}
+
+			editLayout.updateBackground();
+			return;
+		}
+
 		switch (scriptId)
 		{
 			case Script.GRAPHIC_SWAPPER:
 				manager.resolveOrbFrameMismatch();
 				break;
 
+			case Script.TOPLEVEL_SUBCHANGE:
+				//ideally for display mode change
+				editLayout.cancelEditMode();
+				break;
+
 			case Script.TOPLEVEL_REDRAW:
 				//check for an active cutscene
 				manager.pendingChildrenUpdate = manager.isCutsceneActive();
 
-			case Script.TOPLEVEL_SUBCHANGE:
+			case Script.PROC_TOPLEVEL_SUBCHANGE:
 			case Script.TOPLEVEL_SIDE_CUSTOMIZE:
 				manager.updateLogoutX();
 				manager.updateLogoutXOverlay();
@@ -193,8 +265,13 @@ public class CompactOrbsPlugin extends Plugin
 				manager.updateWikiBannerVisibility(config.hideWiki());
 				break;
 
-			case Script.ORBS_UPDATE_HEALTH:
 			case Script.ORBS_UPDATE_SPECENERGY:
+				if (manager.isEditingLayout && config.hideSpec())
+				{
+					//prevent the script from setting the opacity back to 25
+					widgetManager.setTargetOpacity(Orbs.SPEC_ORB_CONTAINER, EDIT_MODE_HIDDEN_OPACITY);
+				}
+			case Script.ORBS_UPDATE_HEALTH:
 				if (!manager.isCompactLayout())
 				{
 					manager.updateNoClickThrough();
@@ -222,7 +299,9 @@ public class CompactOrbsPlugin extends Plugin
 	@Subscribe
 	public void onScriptPreFired(ScriptPreFired event)
 	{
-		if (event.getScriptId() == Orbs.WORLD_MAP_TOOLTIP.getScriptId())
+		int scriptId = event.getScriptId();
+
+		if (scriptId == Orbs.WORLD_MAP_TOOLTIP.getScriptId())
 		{
 			int id = client.getIntStack()[2];
 			int tooltipId = Orbs.WORLD_MAP_TOOLTIP.getComponentId();
@@ -248,6 +327,12 @@ public class CompactOrbsPlugin extends Plugin
 
 			case Varbit.STORE_ORB_TOGGLE:
 			case Varbit.ACTIVITY_ORB_TOGGLE:
+				//might need to add other varbit triggers (toggle wiki, toggle data orbs?)
+				if (manager.isEditingLayout)
+				{
+					editLayout.cancelEditMode();
+				}
+
 				if (manager.allowReordering())
 				{
 					widgetManager.remapTargets(manager.isCompactLayout(), Script.FORCE_UPDATE, Orbs.values());
@@ -296,6 +381,7 @@ public class CompactOrbsPlugin extends Plugin
 
 				clientThread.invokeLater(() ->
 				{
+					editLayout.cancelEditMode();
 					widgetManager.remapTarget(Orbs.WIKI_ICON_CONTAINER, manager.isCompactLayout());
 					manager.updateWikiBannerVisibility(config.hideWiki());
 					manager.updateCustomChildren(true);
@@ -319,13 +405,39 @@ public class CompactOrbsPlugin extends Plugin
 			return;
 		}
 
+		if (manager.isEditingLayout)
+		{
+			if (!key.contains(ConfigKeys.CUSTOM_LAYOUT_PREFIX))
+			{
+				clientThread.invoke(() -> editLayout.cancelEditMode());
+				return;
+			}
+		}
+
 		switch (key)
 		{
 			case ConfigKeys.MINIMAP:
-			case ConfigKeys.COMPASS:
 			case ConfigKeys.HOTKEY_KEYBIND:
 			case ConfigKeys.HOTKEY_TOGGLE_OPTION:
 				//do nothing (prevent default behaviour)
+				break;
+
+			case ConfigKeys.COMPASS:
+				clientThread.invokeLater(() ->
+				{
+					manager.setupMinimapContainer(manager.isCompactLayout());
+					widgetManager.remapTargets(
+						!manager.isCompassHidden() || manager.isMinimapHidden(),
+						Script.FORCE_UPDATE,
+						Compass.values()
+					);
+					widgetManager.remapTargets(
+						!manager.isCompassHidden() || manager.isMinimapHidden(),
+						Script.FORCE_UPDATE,
+						Orbs.values()
+					);
+					widgetManager.setTargetsHidden(manager.isCompassHidden(), Compass.values());
+				});
 				break;
 
 			case ConfigKeys.MINIMAP_BUTTON_PLACEMENT:
@@ -348,7 +460,6 @@ public class CompactOrbsPlugin extends Plugin
 				clientThread.invokeLater(() ->
 				{
 					manager.updateNoClickThrough();
-					manager.updateCompassToggleButton();
 					if (!manager.isCompactLayout())
 					{
 						widgetManager.remapTarget(Orbs.XP_DROPS_CONTAINER, manager.isCompactLayout());
@@ -371,19 +482,30 @@ public class CompactOrbsPlugin extends Plugin
 
 			case ConfigKeys.ORB_LAYOUT:
 			case ConfigKeys.VERTICAL_Y_ADJUSTMENT:
-			case ConfigKeys.MINIMAP_TOGGLE_BUTTON:
-			case ConfigKeys.COMPASS_TOGGLE_BUTTON:
 			case ConfigKeys.HORIZONTAL_ANCHOR:
 			case ConfigKeys.VERTICAL_ANCHOR:
+				if (manager.isFixedMode())
+				{
+					return;
+				}
 				clientThread.invokeLater(() -> manager.updateLayout(manager.isCompactLayout()));
 				break;
 
 			//orb visibility
 			default:
+				if (key.contains(ConfigKeys.CUSTOM_LAYOUT_PREFIX))
+				{
+					return;
+				}
+
 				clientThread.invokeLater(() ->
 				{
 					manager.updateOrbByConfig(event.getKey());
-					manager.updateLayout(manager.isCompactLayout());
+
+					if (!manager.isFixedMode())
+					{
+						manager.updateLayout(manager.isCompactLayout());
+					}
 				});
 				break;
 		}
@@ -392,7 +514,15 @@ public class CompactOrbsPlugin extends Plugin
 	@Override
 	public void resetConfiguration()
 	{
-		clientThread.invokeLater(() -> manager.updateLayout(manager.isCompactLayout()));
+		clientThread.invokeLater(() ->
+		{
+			editLayout.cancelEditMode();
+			if (!manager.isEditingLayout)
+			{
+				manager.resetAllCustomPositions(false);
+				manager.updateLayout(manager.isCompactLayout());
+			}
+		});
 	}
 
 	@Subscribe
@@ -411,7 +541,16 @@ public class CompactOrbsPlugin extends Plugin
 			return;
 		}
 
-		clientThread.invokeLater(() -> manager.updateLayout(manager.isCompactLayout()));
+		clientThread.invokeLater(() ->
+		{
+			editLayout.cancelEditMode();
+			if (!manager.isEditingLayout)
+			{
+				manager.updateLayout(manager.isCompactLayout());
+				manager.updateWikiBannerVisibility(config.hideWiki());
+				manager.updateCustomChildren(true);
+			}
+		});
 	}
 
 	@Subscribe
@@ -420,13 +559,32 @@ public class CompactOrbsPlugin extends Plugin
 		manager.addCustomMenuEntries(event.getMenuEntry());
 	}
 
-	private final HotkeyListener hotkeyListener = new HotkeyListener(() -> config.hotkeyKeybind())
+	@Override
+	public void keyTyped(KeyEvent e)
 	{
-		@Override
-		public void hotkeyPressed()
+	}
+
+	@Override
+	public void keyPressed(KeyEvent e)
+	{
+		if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
+		{
+			if (manager.isEditingLayout)
+			{
+				e.consume();
+				clientThread.invokeLater(() -> editLayout.toggleEditMode(false));
+			}
+		}
+
+		if (config.hotkeyKeybind().matches(e))
 		{
 			if (!manager.isFixedMode())
 			{
+				if (manager.isEditingLayout || manager.isCutsceneActive())
+				{
+					return;
+				}
+
 				switch (config.toggleOption())
 				{
 					case MINIMAP:
@@ -437,24 +595,16 @@ public class CompactOrbsPlugin extends Plugin
 						manager.saveConfig(ConfigKeys.MINIMAP_TOGGLE_BUTTON, !config.hideMinimapToggle());
 						break;
 
-					case COMPASS_BUTTON:
-						manager.saveConfig(ConfigKeys.COMPASS_TOGGLE_BUTTON, !config.hideCompassToggle());
-						break;
-
-					case BOTH_BUTTONS:
-						boolean hidden = !(config.hideMinimapToggle() || config.hideCompassToggle());
-
-						manager.saveConfig(ConfigKeys.MINIMAP_TOGGLE_BUTTON, hidden);
-						manager.saveConfig(ConfigKeys.COMPASS_TOGGLE_BUTTON, hidden);
-						break;
-
 					case DETACHED_MINIMAP:
 						manager.saveConfig(ConfigKeys.ENABLE_MINIMAP_OVERLAY, !config.showMinimapInCompactView());
 						break;
 				}
 			}
-
 		}
-	};
+	}
 
+	@Override
+	public void keyReleased(KeyEvent e)
+	{
+	}
 }

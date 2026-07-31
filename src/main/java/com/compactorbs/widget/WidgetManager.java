@@ -33,6 +33,7 @@ import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.util.SetValue;
 import com.compactorbs.util.ValueKey;
+import com.compactorbs.widget.elements.Minimap;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.layout.offset.OffsetManager;
 import com.compactorbs.widget.layout.slot.Slot;
@@ -45,7 +46,10 @@ import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.widgets.Widget;
+import static net.runelite.api.widgets.WidgetConfig.DRAG;
+import static net.runelite.api.widgets.WidgetConfig.DRAG_ON;
 import net.runelite.api.widgets.WidgetPositionMode;
+import net.runelite.api.widgets.WidgetType;
 
 @Slf4j
 @Singleton
@@ -100,7 +104,7 @@ public class WidgetManager
 
 		for (Map.Entry<ValueKey, SetValue> entry : getTarget(target).getValueMap().entrySet())
 		{
-			remapped |= setValue(widget, entry.getKey(), entry.getValue(), compactLayout);
+			remapped |= setValue(widget, target.getArrayId(), entry.getKey(), entry.getValue(), compactLayout);
 		}
 
 		if (manager.isFixedMode())
@@ -143,31 +147,31 @@ public class WidgetManager
 	}
 
 	//sets the widgets X/Y or position mode as necessary
-	private boolean setValue(Widget w, ValueKey key, SetValue value, boolean compactLayout)
+	private boolean setValue(Widget widget, int index, ValueKey key, SetValue value, boolean compactLayout)
 	{
 		int v = value.get(manager.getCurrentLayout(), compactLayout);
-		int offset = OffsetManager.getTargetOffset(w, key, v, compactLayout, manager, slotManager);
+		v = OffsetManager.getTargetOffset(widget, index, key, v, compactLayout, manager, slotManager);
 
 		switch (key)
 		{
 			case X:
-				return updateValue(w::getOriginalX, w::setOriginalX, offset);
+				return updateValue(widget::getOriginalX, widget::setOriginalX, v);
 			case Y:
-				return updateValue(w::getOriginalY, w::setOriginalY, offset);
+				return updateValue(widget::getOriginalY, widget::setOriginalY, v);
 			case WIDTH:
-				return updateValue(w::getOriginalWidth, w::setOriginalWidth, offset);
+				return updateValue(widget::getOriginalWidth, widget::setOriginalWidth, v);
 			case HEIGHT:
-				return updateValue(w::getOriginalHeight, w::setOriginalHeight, offset);
+				return updateValue(widget::getOriginalHeight, widget::setOriginalHeight, v);
 			case X_POSITION_MODE:
-				return updateValue(w::getXPositionMode, w::setXPositionMode, v);
+				return updateValue(widget::getXPositionMode, widget::setXPositionMode, v);
 			case Y_POSITION_MODE:
-				return updateValue(w::getYPositionMode, w::setYPositionMode, v);
+				return updateValue(widget::getYPositionMode, widget::setYPositionMode, v);
 			case WIDTH_MODE:
-				return updateValue(w::getWidthMode, w::setWidthMode, v);
+				return updateValue(widget::getWidthMode, widget::setWidthMode, v);
 			case HEIGHT_MODE:
-				return updateValue(w::getHeightMode, w::setHeightMode, v);
+				return updateValue(widget::getHeightMode, widget::setHeightMode, v);
 		}
-		throw new IllegalStateException("Unhandled ValueKey (" + key + ") for widget: " + w.getId());
+		throw new IllegalStateException("Unhandled ValueKey (" + key + ") for widget: " + widget.getId());
 	}
 
 	//sets a value only if it has changed
@@ -256,6 +260,51 @@ public class WidgetManager
 		}
 	}
 
+	public void setOpacity(int componentId, int opacity)
+	{
+		Widget widget = client.getWidget(componentId);
+		if (widget == null)
+		{
+			return;
+		}
+
+		widget.setOpacity(opacity);
+
+		if (widget.getChildren() != null)
+		{
+			for (Widget child : widget.getChildren())
+			{
+				if (child != null)
+				{
+					child.setOpacity(opacity);
+				}
+			}
+		}
+	}
+
+	//set the opacity for the target and any related widgets
+	public void setTargetOpacity(TargetWidget target, int opacity)
+	{
+		setOpacity(target.getComponentId(), opacity);
+
+		if (target.getBackingId() != -1)
+		{
+			setOpacity(target.getBackingId(), opacity);
+		}
+		if (target.getButtonId() != -1)
+		{
+			setOpacity(target.getButtonId(), opacity);
+		}
+		if (target.getIndicatorId() != -1)
+		{
+			setOpacity(target.getIndicatorId(), opacity);
+		}
+		if (target.getIconId() != -1)
+		{
+			setOpacity(target.getIconId(), opacity);
+		}
+	}
+
 	public void setNoClickThrough(int componentId, boolean noClickThrough)
 	{
 		Widget widget = client.getWidget(componentId);
@@ -323,6 +372,14 @@ public class WidgetManager
 		return null;
 	}
 
+	public Widget getMapParent()
+	{
+		int id = manager.isClassicResizable()
+			? Minimap.CLASSIC_MAP_CONTAINER.getComponentId()
+			: Minimap.MODERN_MAP_CONTAINER.getComponentId();
+		return getParent(id);
+	}
+
 	//remove all children from the given component id (if they exist, used for custom children)
 	public void clearChildren(int componentId)
 	{
@@ -335,6 +392,56 @@ public class WidgetManager
 				widget.deleteAllChildren();
 			}
 		}
+	}
+
+	public void setDraggable(Widget widget)
+	{
+		widget.setClickMask(DRAG | DRAG_ON);
+	}
+
+	public Widget createHandler(Widget parent, int x, int y, int width, int height, int xMode, int yMode, boolean noClickThrough)
+	{
+		Widget child = parent.createChild(-1, WidgetType.RECTANGLE);
+		child.setFilled(false);
+		child.setOriginalX(x);
+		child.setOriginalY(y);
+		child.setOriginalWidth(width);
+		child.setOriginalHeight(height);
+		child.setXPositionMode(xMode);
+		child.setYPositionMode(yMode);
+		child.setOpacity(255);
+		child.setNoClickThrough(noClickThrough);
+		child.setHasListener(true);
+		child.revalidate();
+		return child;
+	}
+
+	public Widget createIndicator(Widget parent)
+	{
+		Widget child = parent.createChild(-1, WidgetType.RECTANGLE);
+		child.setFilled(false);
+		child.setNoClickThrough(false);
+		child.setHasListener(false);
+		child.setOpacity(255);
+		child.revalidate();
+		return child;
+	}
+
+	public void showIndicator(Widget widget, int x, int y, int width, int height, int color)
+	{
+		widget.setOriginalX(x);
+		widget.setOriginalY(y);
+		widget.setOriginalWidth(width);
+		widget.setOriginalHeight(height);
+		widget.setTextColor(color);
+		widget.setOpacity(0);
+		widget.revalidate();
+	}
+
+	public void hideIndicator(Widget widget)
+	{
+		widget.setOpacity(255);
+		widget.revalidate();
 	}
 
 	public void syncSprite(Widget target, int componentId)

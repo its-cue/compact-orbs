@@ -47,12 +47,12 @@ public class CompassOffset implements OffsetTarget
 			return x;
 		}
 
-		if (manager.isAnchorRight())
+		if (manager.isAnchorRight() && !manager.getCurrentLayout().isCustom())
 		{
 			x += manager.getCurrentLayout().getRightOffset();
 		}
 
-		if (manager.allowReordering())
+		if (manager.allowReordering() && !manager.isEditingLayout)
 		{
 			if (manager.getCurrentLayout().isVertical())
 			{
@@ -108,12 +108,12 @@ public class CompassOffset implements OffsetTarget
 			return y;
 		}
 
-		if (manager.isAnchorBottom())
+		if (manager.isAnchorBottom() && !manager.getCurrentLayout().isCustom())
 		{
 			y += manager.getCurrentLayout().getBottomOffset() - manager.clampVerticalY();
 		}
 
-		if (manager.allowReordering())
+		if (manager.allowReordering() && !manager.isEditingLayout)
 		{
 			if (manager.getCurrentLayout().isVertical()
 				&& manager.isAnchorBottom())

@@ -55,7 +55,7 @@ public class WorldMapOffset implements OffsetTarget
 			return manager.isFixedMode() ? 10 : x;
 		}
 
-		if (manager.allowReordering())
+		if (manager.allowReordering() && !manager.isEditingLayout)
 		{
 			if (manager.getCurrentLayout().isHorizontal())
 			{
@@ -112,7 +112,7 @@ public class WorldMapOffset implements OffsetTarget
 		{
 			y = getHiddenOffset();
 
-			if (manager.isCompactLayout() &&
+			if (manager.isCompactLayout() && !manager.getCurrentLayout().isCustom() &&
 				manager.clampVerticalY() > manager.getCurrentLayout().getBottomOffset())
 			{
 				y -= manager.getCurrentLayout().getBottomOffset() - manager.clampVerticalY();
@@ -125,7 +125,7 @@ public class WorldMapOffset implements OffsetTarget
 			return y;
 		}
 
-		if (manager.allowReordering())
+		if (manager.allowReordering() && !manager.isEditingLayout)
 		{
 			if (manager.getCurrentLayout().isVertical())
 			{

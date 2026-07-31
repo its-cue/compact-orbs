@@ -58,13 +58,15 @@ public enum Minimap implements TargetWidget
 				Original.MAP_CONTAINER_WIDTH,
 				Vertical.MAP_CONTAINER_WIDTH,
 				Horizontal.MAP_CONTAINER_WIDTH,
-				HorizontalWide.MAP_CONTAINER_WIDTH
+				HorizontalWide.MAP_CONTAINER_WIDTH,
+				HorizontalWide.MAP_CONTAINER_WIDTH //custom
 			),
 			HEIGHT, new SetValue(
 				Original.MAP_CONTAINER_HEIGHT,
 				Vertical.MAP_CONTAINER_HEIGHT,
 				Horizontal.MAP_CONTAINER_HEIGHT,
-				HorizontalWide.MAP_CONTAINER_HEIGHT
+				HorizontalWide.MAP_CONTAINER_HEIGHT,
+				Original.MAP_CONTAINER_HEIGHT//custom
 			)
 		)
 	),
@@ -112,13 +114,15 @@ public enum Minimap implements TargetWidget
 				Original.MAP_CONTAINER_WIDTH,
 				Vertical.MAP_CONTAINER_WIDTH,
 				Horizontal.MAP_CONTAINER_WIDTH,
-				HorizontalWide.MAP_CONTAINER_WIDTH
+				HorizontalWide.MAP_CONTAINER_WIDTH,
+				HorizontalWide.MAP_CONTAINER_WIDTH//custom
 			),
 			HEIGHT, new SetValue(
 				Original.MAP_CONTAINER_HEIGHT,
 				Vertical.MAP_CONTAINER_HEIGHT,
 				Horizontal.MAP_CONTAINER_HEIGHT,
-				HorizontalWide.MAP_CONTAINER_HEIGHT
+				HorizontalWide.MAP_CONTAINER_HEIGHT,
+				Original.MAP_CONTAINER_HEIGHT//custom
 			)
 		)
 	),
@@ -131,13 +135,15 @@ public enum Minimap implements TargetWidget
 				Original.MAP_CONTAINER_WIDTH,
 				Vertical.MAP_CONTAINER_WIDTH,
 				Horizontal.MAP_CONTAINER_WIDTH,
-				HorizontalWide.MAP_CONTAINER_WIDTH
+				HorizontalWide.MAP_CONTAINER_WIDTH,
+				HorizontalWide.MAP_CONTAINER_WIDTH//custom
 			),
 			HEIGHT, new SetValue(
 				Original.MAP_CONTAINER_HEIGHT,
 				Vertical.MAP_CONTAINER_HEIGHT,
 				Horizontal.MAP_CONTAINER_HEIGHT,
-				HorizontalWide.MAP_CONTAINER_HEIGHT
+				HorizontalWide.MAP_CONTAINER_HEIGHT,
+				Original.MAP_CONTAINER_HEIGHT//custom
 			)
 		)
 	),
@@ -185,13 +191,15 @@ public enum Minimap implements TargetWidget
 				Original.MAP_CONTAINER_WIDTH,
 				Vertical.MAP_CONTAINER_WIDTH,
 				Horizontal.MAP_CONTAINER_WIDTH,
-				HorizontalWide.MAP_CONTAINER_WIDTH
+				HorizontalWide.MAP_CONTAINER_WIDTH,
+				HorizontalWide.MAP_CONTAINER_WIDTH //custom
 			),
 			HEIGHT, new SetValue(
 				Original.MAP_CONTAINER_HEIGHT,
 				Vertical.MAP_CONTAINER_HEIGHT,
 				Horizontal.MAP_CONTAINER_HEIGHT,
-				HorizontalWide.MAP_CONTAINER_HEIGHT
+				HorizontalWide.MAP_CONTAINER_HEIGHT,
+				Original.MAP_CONTAINER_HEIGHT //custom
 			)
 		)
 	),
@@ -243,4 +251,10 @@ public enum Minimap implements TargetWidget
 			CLASSIC_MINIMAP, MODERN_MINIMAP,
 			CLASSIC_MINIMAP_MASK, MODERN_MINIMAP_MASK
 		};
+
+	@Override
+	public boolean isCompass()
+	{
+		return this == CLASSIC_MAP_MINIMAP || this == MODERN_MAP_MINIMAP;
+	}
 }

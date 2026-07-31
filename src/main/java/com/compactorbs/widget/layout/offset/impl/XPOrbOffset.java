@@ -43,7 +43,7 @@ public class XPOrbOffset implements OffsetTarget
 			return x;
 		}
 
-		if (manager.allowReordering())
+		if (manager.allowReordering() && !manager.isEditingLayout)
 		{
 			if (manager.getCurrentLayout().isHorizontal())
 			{
@@ -120,7 +120,7 @@ public class XPOrbOffset implements OffsetTarget
 			return y;
 		}
 
-		if (manager.allowReordering())
+		if (manager.allowReordering() && !manager.isEditingLayout)
 		{
 			if (manager.getCurrentLayout().isVertical())
 			{

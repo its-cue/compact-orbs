@@ -43,5 +43,50 @@ public interface TargetWidget
 		return -1;
 	}
 
+	default int getBackingId()
+	{
+		return -1;
+	}
+
+	default int getIndicatorId()
+	{
+		return -1;
+	}
+
+	default int getButtonId()
+	{
+		return -1;
+	}
+
+	default int getIconId()
+	{
+		return -1;
+	}
+
+	default int getEmptyId()
+	{
+		return -1;
+	}
+
+	default boolean isMinimapButton()
+	{
+		return false;
+	}
+
+	default boolean isCompass()
+	{
+		return false;
+	}
+
+	default boolean isLogoutX()
+	{
+		return false;
+	}
+
+	default boolean isWiki()
+	{
+		return false;
+	}
+
 	Map<ValueKey, SetValue> getValueMap();
 }

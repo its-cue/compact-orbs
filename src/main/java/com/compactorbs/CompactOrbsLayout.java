@@ -60,7 +60,8 @@ public enum CompactOrbsLayout
 		Layout.Original.MAP_CONTAINER_HEIGHT - Layout.HorizontalWide.MAP_CONTAINER_HEIGHT,
 		List.of(),
 		List.of(Slot.HP_SLOT, Slot.PRAYER_SLOT, Slot.RUN_SLOT, Slot.SPEC_SLOT)
-	);
+	),
+	CUSTOM("Custom", Layout.Custom.LAYOUT_ID, 0, 0, List.of(), List.of());
 
 	//config drop down name
 	private final String name;
@@ -146,5 +147,10 @@ public enum CompactOrbsLayout
 	public boolean isHorizontalWide()
 	{
 		return this == HORIZONTAL_WIDE;
+	}
+
+	public boolean isCustom()
+	{
+		return this == CUSTOM;
 	}
 }

@@ -23,61 +23,44 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.layout.offset.impl;
+package com.compactorbs.widget.layout.edit;
 
-import com.compactorbs.CompactOrbsManager;
-import com.compactorbs.widget.layout.offset.OffsetTarget;
-import com.compactorbs.widget.layout.slot.SlotManager;
-import lombok.Getter;
+import com.compactorbs.widget.TargetWidget;
+import java.util.Collection;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+import javax.inject.Singleton;
+import net.runelite.api.widgets.Widget;
 
-@Getter
-public class MapContainerOffset implements OffsetTarget
+@Singleton
+public class BindingManager
 {
-	@Override
-	public int widthOffset(int w, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
+	private final Map<Widget, Binding> handlerBindings = new IdentityHashMap<>();
+	private final Set<Binding> bindings = new LinkedHashSet<>();
+
+	public void bind(Widget handler, TargetWidget modern, TargetWidget classic, TargetWidget related, boolean hidden)
 	{
-		if (!compact)
-		{
-			return w;
-		}
+		Binding binding = new Binding(handler, modern, classic, related, hidden);
 
-		if (manager.isAnchorRight() && !manager.getCurrentLayout().isCustom())
-		{
-			w += manager.getCurrentLayout().getRightOffset();
-		}
-
-		if ((manager.getCurrentLayout().isHorizontal())
-			&& manager.isAnchorLeft())
-		{
-			w -= slotManager.getHiddenSize();
-		}
-
-		return w;
+		handlerBindings.put(handler, binding);
+		bindings.add(binding);
 	}
 
-	@Override
-	public int heightOffset(int h, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
+	public Binding getByHandler(Widget handler)
 	{
-		if (!compact)
-		{
-			return h;
-		}
+		return handlerBindings.get(handler);
+	}
 
-		if (manager.isAnchorBottom() && !manager.getCurrentLayout().isCustom())
-		{
-			h += manager.getCurrentLayout().getBottomOffset();
-		}
+	public Collection<Binding> all()
+	{
+		return bindings;
+	}
 
-		if (manager.getCurrentLayout().isVertical())
-		{
-			if (manager.isAnchorTop())
-			{
-				h -= slotManager.getHiddenSize();
-			}
-		}
-
-		return h;
+	public void clear()
+	{
+		handlerBindings.clear();
+		bindings.clear();
 	}
 }
-
-

@@ -32,12 +32,24 @@ import net.runelite.api.widgets.Widget;
 
 public class OffsetManager
 {
-	public static int getTargetOffset(Widget widget, ValueKey key, int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	public static int getTargetOffset(Widget widget, int index, ValueKey key, int value, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
 	{
-		Offsets offsets = Offsets.fromWidget(widget);
+		Offsets offsets = Offsets.fromWidget(widget, index);
 		if (offsets == null)
 		{
 			return value;
+		}
+
+		if (compactLayout && manager.getCurrentLayout().isCustom())
+		{
+			if (key == ValueKey.X || key == ValueKey.Y)
+			{
+				int pos = manager.getCustomPosition(widget.getId(), index, key);
+				if (pos != -1)
+				{
+					value = pos;
+				}
+			}
 		}
 
 		return getOffset(offsets.getOffset(), key, value, compactLayout, manager, slotManager);

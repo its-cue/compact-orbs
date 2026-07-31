@@ -25,13 +25,16 @@
 
 package com.compactorbs.widget.layout.offset;
 
+import com.compactorbs.widget.TargetWidget;
+import com.compactorbs.widget.elements.Button;
 import com.compactorbs.widget.elements.Minimap;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.layout.offset.impl.ActivityOrbOffset;
+import com.compactorbs.widget.layout.offset.impl.CompassOffset;
 import com.compactorbs.widget.layout.offset.impl.HPOrbOffset;
 import com.compactorbs.widget.layout.offset.impl.LogoutXOffset;
 import com.compactorbs.widget.layout.offset.impl.MapContainerOffset;
-import com.compactorbs.widget.layout.offset.impl.CompassOffset;
+import com.compactorbs.widget.layout.offset.impl.MinimapButtonOffset;
 import com.compactorbs.widget.layout.offset.impl.OrbContainerOffset;
 import com.compactorbs.widget.layout.offset.impl.PrayerOrbOffset;
 import com.compactorbs.widget.layout.offset.impl.RunOrbOffset;
@@ -49,76 +52,82 @@ import net.runelite.api.widgets.Widget;
 public enum Offsets
 {
 	WIKI_CONTAINER(new WikiContainerOffset(),
-		Orbs.WIKI_ICON_CONTAINER.getComponentId()
+		Orbs.WIKI_ICON_CONTAINER
 	),
 	LOGOUT(new LogoutXOffset(),
-		Orbs.LOGOUT_X_ICON.getComponentId(),
-		Orbs.LOGOUT_X_STONE.getComponentId()
+		Orbs.LOGOUT_X_ICON,
+		Orbs.LOGOUT_X_STONE
 	),
 	HP(new HPOrbOffset(),
-		Orbs.HP_ORB_CONTAINER.getComponentId()
+		Orbs.HP_ORB_CONTAINER
 	),
 	PRAYER(new PrayerOrbOffset(),
-		Orbs.PRAYER_ORB_CONTAINER.getComponentId()
+		Orbs.PRAYER_ORB_CONTAINER
 	),
 	RUN(new RunOrbOffset(),
-		Orbs.RUN_ORB_CONTAINER.getComponentId()
+		Orbs.RUN_ORB_CONTAINER
 	),
 	SPEC(new SpecOrbOffset(),
-		Orbs.SPEC_ORB_CONTAINER.getComponentId()
+		Orbs.SPEC_ORB_CONTAINER
 	),
 	STORE(new StoreOrbOffset(),
-		Orbs.STORE_ORB_CONTAINER.getComponentId()
+		Orbs.STORE_ORB_CONTAINER
 	),
 	ACTIVITY(new ActivityOrbOffset(),
-		Orbs.ACTIVITY_ORB_CONTAINER.getComponentId()
+		Orbs.ACTIVITY_ORB_CONTAINER
 	),
 	XP(new XPOrbOffset(),
-		Orbs.XP_DROPS_CONTAINER.getComponentId()
+		Orbs.XP_DROPS_CONTAINER
 	),
 	WORLD_MAP(new WorldMapOffset(),
-		Orbs.WORLD_MAP_CONTAINER.getComponentId()
+		Orbs.WORLD_MAP_CONTAINER
 	),
 	//top level container
 	MAP_CONTAINER(new MapContainerOffset(),
-		Minimap.CLASSIC_MAP_CONTAINER.getComponentId(),
-		Minimap.MODERN_MAP_CONTAINER.getComponentId()
+		Minimap.CLASSIC_MAP_CONTAINER,
+		Minimap.MODERN_MAP_CONTAINER
 	),
 	//minimap / compass container
 	MAP_MINIMAP(new CompassOffset(),
-		Minimap.CLASSIC_MAP_MINIMAP.getComponentId(),
-		Minimap.MODERN_MAP_MINIMAP.getComponentId()
+		Minimap.CLASSIC_MAP_MINIMAP,
+		Minimap.MODERN_MAP_MINIMAP
 	),
 	//orb parent container
 	ORB_CONTAINER(new OrbContainerOffset(),
-		Minimap.CLASSIC_ORBS_CONTAINER.getComponentId(),
-		Minimap.MODERN_ORBS_CONTAINER.getComponentId()
+		Minimap.CLASSIC_ORBS_CONTAINER,
+		Minimap.MODERN_ORBS_CONTAINER
+	),
+	MINIMAP_BUTTON(new MinimapButtonOffset(),
+		Button.MINIMAP_BUTTON_CLASSIC,
+		Button.MINIMAP_BUTTON_MODERN
 	);
 
 	private final OffsetTarget offset;
-	private final Integer[] componentIds;
+	private final TargetWidget[] targets;
 
-	Offsets(OffsetTarget offsetTarget, Integer... componentIds)
+	Offsets(OffsetTarget offsetTarget, TargetWidget... targets)
 	{
 		this.offset = offsetTarget;
-		this.componentIds = componentIds;
+		this.targets = targets;
 	}
 
-	private static final Map<Integer, Offsets> BY_WIDGET_ID = new HashMap<>();
+	private static final Map<String, Offsets> BY_WIDGET_ID = new HashMap<>();
 
 	static
 	{
 		for (Offsets key : values())
 		{
-			for (Integer widgetId : key.componentIds)
+			for (TargetWidget target : key.targets)
 			{
-				BY_WIDGET_ID.put(widgetId, key);
+				String id = target.getComponentId() + "_" + target.getArrayId();
+				BY_WIDGET_ID.put(id, key);
 			}
 		}
 	}
 
-	public static Offsets fromWidget(Widget widget)
+	public static Offsets fromWidget(Widget widget, int childIndex)
 	{
-		return BY_WIDGET_ID.get(widget.getId());
+		String id = widget.getId() + "_" + childIndex;
+		return BY_WIDGET_ID.get(id);
 	}
 }

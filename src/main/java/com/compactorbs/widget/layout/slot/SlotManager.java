@@ -32,11 +32,11 @@ import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.TargetWidget;
 import com.compactorbs.widget.WidgetManager;
 import com.compactorbs.widget.elements.Orbs;
+import com.compactorbs.widget.layout.OrbToggle;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
@@ -120,6 +120,33 @@ public class SlotManager
 			getSlotsByLayout(layout).put(sourceSlot, outgoing);
 			manager.updateConfigForSlot(sourceSlot, outgoing, layout);
 		}
+	}
+
+	public void swapOrbs(TargetWidget first, TargetWidget second, SlotLayoutMode layout)
+	{
+		if (!Orbs.isSwappableOrb(first.getComponentId()) ||
+			!Orbs.isSwappableOrb(second.getComponentId()))
+		{
+			return;
+		}
+
+		Slot firstSlot = findSlotByOrb(first, layout);
+		Slot secondSlot = findSlotByOrb(second, layout);
+
+		if (firstSlot == null || secondSlot == null || firstSlot == secondSlot)
+		{
+			return;
+		}
+
+		Map<Slot, TargetWidget> slots = getSlotsByLayout(layout);
+
+		slots.put(firstSlot, second);
+		slots.put(secondSlot, first);
+
+		manager.updateConfigForSlot(firstSlot, second, layout);
+		manager.updateConfigForSlot(secondSlot, first, layout);
+
+		remapTargetsForUpdate(config.enableOrbSwapping());
 	}
 
 	//apply visual updates if swapping is enabled
@@ -248,7 +275,7 @@ public class SlotManager
 
 	public int getHiddenSize()
 	{
-		if (config.leaveEmptySpace() || config.disableReordering())
+		if (config.leaveEmptySpace() || config.disableReordering() || manager.isEditingLayout)
 		{
 			return 0;
 		}
@@ -306,7 +333,7 @@ public class SlotManager
 
 	public int applyHiddenYOffset(TargetWidget target, int y)
 	{
-		if (manager.allowReordering())
+		if (manager.allowReordering() && !manager.isEditingLayout)
 		{
 			if (manager.isAnchorTop())
 			{
@@ -323,7 +350,7 @@ public class SlotManager
 
 	public int applyHiddenXOffset(TargetWidget target, int x)
 	{
-		if (manager.allowReordering())
+		if (manager.allowReordering() && !manager.isEditingLayout)
 		{
 			if (manager.isAnchorLeft())
 			{
@@ -362,8 +389,8 @@ public class SlotManager
 			}
 		}
 
-		Supplier<Boolean> entry = manager.orbToToggle.get(target);
-		return entry != null && entry.get();
+		OrbToggle toggle = manager.toggleByTarget.get(target);
+		return toggle != null && toggle.hidden.get();
 	}
 
 	public Slot findSlotByOrb(TargetWidget target, SlotLayoutMode layout)

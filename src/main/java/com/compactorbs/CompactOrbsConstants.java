@@ -38,7 +38,7 @@ public class CompactOrbsConstants
 	public static final class ConfigGroup
 	{
 		public static final String GROUP_NAME = "compactorbs";
-		public static final int CONFIG_VERSION = 1;
+		public static final int CONFIG_VERSION = 2;
 
 		public static final class Wiki
 		{
@@ -59,7 +59,6 @@ public class CompactOrbsConstants
 		public static final String HOTKEY_KEYBIND = "hotkeyKeybind";
 		public static final String HOTKEY_TOGGLE_OPTION = "hotkeyToggleOption";
 		public static final String MINIMAP_TOGGLE_BUTTON = "hideMinimapButton";
-		public static final String COMPASS_TOGGLE_BUTTON = "hideCompassButton";
 		public static final String RIGHT_CLICK_TOGGLE_BUTTONS = "rightClickToggleButtons";
 		public static final String MINIMAP_BUTTON_PLACEMENT = "minimapButtonPlacement";
 		public static final String ORB_LAYOUT = "orbLayout";
@@ -92,6 +91,8 @@ public class CompactOrbsConstants
 		public static final String ENABLE_MINIMAP_OVERLAY = "enableMinimapOverlay";
 		public static final String ENABLE_OVERLAY_TOGGLE_OPTION = "enableOverlayToggleOption";
 		public static final String ENABLE_LOGOUT_X_OVERLAY = "enableLogoutXOverlay";
+
+		public static final String CUSTOM_LAYOUT_PREFIX = "custom_layout_";
 
 		public static final class Wiki
 		{
@@ -151,8 +152,9 @@ public class CompactOrbsConstants
 		public static final int ORBS_UPDATE_SPECENERGY = 2069;
 
 		//relevant orb update scripts
+		public static final int TOPLEVEL_SUBCHANGE = 903;
 		public static final int TOPLEVEL_REDRAW = ScriptID.TOPLEVEL_REDRAW;
-		public static final int TOPLEVEL_SUBCHANGE = 908;
+		public static final int PROC_TOPLEVEL_SUBCHANGE = 908;
 		public static final int TOPLEVEL_SIDEBUTTON_OP = 914;
 		public static final int TOPLEVEL_SIDE_CUSTOMIZE = 919;
 		public static final int WORLD_MAP_UPDATE = 1700;
@@ -345,6 +347,11 @@ public class CompactOrbsConstants
 			public static final int COMPASS_Y = 1;
 		}
 
+		public static final class Custom
+		{
+			public static final int LAYOUT_ID = 3;
+		}
+
 		public static final class MinimapOverlay
 		{
 			public static final int CONTAINER_WIDTH = 182;
@@ -384,20 +391,40 @@ public class CompactOrbsConstants
 		//toggle button opacity when onMouseOver || onMouseLeave
 		public static final int OPACITY = 0;
 		public static final int OPACITY_HOVER = 130;
+
+		public static final int ORBS_CONTAINER_OFFSET_Y = 10;
+		public static final int LOGOUT_X_ICON_OPACITY = 100;
+		public static final int EDIT_MODE_HIDDEN_OPACITY = 160;
+		public static final int EDIT_MODE_BACKGROUND_OPACITY = 220;
 	}
 
 	public static final class MenuOp
 	{
 		public static final String SHOW = "Show";
 		public static final String HIDE = "Hide";
-		public static final Color COLOR = JagexColors.MENU_TARGET;
 
 		public static final String MINIMAP_OP = "Minimap";
 		public static final String DETACHED_OP = "Detached " + MINIMAP_OP;
-		public static final String COMPASS_OP = "Compass";
 
 		public static final String LOGOUT_OP = "Logout";
 		public static final String WORLD_SWITCHER_OP = "World switcher";
+
+		public static final String ENABLE = "Enable";
+		public static final String EDIT_MODE = "edit mode";
+
+		public static final String SAVE = "Save";
+		public static final String CHANGES = "changes";
+
+		public static final String RESET = "Reset";
+		public static final String RESET_ALL = RESET + " all positions";
+
+		public static final Color MENU_TARGET = JagexColors.MENU_TARGET;
+		public static final Color RED = JagexColors.CHAT_FC_TEXT_TRANSPARENT_BACKGROUND;
+
+		public static final int HANDLER_TOGGLE_OP_INDEX = 6;
+		public static final int RESET_POSITION_OP_INDEX = 7;
+		public static final int RESET_ALL_OP_INDEX = 8;
+		public static final int DISABLE_EDIT_MODE_OP_INDEX = 9;
 	}
 
 	public static final class Sprite
@@ -434,17 +461,54 @@ public class CompactOrbsConstants
 		public static final class Orb
 		{
 			public static final int UNIVERSE = InterfaceID.Orbs.UNIVERSE;
+
 			public static final int XP_DROPS = InterfaceID.Orbs.XP_DROPS;
+
 			public static final int HP_ORB = InterfaceID.Orbs.ORB_HEALTH;
+			public static final int HP_ORB_BACKING = InterfaceID.Orbs.HEALTH_BACKING;
+			public static final int HP_ORB_BUTTON = InterfaceID.Orbs.HEALTHBUTTON;
+			public static final int HP_ORB_INDICATOR = InterfaceID.Orbs.HEALTH_INDICATOR;
+			public static final int HP_ORB_ICON = InterfaceID.Orbs.ORB_HEALTH_HEART_ICON;
+			public static final int HP_ORB_EMPTY = InterfaceID.Orbs.HEALTH_EMPTY_CONTENTS;
+
 			public static final int PRAY_ORB = InterfaceID.Orbs.ORB_PRAYER;
+			public static final int PRAY_ORB_BACKING = InterfaceID.Orbs.PRAYER_BACKING;
+			public static final int PRAY_ORB_BUTTON = InterfaceID.Orbs.PRAYERBUTTON;
+			public static final int PRAY_ORB_INDICATOR = InterfaceID.Orbs.PRAYER_INDICATOR;
+			public static final int PRAY_ORB_ICON = InterfaceID.Orbs.PRAYER_ICON;
+			public static final int PRAY_ORB_EMPTY = InterfaceID.Orbs.ORB_PRAYER_EMPTY_GRAPHIC0;
+
 			public static final int RUN_ORB = InterfaceID.Orbs.ORB_RUNENERGY;
+			public static final int RUN_ORB_BACKING = InterfaceID.Orbs.RUNENERGY_BACKING;
+			public static final int RUN_ORB_BUTTON = InterfaceID.Orbs.RUNBUTTON;
+			public static final int RUN_ORB_INDICATOR = InterfaceID.Orbs.RUNENERGY_INDICATOR;
+			public static final int RUN_ORB_ICON = InterfaceID.Orbs.RUNENERGY_ICON;
+			public static final int RUN_ORB_EMPTY = InterfaceID.Orbs.ORB_RUNENERGY_EMPTY_GRAPHIC0;
+
 			public static final int SPEC_ORB = InterfaceID.Orbs.ORB_SPECENERGY;
+			public static final int SPEC_ORB_BACKING = InterfaceID.Orbs.SPECENERGY_BACKING;
+			public static final int SPEC_ORB_BUTTON = InterfaceID.Orbs.SPECBUTTON;
+			public static final int SPEC_ORB_INDICATOR = InterfaceID.Orbs.SPECENERGY_INDICATOR;
+			public static final int SPEC_ORB_ICON = InterfaceID.Orbs.SPECENERGY_ICON;
+			public static final int SPEC_ORB_EMPTY = InterfaceID.Orbs.ORB_SPECENERGY_EMPTY_GRAPHIC0;
+
 			public static final int ACTIVITY_ORB = InterfaceID.Orbs.ORB_CONTENTRECOM;
+			public static final int ACTIVITY_ORB_BACKING = InterfaceID.Orbs.CR_BACKING;
+			public static final int ACTIVITY_ORB_INDICATOR = InterfaceID.Orbs.CR_INDICATOR;
+			public static final int ACTIVITY_ORB_ICON = InterfaceID.Orbs.CR_ICON;
+
 			public static final int STORE_ORB = InterfaceID.Orbs.ORB_STORE;
+			public static final int STORE_ORB_BACKING = InterfaceID.Orbs.STORE_BACKING;
+			public static final int STORE_ORB_INDICATOR = InterfaceID.Orbs.STORE_INDICATOR;
+			public static final int STORE_ORB_ICON = InterfaceID.Orbs.STORE_ICON;
+
 			public static final int WIKI_ICON = InterfaceID.Orbs.WIKI;
 			public static final int WIKI_CONTAINER_VANILLA = InterfaceID.Orbs.WIKI_ICON;
 			public static final int WIKI_ICON_VANILLA = InterfaceID.Orbs.WIKI_ICON_GRAPHIC;
+
 			public static final int WORLD_MAP = InterfaceID.Orbs.ORB_WORLDMAP;
+			public static final int WORLD_MAP_BACKING = InterfaceID.Orbs.WORLDMAP_BACKING;
+			public static final int WORLD_MAP_ICON = InterfaceID.Orbs.WORLDMAP;
 			public static final int WORLD_MAP_TOOLTIP = InterfaceID.Orbs.TOOLTIP;
 		}
 

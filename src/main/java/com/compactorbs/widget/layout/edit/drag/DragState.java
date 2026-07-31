@@ -23,61 +23,32 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.layout.offset.impl;
+package com.compactorbs.widget.layout.edit.drag;
 
-import com.compactorbs.CompactOrbsManager;
-import com.compactorbs.widget.layout.offset.OffsetTarget;
-import com.compactorbs.widget.layout.slot.SlotManager;
-import lombok.Getter;
+import java.awt.Point;
+import javax.inject.Singleton;
+import net.runelite.api.widgets.Widget;
 
-@Getter
-public class MapContainerOffset implements OffsetTarget
+@Singleton
+public class DragState
 {
-	@Override
-	public int widthOffset(int w, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
+	public Point origin = new Point(0, 0);
+	public Point current = new Point(0, 0);
+	public Point offset = new Point(0, 0);
+
+	public Widget lastDraggedHandler;
+	public Widget lastDraggedOn;
+	public Widget handlerIndicator;
+	public Widget boundIndicator;
+
+	public boolean wasDragging;
+
+	public void clear()
 	{
-		if (!compact)
-		{
-			return w;
-		}
-
-		if (manager.isAnchorRight() && !manager.getCurrentLayout().isCustom())
-		{
-			w += manager.getCurrentLayout().getRightOffset();
-		}
-
-		if ((manager.getCurrentLayout().isHorizontal())
-			&& manager.isAnchorLeft())
-		{
-			w -= slotManager.getHiddenSize();
-		}
-
-		return w;
-	}
-
-	@Override
-	public int heightOffset(int h, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
-	{
-		if (!compact)
-		{
-			return h;
-		}
-
-		if (manager.isAnchorBottom() && !manager.getCurrentLayout().isCustom())
-		{
-			h += manager.getCurrentLayout().getBottomOffset();
-		}
-
-		if (manager.getCurrentLayout().isVertical())
-		{
-			if (manager.isAnchorTop())
-			{
-				h -= slotManager.getHiddenSize();
-			}
-		}
-
-		return h;
+		lastDraggedHandler = null;
+		lastDraggedOn = null;
+		handlerIndicator = null;
+		boundIndicator = null;
+		wasDragging = false;
 	}
 }
-
-
