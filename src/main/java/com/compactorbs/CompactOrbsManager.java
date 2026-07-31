@@ -1624,7 +1624,8 @@ public class CompactOrbsManager
 		//removed in 1.7.5 (e60c595)
 		"enableWorldMapOverlay",
 		"enableXPDropOverlay",
-		
+
+		//removed in 1.9.0 (83a3a2d)
 		"hideCompassButton"
 	};
 
