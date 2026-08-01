@@ -567,20 +567,25 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	@Override
 	public void keyPressed(KeyEvent e)
 	{
-		if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
+		if (manager.isFixedMode())
 		{
-			if (manager.isEditingLayout)
+			return;
+		}
+
+		if (manager.isEditingLayout)
+		{
+			if (e.getKeyCode() == KeyEvent.VK_ESCAPE)
 			{
 				e.consume();
 				clientThread.invokeLater(() -> editLayout.toggleEditMode(false));
 			}
 		}
-
-		if (config.hotkeyKeybind().matches(e))
+		else
 		{
-			if (!manager.isFixedMode())
+			if (config.hotkeyKeybind().matches(e))
 			{
-				if (manager.isEditingLayout || manager.isCutsceneActive())
+				//during or after a cutscene, wait until the layout has settled before toggling
+				if (manager.pendingChildrenUpdate)
 				{
 					return;
 				}
