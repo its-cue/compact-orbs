@@ -112,10 +112,11 @@ public interface CompactOrbsConfig extends Config
 		DETACHED_MINIMAP
 	}
 
+	//hidden from the config panel
 	@ConfigItem(
 		keyName = ConfigKeys.MINIMAP,
 		name = "Hide minimap",
-		description = "Enable the ability to collapse the minimap to reposition the orbs",
+		description = "",
 		hidden = true
 	)
 	default boolean hideMinimap()
@@ -126,7 +127,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.COMPASS,
 		name = "Hide compass",
-		description = "Enable the ability to hide the compass, only when the minimap is hidden",
+		description = "",
 		hidden = true
 	)
 	default boolean hideCompass()
@@ -134,75 +135,56 @@ public interface CompactOrbsConfig extends Config
 		return false;
 	}
 
-	@ConfigSection(
-		name = "Layout",
-		description = "Options for modifying the layouts and toggle buttons",
-		position = 0
-	)
-	String compact = "compact";
-
-	@ConfigItem(
-		keyName = ConfigKeys.MINIMAP_BUTTON_PLACEMENT,
-		name = "Toggle location",
-		description = "Select where the minimap toggle button should be while not in compact view <br>" +
-			"-Default: bottom right corner, below the minimap <br>" +
-			"-Above Xp: above the Xp orb <br>" +
-			"-Below Map: next to the Store orb, centered below the minimap <br>" +
-			"-Below X: slightly below the Logout-X"
-		,
-		section = compact,
-		position = 1
-	)
-	default TogglePlacement minimapTogglePlacement()
-	{
-		return TogglePlacement.DEFAULT;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.MINIMAP_TOGGLE_BUTTON,
-		name = "Disable the minimap button",
-		description = "Hide/show the minimap toggle button",
-		section = compact,
-		position = 2
-	)
-	default boolean hideMinimapToggle()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.RIGHT_CLICK_TOGGLE_BUTTONS,
-		name = "Right click the minimap button",
-		description = "Deprioritizes the toggle menu action so it requires a right click",
-		section = compact,
-		position = 3
-	)
-	default boolean rightClickToggleButtons()
-	{
-		return false;
-	}
-
+	//visible on the config panel
 	@ConfigItem(
 		keyName = ConfigKeys.ORB_LAYOUT,
-		name = "Current Layout",
-		description = "The visible layout in compact view <br>" +
-			"-Vertical: orbs stacked vertically & split between 2 columns (default) <br>" +
-			"-Horizontal: orbs stacked and split between 2 rows horizontally <br>" +
-			"-Horizontal-Wide: data orbs aligned to 1 row with remaining orbs/compass stacked above horizontally",
-		section = compact,
-		position = 4
+		name = "Layout type",
+		description = "Select the desired layout when the minimap is minimized",
+		position = 0
 	)
 	default CompactOrbsLayout layout()
 	{
 		return CompactOrbsLayout.VERTICAL;
 	}
 
+	@ConfigSection(
+		name = "Layout Options",
+		description = "",
+		position = 1
+	)
+	String layout = "layout";
+
+	@ConfigItem(
+		keyName = ConfigKeys.ENABLE_NO_CLICKTHROUGH,
+		name = "Prevent orb clickthrough",
+		description = "When enabled, this option will prevent clicks from passing through the data orbs",
+		section = layout,
+		position = 0
+	)
+	default boolean enableNoClickthrough()
+	{
+		return false;
+	}
+
+	@Range(min = 0, max = 200)
+	@ConfigItem(
+		keyName = ConfigKeys.VERTICAL_Y_ADJUSTMENT,
+		name = "Vertical offset",
+		description = "Reduce the vertical position of the current layout by the set value (min: 0, max:200)",
+		section = layout,
+		position = 1
+	)
+	default int verticalYAdjustment()
+	{
+		return 0;
+	}
+
 	@ConfigItem(
 		keyName = ConfigKeys.VERTICAL_ANCHOR,
 		name = "Vertical anchor",
-		description = "Snaps the layout and reorders orbs based on the selected anchor point",
-		section = compact,
-		position = 5
+		description = "Where the layout will snap to, and the direction orbs move while reordering",
+		section = layout,
+		position = 2
 	)
 	default VerticalAnchor verticalAnchor()
 	{
@@ -212,34 +194,21 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.HORIZONTAL_ANCHOR,
 		name = "Horizontal anchor",
-		description = "Snaps the layout and reorders orbs based on the selected anchor point",
-		section = compact,
-		position = 6
+		description = "Where the layout will snap to, and the direction orbs move while reordering",
+		section = layout,
+		position = 3
 	)
 	default HorizontalAnchor horizontalAnchor()
 	{
 		return HorizontalAnchor.RIGHT;
 	}
 
-	@Range(min = 0, max = 200)
-	@ConfigItem(
-		keyName = ConfigKeys.VERTICAL_Y_ADJUSTMENT,
-		name = "Vertical offset",
-		description = "Adjust the layouts vertical position from the Bottom anchor point by the set value",
-		section = compact,
-		position = 7
-	)
-	default int verticalYAdjustment()
-	{
-		return 0;
-	}
-
 	@ConfigItem(
 		keyName = ConfigKeys.DISABLE_REORDERING,
 		name = "Disable orb reordering",
-		description = "Disable reordering logic tied to orb visibility",
-		section = compact,
-		position = 8
+		description = "Disable the reordering logic when orbs are hidden",
+		section = layout,
+		position = 4
 	)
 	default boolean disableReordering()
 	{
@@ -249,40 +218,72 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.LEAVE_EMPTY_SPACE,
 		name = "Leave empty space",
-		description = "Leaves empty space where orbs were moved instead of shifting other elements to fill the gap",
-		section = compact,
-		position = 9
+		description = "Prevent other elements from shifting towards orbs that have been reordered (retains the gap between)",
+		section = layout,
+		position = 5
 	)
 	default boolean leaveEmptySpace()
 	{
 		return false;
 	}
 
-	@ConfigItem(
-		keyName = ConfigKeys.ENABLE_NO_CLICKTHROUGH,
-		name = "Prevent orb clickthrough",
-		description = "Prevents clicks through the data orbs (slightly increases the non-clickable space around them)",
-		section = compact,
-		position = 10
+	@ConfigSection(
+		name = "Toggle Button",
+		description = "",
+		closedByDefault = true,
+		position = 2
 	)
-	default boolean enableNoClickthrough()
+	String button = "button";
+
+	@ConfigItem(
+		keyName = ConfigKeys.MINIMAP_TOGGLE_BUTTON,
+		name = "Hide the toggle button",
+		description = "Hide/show the minimap toggle button",
+		section = button,
+		position = 0
+	)
+	default boolean hideMinimapToggle()
 	{
 		return false;
 	}
 
+	@ConfigItem(
+		keyName = ConfigKeys.RIGHT_CLICK_TOGGLE_BUTTONS,
+		name = "Right click the toggle button",
+		description = "Deprioritizes the toggle menu so it requires a right-click to interact with",
+		section = button,
+		position = 1
+	)
+	default boolean rightClickToggleButtons()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.MINIMAP_BUTTON_PLACEMENT,
+		name = "Toggle location",
+		description = "Select the desired location of the toggle button while the minimap is visible",
+		section = button,
+		position = 2
+	)
+	default TogglePlacement minimapTogglePlacement()
+	{
+		return TogglePlacement.DEFAULT;
+	}
+
 	@ConfigSection(
 		name = "Hotkey",
-		description = "Hotkey settings",
+		description = "",
 		closedByDefault = true,
-		position = 1
+		position = 3
 	)
 	String hotkey = "hotkey";
 
 	@ConfigItem(
 		keyName = ConfigKeys.HOTKEY_KEYBIND,
 		name = "Keybind",
-		description = "Keybind used to toggle the option below <br>" +
-			"-Warning: should use a modifier (e.g. Shift, Ctrl, Alt)",
+		description = "Keybind used to toggle the option selected option <br>" +
+			"-Warning: a modified is recommended (e.g. Shift, Ctrl, Alt)",
 		section = hotkey,
 		position = 0
 	)
@@ -294,10 +295,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.HOTKEY_TOGGLE_OPTION,
 		name = "Select toggle",
-		description = "Select what the hotkey will hide/show <br>" +
-			"-Minimap button: the minimap toggle button <br>" +
-			"-Minimap: the minimap (toggling between compact view) <br>" +
-			"-Detached Minimap: the detached minimap when in compact view",
+		description = "Select what the hotkey will control",
 		section = hotkey,
 		position = 1
 	)
@@ -308,16 +306,16 @@ public interface CompactOrbsConfig extends Config
 
 	@ConfigSection(
 		name = "Orb Swapping",
-		description = "Options to swap orbs around",
+		description = "",
 		closedByDefault = true,
-		position = 2
+		position = 3
 	)
 	String swapping = "swapping";
 
 	@ConfigItem(
 		keyName = ConfigKeys.ENABLE_ORB_SWAPPING,
 		name = "Enable orb swapping",
-		description = "Swap orbs based on the config below",
+		description = "Data orbs can be swapped via edit-mode or the below configs",
 		section = swapping,
 		position = 0
 	)
@@ -459,9 +457,9 @@ public interface CompactOrbsConfig extends Config
 
 	@ConfigSection(
 		name = "Orb Visibility",
-		description = "Options to hide or show orbs",
+		description = "",
 		closedByDefault = true,
-		position = 3
+		position = 5
 	)
 	String visibility = "visibility";
 
@@ -599,8 +597,8 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigSection(
-		name = "Minimap Overlay",
-		description = "Options for the detached minimap",
+		name = "Detached Minimap",
+		description = "",
 		closedByDefault = true,
 		position = 99
 	)
@@ -608,7 +606,7 @@ public interface CompactOrbsConfig extends Config
 
 	@ConfigItem(
 		keyName = ConfigKeys.ENABLE_MINIMAP_OVERLAY,
-		name = "Show minimap in compact view",
+		name = "Show while in compact view",
 		description = "Show a functional minimap that is detached from the orbs while in compact view <br>" +
 			"Warning: this minimap is not supported by plugins that display overlays on the minimap (names, marker tiles, lines, etc.)",
 		section = minimapOverlay,
@@ -634,7 +632,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.ENABLE_LOGOUT_X_OVERLAY,
 		name = "Show Logout-X",
-		description = "Show a functional Logout-X on the detached minimap (only in resizable-modern) <br>",
+		description = "Show a functional Logout-X on the detached minimap (only works in resizable-modern) <br>",
 		section = minimapOverlay,
 		position = 2
 	)
