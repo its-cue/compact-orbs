@@ -1,217 +1,144 @@
 # Compact Orbs
-[![github](https://img.shields.io/badge/feedback%20&%20issues-black?style=for-the-badge&logo=github&logoColor=white)](https://github.com/its-cue/compact-orbs/issues)[![faq](https://img.shields.io/badge/FAQ-black?style=for-the-badge&logoColor=white)](#faq)[![installs](http://img.shields.io/endpoint?labelColor=000000&color=08d13e&style=for-the-badge&url=https://api.runelite.net/pluginhub/shields/installs/plugin/compact-orbs)](https://runelite.net/plugin-hub/cue)
+[![github](https://img.shields.io/badge/feedback%20&%20issues-black?style=for-the-badge&logo=github&logoColor=white)](https://github.com/its-cue/compact-orbs/issues)[![faq](https://img.shields.io/badge/FAQ-black?style=for-the-badge&logoColor=white)](#faq--conflicts)[![installs](http://img.shields.io/endpoint?labelColor=000000&color=08d13e&style=for-the-badge&url=https://api.runelite.net/pluginhub/shields/installs/plugin/compact-orbs)](https://runelite.net/plugin-hub/cue)
 
-![](https://imgur.com/fvzsaOP.gif)
+![](https://imgur.com/iiNx0m3.gif)
 
 <table>
   <tr>
     <td><b><a href="#layout">Layout</a></b></td>
-    <td>Select & modify a compact layout: <code>Vertical</code>/<code>Horizontal</code></td>
+    <td>Choose from a few presets or create a custom layout. <br/> See below for more options</td>
+  </tr>
+
+  <tr>
+    <td><b><a href="#toggle-button">Toggle Button</a></b></td>
+    <td> The eyeball button, has multiple functions: <br/> <code>toggle minimap</code>, <br/> <code>enable edit-mode</code>, <br/> <code>save edit-changes</code>, <br/> <code>reset edit-positions</code>, <br/> <code>toggle detached minimap</code> </td>
   </tr>
 
   <tr>
     <td><b>Hotkey</b></td>
-    <td>Use/set a hotkey to show/hide the <code>Minimap</code> & <code>Compass</code> toggle buttons,<br/> or reconfigure it to show/hide the <code>Minimap</code> (<i>hotkey</i>: <code>ctrl + insert</code>)</td>
+    <td> A configurable keybind, by default:  <br/> <code>shift + insert</code></td>
   </tr>
 
   <tr>
-    <td><b><a href="#swapping">Orb Swapping</a></b></td>
-    <td>Switch an <code>Orb</code> with another  </td>
+    <td><b><a href="#orb-swapping">Orb Swapping</a></b></td>
+    <td>Swap an <code>orb</code> with another, supported in: <br/> <code>fixed-mode</code>, <br/> <code>resizable-classic</code>, <br/> <code>resizable-modern</code></td>
   </tr>
 
   <tr>
-    <td><b><a href="#visibility">Orb Visibility</a></b></td>
-    <td>Hide any <code>Orb</code>, including the <code>Logout-X</code>, <code>Worldmap</code>, &amp; <code>Xp</code></td>
+    <td><b><a href="#orb-visibility">Orb Visibility</a></b></td>
+    <td>Hide / show: <br/> <code>HP</code>, <code>PRAYER</code>, <code>RUN</code>, <code>SPEC</code>, <code>STORE</code>, <code>ACTIVITY</code>, <br/> <code>XP</code>, <code>WORLD-MAP</code>, <code>WIKI</code>, <code>LOGOUT-X</code> </td>
   </tr>
 
   <tr>
-    <td><b><a href="#overlay">Minimap Overlay</a></b></td>
-    <td>Display a <code>Vanilla</code> minimap while in compact view</td>
-  </tr>
-</table>
-  
-<br/>
-  
-<details id="layout">
-<summary>⚙️ Layout</summary>
-
-## Toggle location
-- choose where the toggle button is displayed when the `Minimap` is visible
-    - 1 `Default`: original position, below the wiki banner
-    - 2 `Above Xp`: above the XP orb
-    - 3 `Below Map`: centered below the minimap, to the right of the `Store` orb
-    - 4 `Below X`: positioned in the top-right corner, just below the `Logout-X`
-
-      ![](https://imgur.com/nDjUhTQ.png)
-
-## Hide toggle buttons
-- selectively hide the `Minimap` or `Compass` toggle buttons
-
-## Right click toggle buttons
-- switches the menu priority for the toggle buttons, when enabled it will show below `Walk here` - requiring a right click to `Show`/`Hide`
-
-  ![](https://imgur.com/YreA3qN.png)
-
-## Layout
-- select the desired compact layout
-    - `Vertical` (default): displays orbs stacked vertically similar to the mobile client
-    - `Horizontal`: displays `Data` orbs stacked horizontally in 2 rows
-
-      ![](https://imgur.com/E4MHR1c.png)
-
-## Direction
-- dictates which direction orbs are positioned in the container or when reordering due to any being hidden (direction is not limited to the layout type)
-    - `Horizontal`
-        - `Top`: set the anchor point to the top of the container (displayed as top-down) & will shift orbs upward based on orbs hidden above
-        - `Bottom`: set the anchor point to the bottom of the container (displayed as bottom-up) & will shift orbs downward based on orbs hidden below
-      
-      ![](https://imgur.com/fHpIB0p.png)
-
-    - `Vertical`
-        - `Left`: set the reorder anchor point to the left, & will shift orbs left based on orbs hidden before it
-        - `Right`: set the reorder anchor point to the right, & will shift orbs right based on orbs hidden before it
-
-      ![](https://imgur.com/TfjXKY0.png)
-
-## Reordering
-- orbs by default will reorder based on `Layout` & `Direction`, however this can be toggled off
-    - `leave empty space`: preserves the space between orbs, removes snapping for a floating effect
-
-      ![](https://imgur.com/8dHMRsM.png)
-
-<br/>
-
-
-<table>
-  <tr>
-    <td colspan="2" align="center">
-      Example configuration keeping <code>reordering</code> & enabling <code>leave-empty-space</code>
-    </td>
-  </tr>
-
-  <tr>
-    <td>
-
-✅ `horizontal`
-
-✅ `vertical-left`
-
-❌ `disable-reordering`
-
-✅ `leave-empty-space`
-
-  </td>
-    <td><img src="https://imgur.com/RS9hUZo.png" alt="preview"/></td>
+    <td><b><a href="#detached-minimap">Detached Minimap</a></b></td>
+    <td>Enable a detached minimap while in <code>compact-view</code>, see limitations below</td>
   </tr>
 </table>
 
-## Vertical height offset
-- apply an adjustment to the `Vertical` layouts height when the compass (and `Logout-X` in modern-resizable) is hidden
+<br/>
 
-  ![](https://i.imgur.com/loObB29.gif)
+# Layout
+### Types
+- Select the compact layout that will be visible when the minimap is hidden: 
+    - `vertical`, `horizontal`, `horizontal-wide`, `custom`
 
-## Clickthrough
-- Prevents clicking through the `Hp`, `Prayer`, `Run`, &`Spec` orbs while in compact view
-- removes the `Walk here` menu option
-- slightly increases the non-clickable area around each orb (does **_not_** increase the size of the clickable button)
+    ![](https://imgur.com/8iSY5y2.gif)
 
 <br/>
 
-</details>
+### Edit Mode
+- Can be enabled in either `classic-resizable` or `modern-resizable`
+  - the following can be done without navigating to the config panel: `hide / show`, `swap-orbs`
+  - additionally in `custom-layout`, it features: `drag & drop`, `reset-positions`
 
-<details id="swapping">
-<summary>🔄️ Orb Swapping</summary>
+https://github.com/user-attachments/assets/fb19d099-164a-4c27-b268-86bb5162377e
 
-## Swapping
-- each `slot` is populated with the corresponding `orb` in the config
-- `slot`'s must have a unique orb, since its position never changes (only the `orb` that is displayed)
-- supported across `fixed`, `resizable-classic`, or `resizable-modern` display modes
-    - `Compact slots`: display order when in compact view
-    - `Vanilla slots`: display order when the minimap is visible
-
-![](https://imgur.com/6nENyKE.png)
+> Caution: `edit-mode` can be cancelled without user input in some cases, resulting in some changes not being saved. (specifically `hide`/`show`)
 
 <br/>
 
-</details>
+### Reordering
+- Enables position rearrangement based on what is hidden
+  - not supported in `fixed-mode`, or `custom-layout`
 
-<details id="visibility">
-<summary>👁️ Orb Visibility</summary>
-
-## Orb hiding
-- any listed orb can be hidden (read [In-game settings](#in-game-settings))
-- supported across `fixed`, `resizable-classic`, or `resizable-modern` display modes
-    - `WorldMap`(`ctrl+M`) & the `Logout-X` will work when hidden (so long as the hotkey options are enabled in-game)
-    - `Gridmaster` was for the temporary Gridmaster league (left in the event it returns)
-
-      ![](https://imgur.com/RPYnWuj.gif)
-
-## In-game settings
-- to hide/show the `Store`/`Wiki`/`Activity` the settings below should be `enabled` ✔️
-
-  ![](https://imgur.com/XwpxyQz.png)
-
-- if kept disabled, the orb will not be considered hidden<br/>ex: the orb to the left of `HP` is `Store`, which is disabled in-game and not hidden in the config
-
-  ![](https://imgur.com/1vOaOBC.gif)
-
-_Note_: the config `Show wiki button under minimap` in the Wiki plugin, will be overridden by `Hide Wiki banner`
-
-![](https://imgur.com/Dm8HVb8.png)
+  ![](https://imgur.com/WYMY2hI.gif)
 
 <br/>
 
-</details>
+### Prevent Clickthrough
+- Will prevent clicks from passing through the certain orbs
+  - supported in any `layout`, and is automatically enabled while in `compact-layout`, if `orb-swapping` is turned on
 
-<details id="overlay">
-<summary>🗺️ Minimap Overlay</summary>
+  ![](https://imgur.com/8lvJoGk.gif)
 
+<br/>
+
+### Anchor / Offset
+- `anchor` location dictates where the preset-layouts are positioned within the container - also dictates direction when `reordering` is enabled
+- `vertical-offset` is subtracted from the current position, moving the whole layout if its `anchor` is set to `bottom`
+
+<br/>
+
+---
+
+# Toggle button
+- The little eyeball button which indicates if the `minimap` is hidden (red) or visible (green)
+
+### Right-Click
+- Require a right-click to interact with the `toggle-button` (left=`disabled`, right=`enabled`)
+
+  ![](https://imgur.com/rZyamSg.png)
+
+### Toggle Locations
+
+  ![](https://imgur.com/Cytzlbt.png)
+
+<br/>
+
+---
+
+# Orb Swapping
+- Swap an `orb` with another, only supports: `HP`, `PRAYER`, `RUN`, and `SPEC`
+- Supports different ordering between compact-view and when the minimap is visible (`vanilla`)
+
+  ![](https://imgur.com/fCI7RHU.png)
+
+> Note: since `edit-mode` does not work in `fixed-mode` this option has been left accessible via the config panel
+
+---
+
+# Orb Visibility
+- Hide or show any listed orb; the `logout-x`(Esc) and `world-map`(Ctrl-M) will retain hotkey function even if hidden
+
+https://github.com/user-attachments/assets/27feee3c-b658-4ae9-a9bb-5d1af8dcd5d5
+
+> Note: since `edit-mode` does not work in `fixed-mode` this option has been left accessible via the config panel
+
+---
+
+# Detached Minimap
 - a separate detached minimap, only visible while a compact layout is active (movable)
     - `Logout-X`: will open the logout tab or world switcher
+  
+  ![](https://imgur.com/MpxTcDI.gif)
+  
+> There is no compatibility with plugins that modify, overlay, or add indicators to the original `vanilla` minimap
+>>- Examples include `Quest Helper`, `Shortest Path`, `Ground Markers`, and `Player Indicators`.
 
-      ![](https://imgur.com/xpjxwy6.png)
+---
 
-- `Restrictions`: there is no compatibility with plugins that modify, overlay, or add indicators to the original `Vanilla` minimap (since it's not the `Vanilla` minimap)
-    - for ex;
-        - `Quest Helper` - hint arrow & lines
-        - `Shortest Path` - minimap tile path
-        - `Player Indicators` - minimap names
-        - `NPC Indicators` - minimap names
-        - `Ground Markers` - minimap tiles
-        - `Player-owned House` - teleport icons
-        - `Runecraft` - abyss rift icons
-        - `Barrows` - hill names
-        - `Implings` - minimap names
-        - etc.
+# ❓FAQ / Conflicts
 
-> Disclaimer: this feature is experimental, and could be subject to change/removal depending on the host interface (StatBoostsHud) staying official client only
+#### Q: Are there any ways to prevent the orbs from moving when changing the window size?
+ - A: you can use either an anchor point (now movable) or you can set an `origin` for the minimap - dragging the minimap with `alt`, then `shift-click` when positioned where you want it will let you select where you want the minimap to be anchored to, relative to the `origin`.
 
-<br/>
+#### Q: Can you add [orb] to the detached minimap?
+ - A: no, since the implementation of that feature would go against the plugin-hub guidelines
 
-</details>
-
-<details id="faq">
-<summary>❓ FAQ / Conflicts</summary>
-
-## FAQ
-
-### Q: Any ways to prevent the orbs from moving around when the window size changes?
-- A: here's a few things that helped me -
-    - avoid setting the Runelite window to `maximize` in the top right (next to the close window X)
-    - in the Runelite config side panel, try setting `Resize type` to `Keep game size` (so long as the window doesn't expand past your monitors size)
-    - setting the dimensions for the `Game size`, as well as `Lock window size`
-
-### Q: Can the orbs be hidden without using the compact layout?
-- A: yep, swapping works as well
-
-### Q: Can you add [orb] to the detached minimap?
-- A: there are no plans to include any functional versions of the following orbs:<br/> [`Xp`, `Worldmap`, `Hp`, `Prayer`, `Run`, `Spec`, `Wiki`, `Store`, `Activity`]
-
-## Conflicts
-Since this modifies the minimap visibility, there are a few plugins that have been flagged as conflicts (enabling any will disable this plugin & vice versa)
+## Conflicts:
+The following plugins have been flagged to not work, or conflict with this plugin;
 
 - `Fixed Resizable Hybrid`
 - `Orb Hider`
 - `Minimap Hider`
-
-</details>
+- `Movable Orbs`
