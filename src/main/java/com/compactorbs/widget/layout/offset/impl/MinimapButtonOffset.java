@@ -42,6 +42,11 @@ public class MinimapButtonOffset implements OffsetTarget
 	{
 		if (!compactLayout)
 		{
+			if (manager.isFixedMode())
+			{
+				return x;
+			}
+
 			x = manager.getTogglePlacement().getX();
 
 			if (manager.allowReordering() && !manager.isEditingLayout)
@@ -81,6 +86,11 @@ public class MinimapButtonOffset implements OffsetTarget
 	{
 		if (!compactLayout)
 		{
+			if (manager.isFixedMode())
+			{
+				return y;
+			}
+
 			y = manager.getTogglePlacement().getY();
 
 			if (!manager.isEditingLayout)
@@ -114,13 +124,13 @@ public class MinimapButtonOffset implements OffsetTarget
 			{
 				if (manager.isAnchorTop())
 				{
-					if (manager.getCurrentLayout().isLastVisible(Slot.WIKI_SLOT, slotManager.getHiddenCountAbove(Orbs.WIKI_ICON_CONTAINER)))
+					if (manager.getCurrentLayout().isLastVisible(Slot.WIKI_SLOT, slotManager.getHiddenCountAbove()))
 					{
 						y += 4;
 					}
 
 					if (manager.isWikiHidden() && !manager.isClassicResizable() && !manager.hideLogoutX
-						&& slotManager.getHiddenCountAbove(Orbs.WIKI_ICON_CONTAINER) >= manager.getCurrentLayout().getGroup(Slot.WIKI_SLOT).indexOf(Slot.WIKI_SLOT))
+						&& slotManager.getHiddenCountAbove() >= manager.getCurrentLayout().getGroup(Slot.WIKI_SLOT).indexOf(Slot.WIKI_SLOT))
 					{
 						y -= 14;
 					}

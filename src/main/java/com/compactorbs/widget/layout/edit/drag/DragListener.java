@@ -25,13 +25,12 @@
 
 package com.compactorbs.widget.layout.edit.drag;
 
+import com.compactorbs.CompactOrbsConfig;
 import static com.compactorbs.CompactOrbsConstants.Layout.ORBS_CONTAINER_OFFSET_Y;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.TargetWidget;
 import com.compactorbs.widget.WidgetManager;
 import com.compactorbs.widget.elements.Minimap;
-import com.compactorbs.widget.elements.Orbs;
-import com.compactorbs.widget.layout.EditLayout;
 import com.compactorbs.widget.layout.edit.Binding;
 import com.compactorbs.widget.layout.edit.BindingManager;
 import com.compactorbs.widget.layout.slot.SlotManager;
@@ -41,6 +40,7 @@ import java.awt.event.MouseEvent;
 import javax.inject.Inject;
 import net.runelite.api.Client;
 import net.runelite.api.widgets.Widget;
+import net.runelite.api.widgets.WidgetPositionMode;
 import net.runelite.client.input.MouseListener;
 
 public class DragListener implements MouseListener
@@ -52,6 +52,9 @@ public class DragListener implements MouseListener
 	private CompactOrbsManager manager;
 
 	@Inject
+	private CompactOrbsConfig config;
+
+	@Inject
 	private WidgetManager widgetManager;
 
 	@Inject
@@ -59,9 +62,6 @@ public class DragListener implements MouseListener
 
 	@Inject
 	private BindingManager bindingManager;
-
-	@Inject
-	private EditLayout editLayout;
 
 	@Inject
 	private SlotManager slotManager;
@@ -79,23 +79,41 @@ public class DragListener implements MouseListener
 				Widget container = widgetManager.getMapParent();
 				if (container != null)
 				{
-					Widget bound = widgetManager.getTargetWidget(binding.get(manager.isClassicResizable()));
+					Widget bound = widgetManager.getTargetWidget(binding.get(manager));
 					if (!dragState.wasDragging)
 					{
 						dragState.offset.x = dragState.origin.x - (container.getBounds().x + dragged.getRelativeX());
 						dragState.offset.y = dragState.origin.y - (container.getBounds().y + dragged.getRelativeY());
 					}
 
-					if (editLayout.isCustomLayout())
+					if (manager.isCustomLayout() || !config.enableOrbSwapping())
 					{
-						draggedOn = getIndicatorTarget(dragged, draggedOn, container);
+						if (!manager.isCompactLayout() || manager.isFixedMode())
+						{
+							container = client.getWidget(Minimap.ORBS_UNIVERSE.getComponentId());
+							if (container == null)
+							{
+								return;
+							}
+						}
 
-						updateIndicator(draggedOn);
 						if (bound != null)
 						{
-							Point pos = getPosInContainer(dragged, container.getBounds());
+							Point pos = getDragPosition(dragged, container.getBounds());
+
+							Point handlerPos = toBoundPosition(dragged, bound, pos);
+							setPosition(dragged, handlerPos);
+
+							draggedOn = getIndicatorTarget(dragged, draggedOn, container);
+							setIndicatorTo(draggedOn);
+							updateDraggedIndicator(bound, handlerPos);
+
 							setPosition(bound, pos);
-							showIndicator(bound);
+							if (binding.getRelated() != null)
+							{
+								Widget related = widgetManager.getTargetWidget(binding.getRelated());
+								setPosition(related, pos);
+							}
 						}
 					}
 					else
@@ -103,11 +121,12 @@ public class DragListener implements MouseListener
 						container = client.getWidget(Minimap.ORBS_UNIVERSE.getComponentId());
 						if (container != null)
 						{
-							updateIndicator(draggedOn);
+							setIndicatorTo(draggedOn);
 							if (bound != null)
 							{
-								Point pos = getPosInContainer(dragged, container.getBounds());
+								Point pos = getDragPosition(dragged, container.getBounds());
 								setPosition(bound, pos);
+
 								dragState.lastDraggedOn = draggedOn;
 							}
 						}
@@ -130,24 +149,25 @@ public class DragListener implements MouseListener
 			if (binding != null)
 			{
 				Widget container = widgetManager.getMapParent();
+				if (!manager.isCompactLayout() || manager.isFixedMode())
+				{
+					container = client.getWidget(Minimap.ORBS_UNIVERSE.getComponentId());
+				}
+
 				if (container != null)
 				{
-					Widget bound = widgetManager.getTargetWidget(binding.get(manager.isClassicResizable()));
+					Widget bound = widgetManager.getTargetWidget(binding.get(manager));
 					if (bound != null)
 					{
-						if (editLayout.isCustomLayout())
+						if (manager.isCustomLayout() || !config.enableOrbSwapping())
 						{
-							Point pos = getPosInContainer(dragState.lastDraggedHandler, container.getBounds());
-
-							setPosition(dragState.lastDraggedHandler, pos);
-							setPosition(bound, pos);
-							manager.saveCustomPosition(bound, binding);
+							manager.saveCurrentLayoutPosition(bound, binding);
 						}
 						else
 						{
-							Point pos = editLayout.toBoundPosition(dragState.lastDraggedHandler, bound.getParent());
-
+							Point pos = toHandlerPosition(dragState.lastDraggedHandler, bound);
 							setPosition(bound, pos);
+
 							swapDraggedOrb();
 						}
 					}
@@ -167,36 +187,20 @@ public class DragListener implements MouseListener
 
 		Binding draggedBinding = bindingManager.getByHandler(dragState.lastDraggedHandler);
 		Binding targetBinding = bindingManager.getByHandler(dragState.lastDraggedOn);
-
 		if (draggedBinding == null || targetBinding == null)
 		{
 			return;
 		}
 
-		TargetWidget draggedOrb = draggedBinding.get(manager.isClassicResizable());
-		TargetWidget targetOrb = targetBinding.get(manager.isClassicResizable());
-
+		TargetWidget draggedOrb = draggedBinding.get(manager);
+		TargetWidget targetOrb = targetBinding.get(manager);
 		if (draggedOrb == null || targetOrb == null)
 		{
 			return;
 		}
 
-		if (!Orbs.isSwappableOrb(draggedOrb.getComponentId()) ||
-			!Orbs.isSwappableOrb(targetOrb.getComponentId()))
-		{
-			return;
-		}
-
-		slotManager.swapOrbs(draggedOrb, targetOrb,
-			manager.isCompactLayout()
-				? SlotManager.SlotLayoutMode.COMPACT
-				: SlotManager.SlotLayoutMode.VANILLA
-		);
-
-		final Point temp = new Point(
-			dragState.lastDraggedHandler.getOriginalX(),
-			dragState.lastDraggedHandler.getOriginalY()
-		);
+		final int x = dragState.lastDraggedHandler.getOriginalX();
+		final int y = dragState.lastDraggedHandler.getOriginalY();
 
 		setPosition(dragState.lastDraggedHandler,
 			new Point(
@@ -204,7 +208,10 @@ public class DragListener implements MouseListener
 				dragState.lastDraggedOn.getOriginalY()
 			)
 		);
-		setPosition(dragState.lastDraggedOn, temp);
+
+		setPosition(dragState.lastDraggedOn, new Point(x, y));
+
+		slotManager.swap(draggedOrb, targetOrb);
 	}
 
 	private void resetDrag()
@@ -223,20 +230,22 @@ public class DragListener implements MouseListener
 		dragState.lastDraggedHandler = null;
 	}
 
-	private void showIndicator(Widget widget)
+	private void updateDraggedIndicator(Widget widget, Point pos)
 	{
 		if (dragState.boundIndicator != null)
 		{
+			dragState.boundIndicator.setXPositionMode(widget.getXPositionMode());
+
 			widgetManager.showIndicator(
 				dragState.boundIndicator,
-				widget.getOriginalX(), widget.getOriginalY(),
+				pos.x, pos.y,
 				widget.getWidth(), widget.getHeight(),
 				0xff00ff
 			);
 		}
 	}
 
-	private void updateIndicator(Widget widget)
+	private void setIndicatorTo(Widget widget)
 	{
 		if (dragState.handlerIndicator != null)
 		{
@@ -266,15 +275,21 @@ public class DragListener implements MouseListener
 			return draggedOn;
 		}
 
-		return findOverlappingHandler(dragged, getPosInContainer(dragged, container.getBounds()));
+		Point pos = getDragPosition(dragged, container.getBounds());
+		return findOverlappingHandler(dragged, pos, container.getWidth());
 	}
 
-	private Widget findOverlappingHandler(Widget dragged, Point pos)
+	private Widget findOverlappingHandler(Widget dragged, Point pos, int containerWidth)
 	{
 		int dragX = pos.x;
 		int dragY = pos.y;
 		int dragW = dragged.getWidth();
 		int dragH = dragged.getHeight();
+
+		if (dragged.getXPositionMode() == WidgetPositionMode.ABSOLUTE_RIGHT)
+		{
+			dragX = containerWidth - dragX - dragW;
+		}
 
 		Widget overlap = null;
 		int maxArea = -1;
@@ -288,10 +303,28 @@ public class DragListener implements MouseListener
 			}
 
 			int handlerX = handler.getOriginalX();
+			if (manager.isFixedMode() && handler.getXPositionMode() == WidgetPositionMode.ABSOLUTE_RIGHT)
+			{
+				Widget bound = client.getWidget(binding.getModern().getComponentId());
+				if (bound != null)
+				{
+					handlerX = handlerX - (handler.getParent().getWidth() - bound.getParent().getWidth());
+				}
+			}
+
 			int handlerY = handler.getOriginalY();
+			if (!manager.isCompactLayout() && !manager.isFixedMode())
+			{
+				handlerY -= ORBS_CONTAINER_OFFSET_Y;
+			}
+
+			if (handler.getXPositionMode() == WidgetPositionMode.ABSOLUTE_RIGHT)
+			{
+				handlerX = containerWidth - handlerX - handler.getWidth();
+			}
+
 			int overlapW = Math.min(dragX + dragW, handlerX + handler.getWidth()) - Math.max(dragX, handlerX);
 			int overlapH = Math.min(dragY + dragH, handlerY + handler.getHeight()) - Math.max(dragY, handlerY);
-
 			if ((overlapW >= -2 && overlapH >= 1) || (overlapW >= 1 && overlapH >= -2))
 			{
 				int area = Math.max(0, overlapW) * Math.max(0, overlapH);
@@ -318,24 +351,78 @@ public class DragListener implements MouseListener
 		widget.revalidate();
 	}
 
-	private Point getPosInContainer(Widget widget, Rectangle bounds)
+	public Point getDragPosition(Widget dragged, Rectangle bounds)
 	{
 		int x = dragState.current.x - bounds.x - dragState.offset.x;
 		int y = dragState.current.y - bounds.y - dragState.offset.y;
 
-		int maxX = bounds.width - widget.getWidth();
-		int maxY = bounds.height - widget.getHeight();
+		int maxX = bounds.width - dragged.getWidth();
+		int maxY = bounds.height - dragged.getHeight();
 
-		//clamp against the map containers height since the orb container is offset (prevent cut-off)
-		if (!manager.isCompactLayout() && dragState.wasDragging)
+		if (dragged.getXPositionMode() == WidgetPositionMode.ABSOLUTE_RIGHT)
 		{
-			maxY -= ORBS_CONTAINER_OFFSET_Y;
+			x = bounds.width - x - dragged.getWidth();
+			maxX = bounds.width - dragged.getWidth();
 		}
 
-		x = Math.max(0, Math.min(x, maxX));
-		y = Math.max(0, Math.min(y, maxY));
+		return clamp(new Point(x, y), maxX, maxY);
+	}
+
+	private Point clamp(Point pos, int maxX, int maxY)
+	{
+		return new Point(
+			Math.max(0, Math.min(pos.x, maxX)),
+			Math.max(0, Math.min(pos.y, maxY))
+		);
+	}
+
+	public Point toBoundPosition(Widget handler, Widget bound, Point bounds)
+	{
+		Point offset = getLayoutOffsets();
+		if (handler.getParent() != bound.getParent())
+		{
+			if (!manager.isCompactLayout() && !manager.isFixedMode())
+			{
+				bounds = new Point(bounds.x, bounds.y + ORBS_CONTAINER_OFFSET_Y);
+			}
+
+			if (bound.getXPositionMode() == WidgetPositionMode.ABSOLUTE_RIGHT)
+			{
+				bounds = new Point(bounds.x + (handler.getParent().getWidth() - bound.getParent().getWidth()), bounds.y);
+			}
+		}
+
+		return new Point(bounds.x + offset.x, bounds.y + offset.y);
+	}
+
+	public Point toHandlerPosition(Widget handler, Widget bound)
+	{
+		int x = handler.getOriginalX();
+		int y = handler.getOriginalY();
+
+		Point offset = getLayoutOffsets();
+		if (bound.getParent() != handler.getParent())
+		{
+			if (!manager.isCompactLayout() && !manager.isFixedMode())
+			{
+				y = y - ORBS_CONTAINER_OFFSET_Y;
+			}
+
+			if (bound.getXPositionMode() == WidgetPositionMode.ABSOLUTE_RIGHT)
+			{
+				x = x - (handler.getParent().getWidth() - bound.getParent().getWidth());
+			}
+		}
+
+		x -= offset.x;
+		y -= offset.y;
 
 		return new Point(x, y);
+	}
+
+	private Point getLayoutOffsets()
+	{
+		return new Point(manager.getLayoutXOffset(), manager.getLayoutYOffset());
 	}
 
 	@Override

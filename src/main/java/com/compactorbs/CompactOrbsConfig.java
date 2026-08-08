@@ -109,30 +109,8 @@ public interface CompactOrbsConfig extends Config
 	{
 		MINIMAP_BUTTON,
 		MINIMAP,
-		DETACHED_MINIMAP
-	}
-
-	//hidden from the config panel
-	@ConfigItem(
-		keyName = ConfigKeys.MINIMAP,
-		name = "Hide minimap",
-		description = "",
-		hidden = true
-	)
-	default boolean hideMinimap()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.COMPASS,
-		name = "Hide compass",
-		description = "",
-		hidden = true
-	)
-	default boolean hideCompass()
-	{
-		return false;
+		DETACHED_MINIMAP,
+		EDIT_MODE
 	}
 
 	//visible on the config panel
@@ -227,6 +205,18 @@ public interface CompactOrbsConfig extends Config
 		return false;
 	}
 
+	@ConfigItem(
+		keyName = ConfigKeys.ENABLE_ORB_SWAPPING,
+		name = "Enable orb swapping",
+		description = "Will allow swapping of the main data orbs via edit-mode while enabled. Disables custom-positioning",
+		section = layout,
+		position = 6
+	)
+	default boolean enableOrbSwapping()
+	{
+		return false;
+	}
+
 	@ConfigSection(
 		name = "Toggle Button",
 		description = "",
@@ -305,298 +295,6 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigSection(
-		name = "Orb Swapping",
-		description = "",
-		closedByDefault = true,
-		position = 3
-	)
-	String swapping = "swapping";
-
-	@ConfigItem(
-		keyName = ConfigKeys.ENABLE_ORB_SWAPPING,
-		name = "Enable orb swapping",
-		description = "Data orbs can be swapped via edit-mode or the below configs",
-		section = swapping,
-		position = 0
-	)
-	default boolean enableOrbSwapping()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = "",
-		name = "Compact slots:",
-		description = "Slot order when in compact-view <br>" +
-			"-Warning: each slot must contain a unique orb (otherwise slots will be reset)",
-		section = swapping,
-		position = 1
-	)
-	default void compactHeader()
-	{
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.HP_ORB_SLOT,
-		name = "  HP",
-		description = "Select an orb to be in this slot",
-		section = swapping,
-		position = 2
-	)
-	default FilteredOrb orbInHPSlot()
-	{
-		return FilteredOrb.HP_ORB_CONTAINER;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.PRAYER_ORB_SLOT,
-		name = "  Prayer",
-		description = "Select an orb to be in this slot",
-		section = swapping,
-		position = 3
-	)
-	default FilteredOrb orbInPrayerSlot()
-	{
-		return FilteredOrb.PRAYER_ORB_CONTAINER;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.RUN_ORB_SLOT,
-		name = "  Run",
-		description = "Select an orb to be in this slot",
-		section = swapping,
-		position = 4
-	)
-	default FilteredOrb orbInRunSlot()
-	{
-		return FilteredOrb.RUN_ORB_CONTAINER;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.SPECIAL_ORB_SLOT,
-		name = "  Special",
-		description = "Select an orb to be in this slot",
-		section = swapping,
-		position = 5
-	)
-	default FilteredOrb orbInSpecialSlot()
-	{
-		return FilteredOrb.SPEC_ORB_CONTAINER;
-	}
-
-	@ConfigItem(
-		keyName = "",
-		name = "\u200B",
-		description = "",
-		section = swapping,
-		position = 6
-	)
-	default void slotDivider()
-	{
-	}
-
-	@ConfigItem(
-		keyName = "",
-		name = "Vanilla slots:",
-		description = "Slot order when the minimap is visible (supports Fixed mode) <br>" +
-			"-Warning: each slot must contain a unique orb (otherwise slots will be reset)",
-		section = swapping,
-		position = 7
-	)
-	default void vanillaHeader()
-	{
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.HP_ORB_SLOT_VANILLA,
-		name = "  HP",
-		description = "Select an orb to be in this slot",
-		section = swapping,
-		position = 8
-	)
-	default FilteredOrb orbInHpSlotVanilla()
-	{
-		return FilteredOrb.HP_ORB_CONTAINER;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.PRAYER_ORB_SLOT_VANILLA,
-		name = "  Prayer",
-		description = "Select an orb to be in this slot",
-		section = swapping,
-		position = 9
-	)
-	default FilteredOrb orbInPrayerSlotVanilla()
-	{
-		return FilteredOrb.PRAYER_ORB_CONTAINER;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.RUN_ORB_SLOT_VANILLA,
-		name = "  Run",
-		description = "Select an orb to be in this slot",
-		section = swapping,
-		position = 10
-	)
-	default FilteredOrb orbInRunSlotVanilla()
-	{
-		return FilteredOrb.RUN_ORB_CONTAINER;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.SPECIAL_ORB_SLOT_VANILLA,
-		name = "  Special",
-		description = "Select an orb to be in this slot",
-		section = swapping,
-		position = 11
-	)
-	default FilteredOrb orbInSpecialSlotVanilla()
-	{
-		return FilteredOrb.SPEC_ORB_CONTAINER;
-	}
-
-	@ConfigSection(
-		name = "Orb Visibility",
-		description = "",
-		closedByDefault = true,
-		position = 5
-	)
-	String visibility = "visibility";
-
-	@ConfigItem(
-		keyName = ConfigKeys.HIDE_HP,
-		name = "Hide Hp",
-		description = "Hide/show the Hp orb",
-		section = visibility,
-		position = 0
-	)
-	default boolean hideHp()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.HIDE_PRAYER,
-		name = "Hide Prayer",
-		description = "Hide/show the Prayer orb",
-		section = visibility,
-		position = 1
-	)
-	default boolean hidePray()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.HIDE_RUN,
-		name = "Hide Run",
-		description = "Hide/show the Run orb",
-		section = visibility,
-		position = 2
-	)
-	default boolean hideRun()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.HIDE_SPEC,
-		name = "Hide Special",
-		description = "Hide/show the Special orb",
-		section = visibility,
-		position = 3
-	)
-	default boolean hideSpec()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.HIDE_XP,
-		name = "Hide XP",
-		description = "Hide/show the Xp orb",
-		section = visibility,
-		position = 4
-	)
-	default boolean hideXp()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.HIDE_WORLD,
-		name = "Hide World Map",
-		description = "Hide/show the World map",
-		section = visibility,
-		position = 5
-	)
-	default boolean hideWorld()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.HIDE_STORE,
-		name = "Hide Store",
-		description = "Hide/show the Store orb (should reflect the in-game setting)",
-		section = visibility,
-		position = 6
-	)
-	default boolean hideStore()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.HIDE_ACTIVITY,
-		name = "Hide Activity Advisor",
-		description = "Hide/show the Activity Advisor orb (should reflect the in-game setting)",
-		section = visibility,
-		position = 7
-	)
-	default boolean hideActivity()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.HIDE_WIKI,
-		name = "Hide Wiki banner",
-		description = "Hide/show the Wiki banner (should reflect the in-game setting) <br>" +
-			"Warning: if enabled, the Wiki plugins banner will also be hidden regardless of the plugins own config",
-		section = visibility,
-		position = 8
-	)
-	default boolean hideWiki()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.HIDE_LOGOUT_X,
-		name = "Hide Logout-X",
-		description = "Hide/show the Logout-X (only in resizable-modern)",
-		section = visibility,
-		position = 9
-	)
-	default boolean hideLogout()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.HIDE_GRID,
-		name = "Hide Grid Master (Legacy)",
-		description = "Hide/show the Grid Master orb (temporary game-mode)",
-		section = visibility,
-		position = 10
-	)
-	default boolean hideGrid()
-	{
-		return false;
-	}
-
-	@ConfigSection(
 		name = "Detached Minimap",
 		description = "",
 		closedByDefault = true,
@@ -637,6 +335,252 @@ public interface CompactOrbsConfig extends Config
 		position = 2
 	)
 	default boolean showOverlayLogoutX()
+	{
+		return false;
+	}
+
+	//hidden from the config panel
+	@ConfigItem(
+		keyName = ConfigKeys.MINIMAP,
+		name = "Hide minimap",
+		description = "",
+		hidden = true
+	)
+	default boolean hideMinimap()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.COMPASS,
+		name = "Hide compass",
+		description = "",
+		hidden = true
+	)
+	default boolean hideCompass()
+	{
+		return false;
+	}
+
+	//orb swapping
+	@ConfigItem(
+		keyName = ConfigKeys.HP_ORB_SLOT,
+		name = "  HP",
+		description = "Select an orb to be in this slot",
+		hidden = true
+	)
+	default FilteredOrb orbInHPSlot()
+	{
+		return FilteredOrb.HP_ORB_CONTAINER;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.PRAYER_ORB_SLOT,
+		name = "  Prayer",
+		description = "Select an orb to be in this slot",
+		hidden = true
+	)
+	default FilteredOrb orbInPrayerSlot()
+	{
+		return FilteredOrb.PRAYER_ORB_CONTAINER;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.RUN_ORB_SLOT,
+		name = "  Run",
+		description = "Select an orb to be in this slot",
+		hidden = true
+	)
+	default FilteredOrb orbInRunSlot()
+	{
+		return FilteredOrb.RUN_ORB_CONTAINER;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.SPECIAL_ORB_SLOT,
+		name = "  Special",
+		description = "Select an orb to be in this slot",
+		hidden = true
+	)
+	default FilteredOrb orbInSpecialSlot()
+	{
+		return FilteredOrb.SPEC_ORB_CONTAINER;
+	}
+
+	@ConfigItem(
+		keyName = "",
+		name = "Vanilla slots:",
+		description = "Slot order when the minimap is visible (supports Fixed mode) <br>" +
+			"-Warning: each slot must contain a unique orb (otherwise slots will be reset)",
+		hidden = true
+	)
+	default void vanillaHeader()
+	{
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.HP_ORB_SLOT_VANILLA,
+		name = "  HP",
+		description = "Select an orb to be in this slot",
+		hidden = true
+	)
+	default FilteredOrb orbInHpSlotVanilla()
+	{
+		return FilteredOrb.HP_ORB_CONTAINER;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.PRAYER_ORB_SLOT_VANILLA,
+		name = "  Prayer",
+		description = "Select an orb to be in this slot",
+		hidden = true
+	)
+	default FilteredOrb orbInPrayerSlotVanilla()
+	{
+		return FilteredOrb.PRAYER_ORB_CONTAINER;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.RUN_ORB_SLOT_VANILLA,
+		name = "  Run",
+		description = "Select an orb to be in this slot",
+		hidden = true
+	)
+	default FilteredOrb orbInRunSlotVanilla()
+	{
+		return FilteredOrb.RUN_ORB_CONTAINER;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.SPECIAL_ORB_SLOT_VANILLA,
+		name = "  Special",
+		description = "Select an orb to be in this slot",
+		hidden = true
+	)
+	default FilteredOrb orbInSpecialSlotVanilla()
+	{
+		return FilteredOrb.SPEC_ORB_CONTAINER;
+	}
+
+	//orb hiding
+	@ConfigItem(
+		keyName = ConfigKeys.HIDE_HP,
+		name = "Hide Hp",
+		description = "Hide/show the Hp orb",
+		hidden = true
+	)
+	default boolean hideHp()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.HIDE_PRAYER,
+		name = "Hide Prayer",
+		description = "Hide/show the Prayer orb",
+		hidden = true
+	)
+	default boolean hidePray()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.HIDE_RUN,
+		name = "Hide Run",
+		description = "Hide/show the Run orb",
+		hidden = true
+	)
+	default boolean hideRun()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.HIDE_SPEC,
+		name = "Hide Special",
+		description = "Hide/show the Special orb",
+		hidden = true
+	)
+	default boolean hideSpec()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.HIDE_XP,
+		name = "Hide XP",
+		description = "Hide/show the Xp orb",
+		hidden = true
+	)
+	default boolean hideXp()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.HIDE_WORLD,
+		name = "Hide World Map",
+		description = "Hide/show the World map",
+		hidden = true
+	)
+	default boolean hideWorld()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.HIDE_STORE,
+		name = "Hide Store",
+		description = "Hide/show the Store orb (should reflect the in-game setting)",
+		hidden = true
+	)
+	default boolean hideStore()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.HIDE_ACTIVITY,
+		name = "Hide Activity Advisor",
+		description = "Hide/show the Activity Advisor orb (should reflect the in-game setting)",
+		hidden = true
+	)
+	default boolean hideActivity()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.HIDE_WIKI,
+		name = "Hide Wiki banner",
+		description = "Hide/show the Wiki banner (should reflect the in-game setting) <br>" +
+			"Warning: if enabled, the Wiki plugins banner will also be hidden regardless of the plugins own config",
+		hidden = true
+	)
+	default boolean hideWiki()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.HIDE_LOGOUT_X,
+		name = "Hide Logout-X",
+		description = "Hide/show the Logout-X (only in resizable-modern)",
+		hidden = true
+	)
+	default boolean hideLogout()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.HIDE_GRID,
+		name = "Hide Grid Master (Legacy)",
+		description = "Hide/show the Grid Master orb (temporary game-mode)",
+		hidden = true
+	)
+	default boolean hideGrid()
 	{
 		return false;
 	}

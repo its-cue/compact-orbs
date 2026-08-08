@@ -26,23 +26,19 @@
 package com.compactorbs.widget.layout.slot;
 
 import com.compactorbs.CompactOrbsConfig;
-import com.compactorbs.CompactOrbsConstants;
 import com.compactorbs.CompactOrbsLayout;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.TargetWidget;
 import com.compactorbs.widget.WidgetManager;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.layout.OrbToggle;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import lombok.extern.slf4j.Slf4j;
+import lombok.Getter;
 import net.runelite.api.widgets.Widget;
 
-@Slf4j
 @Singleton
 public class SlotManager
 {
@@ -55,210 +51,197 @@ public class SlotManager
 	@Inject
 	private WidgetManager widgetManager;
 
-	public SlotLayoutMode currentSlotLayoutMode;
+	@Inject
+	private SlotRegistry registry;
 
-	public enum SlotLayoutMode
+	public enum SlotsLayoutMode
 	{
 		COMPACT,
 		VANILLA
 	}
 
-	//map of slots and their target widget per layout mode
-	private final EnumMap<SlotLayoutMode, EnumMap<Slot, TargetWidget>> slotLayoutMap = new EnumMap<>(SlotLayoutMode.class);
+	@Getter
+	private SlotsLayoutMode currentLayoutMode;
+
+	@Getter
+	private int hiddenCountAbove;
+
+	private final EnumMap<SlotsLayoutMode, SlotLayout> layouts = new EnumMap<>(SlotsLayoutMode.class);
 
 	public void initSlots()
 	{
-		validateSlotConfig();
-		generateSlots(config.enableOrbSwapping());
+		layouts.clear();
+
+		updateCurrentLayout();
+
+		for (SlotsLayoutMode mode : SlotsLayoutMode.values())
+		{
+			SlotLayout state = new SlotLayout();
+			load(state, mode);
+			layouts.put(mode, state);
+		}
+
+		updateOrbPositions();
+	}
+
+	public void updateCurrentLayout()
+	{
+		currentLayoutMode = manager.isCompactLayout()
+			? SlotsLayoutMode.COMPACT
+			: SlotsLayoutMode.VANILLA;
+	}
+
+	public SlotLayout getLayout(SlotsLayoutMode mode)
+	{
+		return layouts.get(mode);
+	}
+
+	public SlotLayout getCurrentLayout()
+	{
+		return getLayout(currentLayoutMode);
+	}
+
+	public TargetWidget get(Slot slot)
+	{
+		if (!manager.allowReordering())
+		{
+			return slot.getDefaultTarget();
+		}
+
+		return getCurrentLayout().get(slot);
+	}
+
+	public Slot find(TargetWidget target)
+	{
+		return getCurrentLayout().find(target);
+	}
+
+	public void swap(TargetWidget first, TargetWidget second)
+	{
+		Slot firstSlot = find(first);
+		Slot secondSlot = find(second);
+
+		if (firstSlot == null || secondSlot == null)
+		{
+			return;
+		}
+
+		SlotLayout layout = getCurrentLayout();
+		layout.swap(firstSlot, secondSlot);
+
+		save(currentLayoutMode);
+
+		updateOrbPositions();
+	}
+
+	public void save(SlotsLayoutMode mode)
+	{
+		registry.save(mode, getLayout(mode));
 	}
 
 	public void reset()
 	{
-		slotLayoutMap.clear();
+		getLayout(currentLayoutMode).reset();
 	}
 
-	public void generateSlots(boolean updateVisual)
+	private void updateOrbPositions()
 	{
-		reset();
-
-		for (SlotLayoutMode layout : SlotLayoutMode.values())
-		{
-			for (Slot slot : Slot.values())
-			{
-				getSlotsByLayout(layout).put(slot, getOrbBySlot(slot, layout));
-			}
-		}
-
-		remapTargetsForUpdate(updateVisual);
-	}
-
-	//handle config change event, swap orb to desired slot and update visuals if swapping is enabled
-	public void applySlotSwap(Slot slot, SlotLayoutMode layout)
-	{
-		TargetWidget desired = slot.getOrbByConfig(config, layout);
-		TargetWidget current = getSlotsByLayout(layout).get(slot);
-
-		if (desired == current)
+		if (!manager.isLoggedIn())
 		{
 			return;
 		}
 
-		swapSlots(layout, slot, desired, current);
-		remapTargetsForUpdate(config.enableOrbSwapping());
+		widgetManager.remapTargets(Orbs.SWAPPABLE_ORBS);
 	}
 
-	//place the incoming orb at current slot, move outgoing orb to source slot
-	//update config for the slot receiving the outgoing orb
-	private void swapSlots(SlotLayoutMode layout, Slot targetSlot, TargetWidget incoming, TargetWidget outgoing)
+	private void load(SlotLayout state, SlotsLayoutMode mode)
 	{
-		Slot sourceSlot = findSlotByOrb(incoming, layout);
-
-		getSlotsByLayout(layout).put(targetSlot, incoming);
-
-		if (sourceSlot != null && sourceSlot != targetSlot)
+		for (Slot slot : Slot.values())
 		{
-			getSlotsByLayout(layout).put(sourceSlot, outgoing);
-			manager.updateConfigForSlot(sourceSlot, outgoing, layout);
+			TargetWidget target =
+				config.enableOrbSwapping()
+					? registry.resolve(slot, mode, config)
+					: slot.getDefaultTarget();
+
+			state.set(slot, target);
 		}
 	}
 
-	public void swapOrbs(TargetWidget first, TargetWidget second, SlotLayoutMode layout)
+	private int computeHiddenOffset(TargetWidget target, boolean isBelow)
 	{
-		if (!Orbs.isSwappableOrb(first.getComponentId()) ||
-			!Orbs.isSwappableOrb(second.getComponentId()))
-		{
-			return;
-		}
-
-		Slot firstSlot = findSlotByOrb(first, layout);
-		Slot secondSlot = findSlotByOrb(second, layout);
-
-		if (firstSlot == null || secondSlot == null || firstSlot == secondSlot)
-		{
-			return;
-		}
-
-		Map<Slot, TargetWidget> slots = getSlotsByLayout(layout);
-
-		slots.put(firstSlot, second);
-		slots.put(secondSlot, first);
-
-		manager.updateConfigForSlot(firstSlot, second, layout);
-		manager.updateConfigForSlot(secondSlot, first, layout);
-
-		remapTargetsForUpdate(config.enableOrbSwapping());
-	}
-
-	//apply visual updates if swapping is enabled
-	private void remapTargetsForUpdate(boolean updateVisual)
-	{
-		if (updateVisual)
-		{
-			widgetManager.remapTargets(
-				manager.isMinimapHidden() && !manager.isFixedMode(),
-				CompactOrbsConstants.Script.FORCE_UPDATE,
-				//swappable orbs
-				Orbs.HP_ORB_CONTAINER, Orbs.PRAYER_ORB_CONTAINER, Orbs.RUN_ORB_CONTAINER, Orbs.SPEC_ORB_CONTAINER,
-				//other
-				Orbs.ACTIVITY_ORB_CONTAINER, Orbs.STORE_ORB_CONTAINER
-			);
-		}
-	}
-
-	//return the height of the hidden orbs above
-	public int getHiddenDimensionsAbove(TargetWidget target)
-	{
-		return computeHiddenOffset(target, false, false);
-	}
-
-	//return the height of the hidden orbs below
-	public int getHiddenDimensionsBelow(TargetWidget target)
-	{
-		return computeHiddenOffset(target, false, true);
-	}
-
-	//return a count of the hidden orbs above
-	public int getHiddenCountAbove(TargetWidget target)
-	{
-		return computeHiddenOffset(target, true, false);
-	}
-
-	//return a count of the hidden orbs below
-	public int getHiddenCountBelow(TargetWidget target)
-	{
-		return computeHiddenOffset(target, true, true);
-	}
-
-	//return the amount of hidden orbs above or below a target widget
-	// @dimension return hidden orb dimensions
-	// @below returns hidden orb count (for above, or below)
-	public int computeHiddenOffset(TargetWidget target, boolean count, boolean isBelow)
-	{
-		if (target == null)
+		if (target == null || !manager.allowReordering())
 		{
 			return 0;
 		}
 
-		Slot targetSlot = findSlotByOrb(target, SlotLayoutMode.COMPACT);
-		if (targetSlot == null)
+		Slot slot = find(target);
+		if (slot == null)
 		{
 			return 0;
 		}
 
-		List<Slot> group = manager.getCurrentLayout().getGroup(targetSlot);
+		List<Slot> group = manager.getCurrentLayout().getGroup(slot);
 
-		int targetIndex = group.indexOf(targetSlot);
+		int targetIndex = group.indexOf(slot);
 		if (targetIndex < 0)
 		{
 			return 0;
 		}
 
 		return isBelow
-			? hiddenBelowOffset(group, targetIndex, count)
-			: hiddenAboveOffset(group, targetIndex, count);
+			? sumHiddenInRange(group, targetIndex + 1, group.size())
+			: sumHiddenInRange(group, 0, targetIndex);
 	}
 
-	private int hiddenAboveOffset(List<Slot> columnOrRow, int targetIndex, boolean count)
+	private int sumHiddenInRange(List<Slot> group, int start, int end)
 	{
 		int total = 0;
+		hiddenCountAbove = 0;
 
-		for (int index = 0; index < targetIndex; index++)
+		for (int index = start; index < end; index++)
 		{
-			TargetWidget orbInSlot = getCurrentSlots().get(columnOrRow.get(index));
-			if (isOrbHidden(orbInSlot))
-			{
-				total += count ? 1 : getSlotSize(columnOrRow.get(index));
-			}
-		}
+			Slot slot = group.get(index);
 
-		return total;
-	}
-
-	private int hiddenBelowOffset(List<Slot> columnOrRow, int targetIndex, boolean count)
-	{
-		int total = 0;
-
-		for (int index = targetIndex + 1; index < columnOrRow.size(); index++)
-		{
-			Slot slot = columnOrRow.get(index);
-			if (slot == Slot.WIKI_SLOT)
+			if (slot == Slot.WIKI_SLOT && index > start)
 			{
 				continue;
 			}
 
-			TargetWidget orbInSlot = getCurrentSlots().get(slot);
-			if (isOrbHidden(orbInSlot))
+			if (isOrbHidden(slot))
 			{
-				total += count ? 1 : getSlotSize(slot);
+				total += getSlotDimension(slot);
+				hiddenCountAbove++;
 			}
 		}
 
 		return total;
 	}
 
-	private int getSlotSize(Slot slot)
+	private boolean isOrbHidden(Slot slot)
 	{
-		TargetWidget target = getCurrentSlots().get(slot);
+		TargetWidget target = get(slot);
+		if (target == null)
+		{
+			return false;
+		}
+
+		if (target == Orbs.ACTIVITY_ORB_CONTAINER && manager.isActivityOrbDisabled())
+		{
+			return config.hideActivity() && manager.allowReordering();
+		}
+
+		if (target == Orbs.STORE_ORB_CONTAINER && manager.isStoreOrbDisabled())
+		{
+			return config.hideStore() && manager.allowReordering();
+		}
+
+		OrbToggle toggle = manager.toggleByTarget.get(target);
+		return toggle != null && toggle.hidden.get();
+	}
+
+	private int getSlotDimension(Slot slot)
+	{
+		TargetWidget target = get(slot);
 		if (target == null)
 		{
 			return 0;
@@ -270,7 +253,15 @@ public class SlotManager
 			return 0;
 		}
 
-		return manager.getCurrentLayout().getSlotDimension(widget);
+		if (manager.getCurrentLayout().isHorizontal() ||
+			manager.getCurrentLayout().isHorizontalWide())
+		{
+			return widget.getOriginalWidth();
+		}
+		else
+		{
+			return widget.getOriginalHeight();
+		}
 	}
 
 	public int getHiddenSize()
@@ -298,201 +289,52 @@ public class SlotManager
 				continue;
 			}
 
-			TargetWidget target = getCurrentSlots().get(slot);
-
-			if (isOrbHidden(target))
+			if (isOrbHidden(slot))
 			{
-				total += getSlotSize(slot);
+				total += getSlotDimension(slot);
 			}
 		}
 
 		return total;
 	}
 
-	private int hiddenAboveOffset(TargetWidget target, int value)
-	{
-		if (target != null)
-		{
-			int sum = getHiddenDimensionsAbove(target);
-			value -= sum;
-		}
-
-		return value;
-	}
-
-	private int hiddenBelowOffset(TargetWidget target, int value)
-	{
-		if (target != null)
-		{
-			int sum = getHiddenDimensionsBelow(target);
-			value += sum;
-		}
-
-		return value;
-	}
-
-	public int applyHiddenYOffset(TargetWidget target, int y)
-	{
-		if (manager.allowReordering() && !manager.isEditingLayout)
-		{
-			if (manager.isAnchorTop())
-			{
-				return hiddenAboveOffset(target, y);
-			}
-			else if (manager.isAnchorBottom())
-			{
-				return hiddenBelowOffset(target, y);
-			}
-		}
-
-		return y;
-	}
-
 	public int applyHiddenXOffset(TargetWidget target, int x)
 	{
-		if (manager.allowReordering() && !manager.isEditingLayout)
+		if (!manager.allowReordering() || manager.isEditingLayout)
 		{
-			if (manager.isAnchorLeft())
-			{
-				return hiddenAboveOffset(target, x);
-			}
-			else if (manager.isAnchorRight())
-			{
-				return hiddenBelowOffset(target, x);
-			}
+			return x;
+		}
+
+		if (manager.isAnchorLeft())
+		{
+			return x - computeHiddenOffset(target, false);
+		}
+
+		if (manager.isAnchorRight())
+		{
+			return x + computeHiddenOffset(target, true);
 		}
 
 		return x;
 	}
 
-	private boolean isOrbHidden(TargetWidget target)
+	public int applyHiddenYOffset(TargetWidget target, int y)
 	{
-		if (target == null)
+		if (!manager.allowReordering() || manager.isEditingLayout)
 		{
-			return false;
+			return y;
 		}
 
-		if (target == Orbs.ACTIVITY_ORB_CONTAINER && manager.isActivityOrbDisabled())
+		if (manager.isAnchorTop())
 		{
-			//don't count as hidden unless the config to hide is enabled (requested)
-			if (config.hideActivity() && manager.allowReordering())
-			{
-				return true;
-			}
+			return y - computeHiddenOffset(target, false);
 		}
 
-		if (target == Orbs.STORE_ORB_CONTAINER && manager.isStoreOrbDisabled())
+		if (manager.isAnchorBottom())
 		{
-			if (config.hideStore() && manager.allowReordering())
-			{
-				return true;
-			}
+			return y + computeHiddenOffset(target, true);
 		}
 
-		OrbToggle toggle = manager.toggleByTarget.get(target);
-		return toggle != null && toggle.hidden.get();
-	}
-
-	public Slot findSlotByOrb(TargetWidget target, SlotLayoutMode layout)
-	{
-		Map<Slot, TargetWidget> map = getSlotsByLayout(layout);
-		if (map == null || map.isEmpty())
-		{
-			return null;
-		}
-
-		for (Map.Entry<Slot, TargetWidget> entry : map.entrySet())
-		{
-			if (entry.getValue() == target)
-			{
-				return entry.getKey();
-			}
-		}
-
-		return null;
-	}
-
-	private TargetWidget getOrbBySlot(Slot slot, SlotLayoutMode layout)
-	{
-		TargetWidget target = slot.getOriginal();
-		if (target instanceof Orbs && config.enableOrbSwapping())
-		{
-			TargetWidget configured = slot.getOrbByConfig(config, layout);
-			if (configured != null)
-			{
-				return configured;
-			}
-		}
-		return target;
-	}
-
-	private Map<Slot, TargetWidget> getSlotsByLayout(SlotLayoutMode layout)
-	{
-		return slotLayoutMap.computeIfAbsent(layout, k -> new EnumMap<>(Slot.class));
-	}
-
-	private Map<Slot, TargetWidget> getCurrentSlots()
-	{
-		if (currentSlotLayoutMode == null)
-		{
-			updateCurrentSlotLayout();
-		}
-
-		return getSlotsByLayout(currentSlotLayoutMode);
-	}
-
-	public void updateCurrentSlotLayout()
-	{
-		if (manager.isCompactLayout())
-		{
-			currentSlotLayoutMode = SlotLayoutMode.COMPACT;
-			return;
-		}
-
-		currentSlotLayoutMode = SlotLayoutMode.VANILLA;
-	}
-
-	//validate each slot in the config has a unique orb per layout
-	private void validateSlotConfig()
-	{
-		for (SlotLayoutMode layout : SlotLayoutMode.values())
-		{
-			Map<TargetWidget, Slot> seen = new HashMap<>();
-			boolean repeat = false;
-
-			for (Slot slot : Slot.values())
-			{
-				if (slot.getSlotConfigMap().isEmpty())
-				{
-					continue;
-				}
-
-				TargetWidget orb = slot.getOrbByConfig(config, layout);
-				if (seen.containsKey(orb))
-				{
-					log.debug("Non-unique orb {} found in layout: {}", orb, layout);
-					repeat = true;
-					break;
-				}
-
-				seen.put(orb, slot);
-			}
-
-			//should only happen if config changes were made while plugin was inactive
-			//and slots in the same layout contain a repeat orb
-			if (repeat)
-			{
-				for (Slot slot : Slot.values())
-				{
-					if (slot.getSlotConfigMap().isEmpty())
-					{
-						continue;
-					}
-
-					//reset all configs to default
-					manager.updateConfigForSlot(slot, slot.getOriginal(), layout);
-				}
-			}
-		}
+		return y;
 	}
 }

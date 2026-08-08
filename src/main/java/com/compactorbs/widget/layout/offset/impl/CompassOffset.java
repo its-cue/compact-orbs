@@ -27,7 +27,6 @@ package com.compactorbs.widget.layout.offset.impl;
 
 import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsManager;
-import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.layout.offset.OffsetTarget;
 import com.compactorbs.widget.layout.slot.Slot;
 import com.compactorbs.widget.layout.slot.SlotManager;
@@ -58,7 +57,7 @@ public class CompassOffset implements OffsetTarget
 			{
 				if ((manager.isClassicResizable() || manager.hideLogoutX)
 					&& manager.getCurrentLayout().isLastVisible(
-					Slot.WIKI_SLOT, slotManager.getHiddenCountAbove(Orbs.WIKI_ICON_CONTAINER)))
+					Slot.WIKI_SLOT, slotManager.getHiddenCountAbove()))
 				{
 					x += 18;
 				}
@@ -120,7 +119,7 @@ public class CompassOffset implements OffsetTarget
 			{
 				if ((manager.isClassicResizable() || manager.hideLogoutX)
 					&& manager.getCurrentLayout().isLastVisible(
-					Slot.WIKI_SLOT, slotManager.getHiddenCountAbove(Orbs.WIKI_ICON_CONTAINER)))
+					Slot.WIKI_SLOT, slotManager.getHiddenCountAbove()))
 				{
 					y = Layout.Vertical.MAP_CONTAINER_HEIGHT - Layout.COMPASS_FRAME_SIZE - 17;
 				}

@@ -28,6 +28,7 @@ package com.compactorbs.widget.elements;
 import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
 import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
+import com.compactorbs.CompactOrbsConstants.Widgets.Fixed;
 import com.compactorbs.util.SetValue;
 import com.compactorbs.util.ValueKey;
 import static com.compactorbs.util.ValueKey.X;
@@ -76,6 +77,18 @@ public enum Button implements TargetWidget
 				Layout.Vertical.MAP_CONTAINER_HEIGHT - Layout.TOGGLE_BUTTON_SIZE
 			)
 		)
+	),
+	MINIMAP_BUTTON_FIXED(Fixed.ORBS, 0,
+		Map.of(
+			X, new SetValue(
+				5,
+				5
+			),
+			Y, new SetValue(
+				0,
+				0
+			)
+		)
 	);
 
 	private final int componentId, arrayId;
@@ -85,6 +98,6 @@ public enum Button implements TargetWidget
 	@Override
 	public boolean isMinimapButton()
 	{
-		return this == MINIMAP_BUTTON_CLASSIC || this == MINIMAP_BUTTON_MODERN;
+		return this == MINIMAP_BUTTON_CLASSIC || this == MINIMAP_BUTTON_MODERN || this == MINIMAP_BUTTON_FIXED;
 	}
 }

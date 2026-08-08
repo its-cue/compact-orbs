@@ -46,9 +46,9 @@ public class SetValue
 		this.modified = new int[]{modified};
 	}
 
-	public int get(CompactOrbsLayout layout, boolean compactLayout)
+	public int getModified(CompactOrbsLayout layout)
 	{
-		if (!compactLayout || modified.length == 0)
+		if (layout == null || modified.length == 0)
 		{
 			return original;
 		}
@@ -59,5 +59,4 @@ public class SetValue
 			? modified[index]
 			: modified[0];
 	}
-
 }

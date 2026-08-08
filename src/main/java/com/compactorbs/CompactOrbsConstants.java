@@ -92,7 +92,10 @@ public class CompactOrbsConstants
 		public static final String ENABLE_OVERLAY_TOGGLE_OPTION = "enableOverlayToggleOption";
 		public static final String ENABLE_LOGOUT_X_OVERLAY = "enableLogoutXOverlay";
 
+		//edit-modes custom positioning
 		public static final String CUSTOM_LAYOUT_PREFIX = "custom_layout_";
+		public static final String VANILLA_LAYOUT_PREFIX = "vanilla_layout_";
+		public static final String FIXED_LAYOUT_PREFIX = "fixed_layout_";
 
 		public static final class Wiki
 		{
@@ -179,6 +182,9 @@ public class CompactOrbsConstants
 		{
 			public static final int MAP_CONTAINER_WIDTH = 211;
 			public static final int MAP_CONTAINER_HEIGHT = 207;
+
+			public static final int ORBS_CONTAINER_WIDTH = 207;
+			public static final int ORBS_CONTAINER_HEIGHT = 197;
 
 			public static final int XP_DROPS_X = 0;
 			public static final int XP_DROPS_Y = 17;
@@ -421,10 +427,11 @@ public class CompactOrbsConstants
 		public static final Color MENU_TARGET = JagexColors.MENU_TARGET;
 		public static final Color RED = JagexColors.CHAT_FC_TEXT_TRANSPARENT_BACKGROUND;
 
+		public static final int OP_INDEX_0 = 0;
 		public static final int HANDLER_TOGGLE_OP_INDEX = 6;
 		public static final int RESET_POSITION_OP_INDEX = 7;
 		public static final int RESET_ALL_OP_INDEX = 8;
-		public static final int DISABLE_EDIT_MODE_OP_INDEX = 9;
+		public static final int EDIT_MODE_OP_INDEX = 9;
 	}
 
 	public static final class Sprite
@@ -432,6 +439,9 @@ public class CompactOrbsConstants
 		//orb related sprites
 		public static final int FRAME = SpriteID.OrbFrame.FRAME;
 		public static final int FRAME_HOVERED = SpriteID.OrbFrame.FRAME_HOVERED;
+
+		//for edit-mode
+		public static final int FIXED_MINIMAP_MASK = SpriteID.FIXED_MAP_MASK;
 
 		//minimap overlay sprites
 		public static final int COMPASS_MASK = SpriteID.RESIZE_COMPASS_MASK;
@@ -443,8 +453,6 @@ public class CompactOrbsConstants
 		//toggle button sprites
 		public static final int HIDDEN = SpriteID.GroundItemsVisibility._1;
 		public static final int VISIBLE = SpriteID.GroundItemsVisibility._0;
-
-		public static final int WIDGET_INSPECTOR = SpriteID.OptionsIcons._50;
 	}
 
 	public static final class Widgets
@@ -515,7 +523,9 @@ public class CompactOrbsConstants
 		//fixed mode widget ids
 		public static final class Fixed
 		{
-			public static final int ORBS = InterfaceID.Toplevel.MAPCONTAINER;
+			public static final int MAP_CONTAINER = InterfaceID.Toplevel.MAPCONTAINER;
+			public static final int MINIMAP_MASK = InterfaceID.Toplevel.MINIMAP;
+			public static final int ORBS = InterfaceID.Toplevel.ORBS;
 		}
 
 		//classic-resizable widget ids

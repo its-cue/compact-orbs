@@ -26,10 +26,18 @@
 package com.compactorbs.widget;
 
 import com.compactorbs.CompactOrbsConfig;
-import com.compactorbs.CompactOrbsConstants;
+import com.compactorbs.CompactOrbsConstants.Enum;
+import com.compactorbs.CompactOrbsConstants.Layout;
+import com.compactorbs.CompactOrbsConstants.Layout.MinimapOverlay;
+import com.compactorbs.CompactOrbsConstants.Layout.Original;
+import com.compactorbs.CompactOrbsConstants.MenuOp;
 import com.compactorbs.CompactOrbsConstants.Script;
+import com.compactorbs.CompactOrbsConstants.Sprite;
+import com.compactorbs.CompactOrbsConstants.VarPlayer;
 import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
+import com.compactorbs.CompactOrbsConstants.Widgets.Fixed;
 import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
+import com.compactorbs.CompactOrbsLayout;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.util.SetValue;
 import com.compactorbs.util.ValueKey;
@@ -38,6 +46,7 @@ import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.layout.offset.OffsetManager;
 import com.compactorbs.widget.layout.slot.Slot;
 import com.compactorbs.widget.layout.slot.SlotManager;
+import com.compactorbs.widget.layout.slot.SlotRegistry;
 import java.util.Map;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
@@ -46,9 +55,8 @@ import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.widgets.Widget;
-import static net.runelite.api.widgets.WidgetConfig.DRAG;
-import static net.runelite.api.widgets.WidgetConfig.DRAG_ON;
 import net.runelite.api.widgets.WidgetPositionMode;
+import net.runelite.api.widgets.WidgetSizeMode;
 import net.runelite.api.widgets.WidgetType;
 
 @Slf4j
@@ -67,49 +75,52 @@ public class WidgetManager
 	@Inject
 	private SlotManager slotManager;
 
-	//update multiple widgets that match the script id (FORCE_UPDATE bypasses the check)
-	public void remapTargets(boolean compactLayout, int scriptId, TargetWidget... widgets)
-	{
-		//ensure slot layout correctness before remapping
-		slotManager.updateCurrentSlotLayout();
+	@Inject
+	private SlotRegistry slotRegistry;
 
-		for (TargetWidget target : widgets)
+	public void remapTargets(TargetWidget... targets)
+	{
+		remapTargets(false, Script.FORCE_UPDATE, targets);
+	}
+
+	public void remapTargetsByScriptId(int scriptId, TargetWidget... targets)
+	{
+		remapTargets(false, scriptId, targets);
+	}
+
+	//should only be called on shutdown with toDefault being true
+	public void remapTargets(boolean toDefault, int scriptId, TargetWidget... targets)
+	{
+		slotManager.updateCurrentLayout();
+
+		for (TargetWidget target : targets)
 		{
 			if (!shouldUpdateTarget(target, scriptId))
 			{
 				continue;
 			}
 
-			remapTarget(target, compactLayout);
+			remapTarget(toDefault, target);
 		}
 	}
 
-	//update a target widgets X/Y or position mode, based on layout, if necessary
-	public void remapTarget(TargetWidget target, boolean compactLayout)
+	private void remapTarget(boolean toDefault, TargetWidget target)
 	{
+		if (target == null)
+		{
+			return;
+		}
+
 		Widget widget = getTargetWidget(target);
 		if (widget == null)
 		{
 			return;
 		}
 
-		//ignore the widget inspector (shares same container/index as grid master)
-		if (target == Orbs.GRID_MASTER_ORB_CONTAINER &&
-			widget.getSpriteId() == CompactOrbsConstants.Sprite.WIDGET_INSPECTOR)
-		{
-			return;
-		}
-
 		boolean remapped = false;
-
 		for (Map.Entry<ValueKey, SetValue> entry : getTarget(target).getValueMap().entrySet())
 		{
-			remapped |= setValue(widget, target.getArrayId(), entry.getKey(), entry.getValue(), compactLayout);
-		}
-
-		if (manager.isFixedMode())
-		{
-			applyFixedModeValues(widget, target);
+			remapped |= setValue(widget, target.getArrayId(), entry.getKey(), entry.getValue(), toDefault);
 		}
 
 		if (remapped)
@@ -118,7 +129,6 @@ public class WidgetManager
 		}
 	}
 
-	//returns a target widget
 	private TargetWidget getTarget(TargetWidget target)
 	{
 		if (target instanceof Orbs)
@@ -129,28 +139,110 @@ public class WidgetManager
 		return target;
 	}
 
-	//returns which orb the target should reference
-	public TargetWidget getSlotTarget(TargetWidget target)
+	private TargetWidget getSlotTarget(TargetWidget target)
 	{
-		if (!Orbs.SWAPPABLE_ORBS.contains((Orbs) target) || !config.enableOrbSwapping())
+		if (!Orbs.isSwappableOrb(target.getComponentId()) || !config.enableOrbSwapping())
 		{
 			return target;
 		}
 
-		Slot slot = slotManager.findSlotByOrb(target, slotManager.currentSlotLayoutMode);
+		Slot slot = slotManager.find(target);
 		if (slot == null)
 		{
 			return target;
 		}
 
-		return slot.getOriginal();
+		return slot.getDefaultTarget();
 	}
 
-	//sets the widgets X/Y or position mode as necessary
-	private boolean setValue(Widget widget, int index, ValueKey key, SetValue value, boolean compactLayout)
+	private int getSavedValue(Widget widget, int index, ValueKey key, boolean useSavedPosition)
 	{
-		int v = value.get(manager.getCurrentLayout(), compactLayout);
-		v = OffsetManager.getTargetOffset(widget, index, key, v, compactLayout, manager, slotManager);
+		if (!useSavedPosition || (key != ValueKey.X && key != ValueKey.Y))
+		{
+			return -1;
+		}
+
+		return manager.getSavedPosition(widget, index, key);
+	}
+
+	private int getValue(Widget widget, int index, ValueKey key, SetValue value, boolean toDefault)
+	{
+		boolean useSavedPosition =
+			!toDefault
+				&& (manager.isCompactLayout()
+				|| (manager.isVanillaCustom() && manager.useSavedPosition(widget, index)));
+
+		CompactOrbsLayout layout =
+			manager.isCompactLayout()
+				? manager.getCurrentLayout()
+				: null;
+
+		int v = useSavedPosition
+			? value.getModified(layout)
+			: value.getOriginal();
+
+		int saved = getSavedValue(widget, index, key, useSavedPosition);
+		if (saved != -1)
+		{
+			return saved;
+		}
+
+		//offsets return fixed mode positions early (not stored in the Orbs enum)
+		if (!toDefault || manager.isFixedMode())
+		{
+			v = OffsetManager.getTargetOffset(widget, index, key, v, manager, slotManager);
+		}
+
+		return v;
+	}
+
+	//the wiki banners container is too big (that's what she said) when the minimap is visible
+	private int adjustValue(Widget widget, int index, ValueKey key, int value, boolean toDefault)
+	{
+		if (!manager.isVanillaCustom() || toDefault)
+		{
+			return value;
+		}
+
+		switch (key)
+		{
+			case Y:
+				if (isWikiContainer(widget)
+					&& manager.getSavedPosition(widget, index, key) == -1)
+				{
+					return value + 10;
+				}
+				break;
+
+			case HEIGHT:
+				if (isWikiContainer(widget))
+				{
+					return value - 20;
+				}
+				break;
+
+			case X_POSITION_MODE:
+				if (isWikiElement(widget))
+				{
+					return WidgetPositionMode.ABSOLUTE_LEFT;
+				}
+				break;
+
+			case Y_POSITION_MODE:
+				if (isWikiElement(widget))
+				{
+					return WidgetPositionMode.ABSOLUTE_TOP;
+				}
+				break;
+		}
+
+		return value;
+	}
+
+	private boolean setValue(Widget widget, int index, ValueKey key, SetValue value, boolean toDefault)
+	{
+		int v = getValue(widget, index, key, value, toDefault);
+		v = adjustValue(widget, index, key, v, toDefault);
 
 		switch (key)
 		{
@@ -174,7 +266,6 @@ public class WidgetManager
 		throw new IllegalStateException("Unhandled ValueKey (" + key + ") for widget: " + widget.getId());
 	}
 
-	//sets a value only if it has changed
 	public boolean updateValue(IntSupplier getter, IntConsumer setter, int value)
 	{
 		if (getter.getAsInt() != value)
@@ -186,15 +277,6 @@ public class WidgetManager
 		return false;
 	}
 
-	private void applyFixedModeValues(Widget widget, TargetWidget target)
-	{
-		if (target == Orbs.STORE_ORB_CONTAINER || target == Orbs.ACTIVITY_ORB_CONTAINER)
-		{
-			widget.setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT);
-		}
-	}
-
-	//set visibility for target widgets, excluding the wiki banner (handled in updateWikiBanner)
 	public void setTargetsHidden(boolean hidden, TargetWidget... widgets)
 	{
 		for (TargetWidget target : widgets)
@@ -208,17 +290,10 @@ public class WidgetManager
 		}
 	}
 
-	//set visibility for a target widget and its children (if they exist), if necessary
 	public void setHidden(TargetWidget target, boolean hidden)
 	{
 		Widget widget = getTargetWidget(target);
 		if (widget == null)
-		{
-			return;
-		}
-
-		if (target == Orbs.GRID_MASTER_ORB_CONTAINER &&
-			widget.getSpriteId() == CompactOrbsConstants.Sprite.WIDGET_INSPECTOR)
 		{
 			return;
 		}
@@ -350,6 +425,11 @@ public class WidgetManager
 	//returns the current visible parent widget
 	public Widget getCurrentParent()
 	{
+		if (manager.isFixedMode())
+		{
+			return getParent(Fixed.ORBS);
+		}
+
 		Widget parent = getParent(Modern.ORBS);
 		if (parent != null && !parent.isHidden())
 		{
@@ -360,7 +440,7 @@ public class WidgetManager
 	}
 
 	//returns the parent widget for the given component ID
-	//can exist and be hidden, so check for visibility
+//can exist and be hidden, so check for visibility
 	public Widget getParent(int componentId)
 	{
 		Widget parent = client.getWidget(componentId);
@@ -374,29 +454,60 @@ public class WidgetManager
 
 	public Widget getMapParent()
 	{
-		int id = manager.isClassicResizable()
-			? Minimap.CLASSIC_MAP_CONTAINER.getComponentId()
-			: Minimap.MODERN_MAP_CONTAINER.getComponentId();
-		return getParent(id);
-	}
-
-	//remove all children from the given component id (if they exist, used for custom children)
-	public void clearChildren(int componentId)
-	{
-		Widget widget = client.getWidget(componentId);
-		if (widget != null)
+		if (manager.isFixedMode())
 		{
-			Widget child = widget.getChild(0);
-			if (child != null)
-			{
-				widget.deleteAllChildren();
-			}
+			return getParent(Fixed.MAP_CONTAINER);
+		}
+		else if (manager.isClassicResizable())
+		{
+			return getParent(Minimap.CLASSIC_MAP_CONTAINER.getComponentId());
+		}
+		else
+		{
+			return getParent(Minimap.MODERN_MAP_CONTAINER.getComponentId());
 		}
 	}
 
-	public void setDraggable(Widget widget)
+	public Widget getMinimapMask()
 	{
-		widget.setClickMask(DRAG | DRAG_ON);
+		if (manager.isFixedMode())
+		{
+			return client.getWidget(Fixed.MINIMAP_MASK);
+		}
+		else if (manager.isClassicResizable())
+		{
+			return client.getWidget(Classic.MINIMAP_MASK);
+		}
+		else
+		{
+			return client.getWidget(Modern.MINIMAP_MASK);
+		}
+	}
+
+	public void clearChild(Widget child)
+	{
+		if (child == null)
+		{
+			return;
+		}
+
+		Widget widget = child.getParent();
+		if (widget == null)
+		{
+			return;
+		}
+
+		Widget[] children = widget.getChildren();
+		if (children == null || children.length <= child.getIndex() || children[child.getIndex()] != child)
+		{
+			log.debug("no child found that matched: {}={}[{}]", child, child.getId(), child.getIndex());
+			return;
+		}
+
+		log.debug("clearing child: {}({}), on parent={}({}), at index={}",
+			child, child.getId(), widget, widget.getId(), child.getIndex());
+
+		children[child.getIndex()] = null;
 	}
 
 	public Widget createHandler(Widget parent, int x, int y, int width, int height, int xMode, int yMode, boolean noClickThrough)
@@ -444,6 +555,203 @@ public class WidgetManager
 		widget.revalidate();
 	}
 
+	public void removeMinimapRendering()
+	{
+		Widget widget = getMinimapMask();
+		if (widget == null)
+		{
+			return;
+		}
+
+		widget.setType(WidgetType.LAYER);
+		widget.setContentType(0);
+		widget.setSpriteId(-1);
+	}
+
+	public void restoreMinimapRendering()
+	{
+		Widget widget = getMinimapMask();
+		if (widget == null)
+		{
+			return;
+		}
+
+		widget.setType(WidgetType.GRAPHIC);
+		widget.setContentType(MinimapOverlay.MINIMAP_CONTENT);
+		widget.setSpriteId(manager.isFixedMode() ? Sprite.FIXED_MINIMAP_MASK : Sprite.MINIMAP_MASK);
+	}
+
+	public Widget createMinimapButton(Widget parent)
+	{
+		Widget widget = parent.createChild(-1, WidgetType.GRAPHIC)
+			.setOriginalX(5)
+			.setOriginalWidth(Layout.TOGGLE_BUTTON_SIZE)
+			.setOriginalHeight(Layout.TOGGLE_BUTTON_SIZE)
+			.setSpriteId(getSpriteId(!manager.isMinimapHidden()))
+			.setOpacity(Layout.OPACITY)
+			.setHidden(false)
+			.setHasListener(true);
+		widget.revalidate();
+		return widget;
+	}
+
+	public Widget createCompassFrame(Widget parent)
+	{
+		Widget widget = parent.createChild(-1, WidgetType.GRAPHIC)
+			.setOriginalWidth(Layout.COMPASS_FRAME_SIZE)
+			.setOriginalHeight(Layout.COMPASS_FRAME_SIZE)
+			.setSpriteId(Sprite.COMPASS_FRAME)
+			.setOpacity(Layout.OPACITY)
+			.setHidden(false);
+		widget.revalidate();
+		return widget;
+	}
+
+	public Widget createNoClick(Widget parent, Widget child)
+	{
+		Widget widget = parent.createChild(0, WidgetType.LAYER)
+			.setOriginalX(child.getOriginalX())
+			.setOriginalY(child.getOriginalY())
+			.setOriginalWidth(child.getOriginalWidth())
+			.setOriginalHeight(child.getOriginalHeight());
+		widget.setNoClickThrough(true);
+		widget.revalidate();
+		return widget;
+	}
+
+	public Widget createOverlayNoClick(Widget parent, int y, int width, int height)
+	{
+		Widget widget = parent.createChild(-1, WidgetType.LAYER)
+			.setOriginalX(0)
+			.setOriginalY(y)
+			.setOriginalWidth(width)
+			.setOriginalHeight(height)
+			.setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT)
+			.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP);
+		widget.setNoClickThrough(true);
+		return widget;
+	}
+
+	public Widget createOverlayCompass(Widget parent)
+	{
+		Widget widget = parent.createChild(-1, WidgetType.GRAPHIC)
+			.setContentType(MinimapOverlay.COMPASS_CONTENT)
+			.setSpriteId(Sprite.COMPASS_MASK)
+			.setOriginalX(Original.COMPASS_X - (Original.MAP_CONTAINER_WIDTH - MinimapOverlay.CONTAINER_WIDTH))
+			.setOriginalY(Original.COMPASS_Y)
+			.setOriginalWidth(Original.COMPASS_DIMENSION)
+			.setOriginalHeight(Original.COMPASS_DIMENSION)
+			.setXPositionMode(WidgetPositionMode.ABSOLUTE_LEFT)
+			.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP);
+		widget.revalidate();
+		return widget;
+	}
+
+	public Widget createOverlayCompassLayer(Widget parent)
+	{
+		Widget widget = parent.createChild(-1, WidgetType.LAYER)
+			.setOriginalX(Original.COMPASS_X - (Original.MAP_CONTAINER_WIDTH - MinimapOverlay.CONTAINER_WIDTH))
+			.setOriginalY(Original.COMPASS_Y)
+			.setOriginalWidth(Layout.COMPASS_SIZE)
+			.setOriginalHeight(Layout.COMPASS_SIZE);
+		widget.revalidate();
+		return widget;
+	}
+
+	public Widget createOverlayCompassNoClick(Widget parent)
+	{
+		Widget widget = parent.createChild(-1, WidgetType.TEXT)
+			.setXPositionMode(WidgetPositionMode.ABSOLUTE_CENTER)
+			.setYPositionMode(WidgetPositionMode.ABSOLUTE_CENTER)
+			.setWidthMode(WidgetSizeMode.MINUS)
+			.setHeightMode(WidgetSizeMode.MINUS)
+			.setHasListener(true);
+		widget.setNoClickThrough(true);
+		widget.revalidate();
+		return widget;
+	}
+
+	public Widget createOverlayCompassMenuOp(Widget parent)
+	{
+		Widget widget = parent.createChild(-1, WidgetType.TEXT)
+			.setXPositionMode(WidgetPositionMode.ABSOLUTE_CENTER)
+			.setYPositionMode(WidgetPositionMode.ABSOLUTE_CENTER)
+			.setWidthMode(WidgetSizeMode.MINUS)
+			.setHeightMode(WidgetSizeMode.MINUS)
+			.setHasListener(true);
+		widget.setOnOpListener(Script.TOPLEVEL_COMPASS_OP, Script.OPINDEX0);
+		widget.setOnVarTransmitListener(Script.TOPLEVEL_COMPASS_SETOP, Script.COMPONENT0, Script.COMSUBID1);
+		widget.setVarTransmitTrigger(VarPlayer.MAP_FLAGS_CACHED);
+		widget.revalidate();
+		return widget;
+	}
+
+	public Widget createOverlayMinimap(Widget parent)
+	{
+		Widget widget = parent.createChild(-1, WidgetType.GRAPHIC)
+			.setContentType(MinimapOverlay.MINIMAP_CONTENT)
+			.setSpriteId(Sprite.MINIMAP_MASK)
+			.setOriginalX(Original.MINIMAP_X)
+			.setOriginalY(Original.MINIMAP_Y)
+			.setOriginalWidth(Original.MINIMAP_DIMENSION)
+			.setOriginalHeight(Original.MINIMAP_DIMENSION)
+			.setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT)
+			.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP);
+		widget.revalidate();
+		return widget;
+	}
+
+	public Widget createOverlayMinimapFrame(Widget parent)
+	{
+		Widget widget = parent.createChild(-1, WidgetType.GRAPHIC)
+			.setSpriteId(Sprite.MINIMAP_FRAME)
+			.setOriginalWidth(MinimapOverlay.CONTAINER_WIDTH)
+			.setOriginalHeight(MinimapOverlay.CONTAINER_HEIGHT)
+			.setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT)
+			.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP);
+		widget.revalidate();
+		return widget;
+	}
+
+	public Widget createOverlayLogoutXStone(Widget parent, boolean hidden)
+	{
+		Widget widget = parent.createChild(-1, WidgetType.GRAPHIC)
+			.setOriginalX(Original.LOGOUT_X)
+			.setOriginalY(Original.LOGOUT_Y)
+			.setOriginalWidth(Layout.LOGOUT_X_WIDTH)
+			.setOriginalHeight(Layout.LOGOUT_X_HEIGHT)
+			.setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT)
+			.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP)
+			.setHidden(hidden)
+			.setHasListener(true);
+		widget.setAction(0, MenuOp.LOGOUT_OP);
+		widget.setOnOpListener(Script.TOPLEVEL_SIDEBUTTON_OP, Script.OPINDEX0, Enum.TOPLEVEL_COMPONENTS, 10);
+		syncSprite(widget, Modern.LOGOUT_X_STONE);
+		widget.revalidate();
+		return widget;
+	}
+
+	public Widget createOverlayLogoutXIcon(Widget parent, boolean hidden)
+	{
+		Widget widget = parent.createChild(-1, WidgetType.GRAPHIC)
+			.setOriginalX(Original.LOGOUT_X)
+			.setOriginalY(Original.LOGOUT_Y)
+			.setOriginalWidth(Layout.LOGOUT_X_WIDTH)
+			.setOriginalHeight(Layout.LOGOUT_X_HEIGHT)
+			.setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT)
+			.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP)
+			.setSpriteId(Sprite.LOGOUT_X_BUTTON)
+			.setHidden(hidden)
+			.setOpacity(100);
+		widget.revalidate();
+		return widget;
+	}
+
+	public int getSpriteId(boolean hidden)
+	{
+		return hidden ? Sprite.VISIBLE : Sprite.HIDDEN;
+	}
+
 	public void syncSprite(Widget target, int componentId)
 	{
 		if (target == null)
@@ -464,14 +772,27 @@ public class WidgetManager
 		}
 	}
 
+	private boolean isWikiContainer(Widget widget)
+	{
+		return widget.getId() == Orbs.WIKI_ICON_CONTAINER.getComponentId() &&
+			widget.getIndex() == Orbs.WIKI_ICON_CONTAINER.getArrayId();
+	}
+
+	private boolean isWikiElement(Widget widget)
+	{
+		return (widget.getId() == Orbs.WIKI_PLUGIN_ICON.getComponentId() &&
+			widget.getIndex() == Orbs.WIKI_PLUGIN_ICON.getArrayId()) ||
+
+			(widget.getId() == Orbs.WIKI_VANILLA_CONTAINER.getComponentId() &&
+				widget.getIndex() == Orbs.WIKI_VANILLA_CONTAINER.getArrayId()) ||
+
+			(widget.getId() == Orbs.WIKI_VANILLA_ICON.getComponentId() &&
+				widget.getIndex() == Orbs.WIKI_VANILLA_ICON.getArrayId());
+	}
+
 	//check if a target widget should be updated based on script id (or FORCE_UPDATE)
 	private boolean shouldUpdateTarget(TargetWidget target, int scriptId)
 	{
 		return (scriptId == Script.FORCE_UPDATE) || target.getScriptId() == scriptId;
-	}
-
-	public boolean exists(Widget child, Widget parent)
-	{
-		return child != null && child.getParentId() == parent.getId();
 	}
 }

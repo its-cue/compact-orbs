@@ -31,12 +31,10 @@ import com.compactorbs.CompactOrbsConfig.TogglePlacement;
 import com.compactorbs.CompactOrbsConfig.VerticalAnchor;
 import com.compactorbs.CompactOrbsConstants.ConfigGroup;
 import com.compactorbs.CompactOrbsConstants.ConfigKeys;
-import com.compactorbs.CompactOrbsConstants.Enum;
 import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsConstants.MenuOp;
 import com.compactorbs.CompactOrbsConstants.Script;
 import com.compactorbs.CompactOrbsConstants.Sprite;
-import com.compactorbs.CompactOrbsConstants.VarPlayer;
 import com.compactorbs.CompactOrbsConstants.Varbit;
 import com.compactorbs.CompactOrbsConstants.VarbitValue;
 import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
@@ -55,8 +53,6 @@ import com.compactorbs.widget.layout.OrbToggle;
 import com.compactorbs.widget.layout.edit.Binding;
 import com.compactorbs.widget.layout.edit.BindingManager;
 import com.compactorbs.widget.layout.edit.drag.DragState;
-import com.compactorbs.widget.layout.slot.Slot;
-import com.compactorbs.widget.layout.slot.SlotConfig;
 import com.compactorbs.widget.layout.slot.SlotManager;
 import java.util.HashMap;
 import java.util.Map;
@@ -78,7 +74,6 @@ import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetPositionMode;
 import net.runelite.api.widgets.WidgetSizeMode;
-import net.runelite.api.widgets.WidgetType;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatColorType;
 import net.runelite.client.chat.ChatMessageBuilder;
@@ -122,116 +117,82 @@ public class CompactOrbsManager
 	@Inject
 	private BindingManager bindingManager;
 
+	public boolean isUpdatingProfile;
 	public boolean isEditingLayout;
-
-	private int previousParentId = -1;
-
-	//flags for shutdown, otherwise synced to the corresponding config state
 	public boolean hideWorldMap;
 	public boolean hideLogoutX;
 	public boolean enableNoClickThrough;
-
-	//limit the warning message from potentially being spammy
 	public boolean hasSeenWikiWarning;
+	public boolean isLoggingIn;
+	public boolean isCutsceneActive;
+	public boolean detachedMinimapParentIsReady;
 
-	//flag for the first "logged in" game state
-	public boolean initialLoginPending;
-
-	//update flag for the custom widgets
-	public boolean pendingChildrenUpdate;
-
-	//minimap overlay flag, when layer is ready for children
-	public boolean pendingMinimapOverlayChildren;
-
-	public boolean updateFixedMode;
-
-	//custom widgets created when in compact layout
 	public Widget compassFrame;
-	private Widget minimapButton;
+	public Widget minimapButton;
+	private Widget overlayCompass;
+	private Widget overlayCompassLayer;
+	private Widget overlayCompassNoClick;
+	private Widget overlayCompassMenuOp;
+	private Widget overlayMinimap;
+	private Widget overlayMinimapFrame;
 	private Widget overlayLogoutXStone;
 	private Widget overlayLogoutXIcon;
+	private final Map<TargetWidget, Widget> noClickThroughChildren = new HashMap<>();
 
 	private final Map<String, OrbToggle> hideByConfigMap = new HashMap<>();
 	private final Map<Integer, OrbToggle> hideByScriptMap = new HashMap<>();
 	public final Map<TargetWidget, OrbToggle> toggleByTarget = new HashMap<>();
 
-	public void init(int scriptId)
+	//update on startup, onWidgetLoaded, and onScriptPostFired
+	public void update(int scriptId)
 	{
 		updateWikiBannerVisibility(config.hideWiki());
-
-		updateOrbByScript(scriptId);
-
-		if (isFixedMode())
-		{
-			if (updateFixedMode)
-			{
-				widgetManager.setHidden(MinimapOverlay.UNIVERSE, true);
-				widgetManager.remapTargets(false, Script.FORCE_UPDATE, Orbs.values());
-				updateNoClickThrough();
-				setupMinimapContainer(false);
-				updateFixedMode = false;
-			}
-			return;
-		}
-
-		build(scriptId);
-	}
-
-	private void build(int scriptId)
-	{
+		hideOrbByScript(scriptId);
 		createCustomChildren();
 
 		if (scriptId == Script.FORCE_UPDATE)
 		{
-			setupMinimapContainer(isMinimapHidden() && !isMinimapMinimized());
-			widgetManager.setTargetsHidden((isMinimapHidden() && isCompassHidden()), Compass.values());
-			widgetManager.remapTargets(isMinimapHidden(), Script.FORCE_UPDATE, Compass.values());
-			widgetManager.remapTargets(isMinimapHidden(), Script.FORCE_UPDATE, Orbs.values());
-		}
-		else
-		{
-			widgetManager.remapTargets(isMinimapHidden(), scriptId, Orbs.values());
-		}
-
-		updateCustomChildren(pendingChildrenUpdate || scriptId == Script.FORCE_UPDATE);
-		updateNoClickThrough();
-	}
-
-	public void updateLayout(boolean compact)
-	{
-		if (isFixedMode())
-		{
-			widgetManager.setHidden(MinimapOverlay.UNIVERSE, true);
-			widgetManager.remapTargets(false, Script.FORCE_UPDATE, Orbs.values());
-			updateNoClickThrough();
-			setupMinimapContainer(false);
+			rebuildLayout();
 			return;
 		}
 
-		setupMinimapContainer(compact);
-		setupOrbsContainer();
-		widgetManager.remapTargets(compact, Script.FORCE_UPDATE, Compass.values());
-		widgetManager.remapTargets(compact, Script.FORCE_UPDATE, Orbs.values());
-		widgetManager.setTargetsHidden((compact && isCompassHidden()), Compass.values());
-		updateCustomChildren(true);
+		widgetManager.remapTargetsByScriptId(scriptId, Orbs.values());
 		updateNoClickThrough();
-
-		if (!isClassicResizable())
-		{
-			widgetManager.revalidate(Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
-		}
-		widgetManager.revalidate(Orbs.WORLD_MAP_CONTAINER);
 	}
 
-	public void reset()
+	//rebuild the layout from state/config
+	public void rebuildLayout()
+	{
+		updateCustomChildren();
+
+		if (isFixedMode())
+		{
+			widgetManager.setHidden(MinimapOverlay.UNIVERSE, true);
+			widgetManager.remapTargets(Orbs.values());
+			updateNoClickThrough();
+			return;
+		}
+
+		setupMinimapContainer(false);
+		widgetManager.setTargetsHidden(isCompactLayout() && isCompassHidden(), Compass.values());
+		widgetManager.remapTargets(Compass.values());
+		widgetManager.remapTargets(Orbs.values());
+		updateNoClickThrough();
+
+		if (!isClassicResizable() && !isFixedMode())
+		{
+			hideLogout();
+		}
+	}
+
+	//clear anything that can persist during runtime
+	private void clearRuntimeState()
 	{
 		hasSeenWikiWarning = false;
-		pendingChildrenUpdate = false;
 		hideWorldMap = false;
 		hideLogoutX = false;
 		enableNoClickThrough = false;
-
-		editLayout.cancelEditMode();
+		isUpdatingProfile = false;
 
 		bindingManager.clear();
 		hideByConfigMap.clear();
@@ -239,14 +200,47 @@ public class CompactOrbsManager
 		toggleByTarget.clear();
 
 		slotManager.reset();
+	}
+
+	//only called on plugin shutdown
+	public void reset()
+	{
+		if (isEditingLayout)
+		{
+			//save configs on shutdown
+			isUpdatingProfile = false;
+			editLayout.toggleEditMode(false);
+		}
+
+		clearRuntimeState();
+
 		clearCustomChildren();
-		clearMinimapOverlayChildren();
 
 		resetVisibility();
 		resetPositioning();
 		resetNoClickThrough();
+	}
 
-		resetMinimapOverlayContainer();
+	//used for profile swap/full config reset
+	public void rebuild(boolean reset)
+	{
+		if (isEditingLayout)
+		{
+			//do not save configs
+			editLayout.toggleEditMode(false);
+		}
+
+		clearRuntimeState();
+
+		registerOrbsHidden();
+		hideAllOrbsByScript();
+		slotManager.initSlots();
+
+		if (reset)
+		{
+			resetSavedPositionConfigs();
+		}
+		rebuildLayout();
 	}
 
 	private void resetVisibility()
@@ -261,30 +255,22 @@ public class CompactOrbsManager
 	{
 		if (isFixedMode())
 		{
-			widgetManager.remapTargets(false, Script.FORCE_UPDATE, Orbs.WORLD_MAP_CONTAINER);
-		}
-		else if (isCompactLayout())
-		{
-			setupMinimapContainer(false);
-			setupOrbsContainer();
+			widgetManager.remapTargets(true, Script.FORCE_UPDATE, Orbs.WORLD_MAP_CONTAINER);
 		}
 
-		widgetManager.remapTargets(false, Script.FORCE_UPDATE, Orbs.values());
-		widgetManager.remapTargets(false, Script.FORCE_UPDATE, Compass.values());
+		setupMinimapContainer(true);
+
+		widgetManager.remapTargets(true, Script.FORCE_UPDATE, Orbs.values());
+		widgetManager.remapTargets(true, Script.FORCE_UPDATE, Compass.values());
 	}
 
 	private void resetNoClickThrough()
 	{
 		for (TargetWidget orb : Orbs.SWAPPABLE_ORBS)
 		{
-			//reset the orb layers noClickThrough
 			widgetManager.setNoClickThrough(orb.getComponentId(), false);
-
-			//reset the backing/buttons noClickThrough
 			handleVanillaNoClickThrough(orb, false);
-
-			//clear any proxy child that may be remaining
-			widgetManager.clearChildren(orb.getComponentId());
+			widgetManager.clearChild(noClickThroughChildren.remove(orb));
 		}
 	}
 
@@ -292,39 +278,20 @@ public class CompactOrbsManager
 	public void onMinimapToggle()
 	{
 		saveConfig(ConfigKeys.MINIMAP, !isMinimapHidden());
-
-		clientThread.invokeLater(() ->
-		{
-			setupMinimapContainer(isMinimapHidden());
-			setupOrbsContainer();
-
-			if (!isClassicResizable())
-			{
-				updateLogoutX();
-			}
-
-			widgetManager.remapTargets(isMinimapHidden(), Script.FORCE_UPDATE, Compass.values());
-			widgetManager.remapTargets(isMinimapHidden(), Script.FORCE_UPDATE, Orbs.values());
-			widgetManager.setTargetsHidden(isMinimapHidden() && isCompassHidden(), Compass.values());
-			updateNoClickThrough();
-			updateCustomChildren(true);
-		});
+		rebuildLayout();
 	}
 
-	public void setupMinimapContainer(boolean compactLayout)
+	public void setupMinimapContainer(boolean toDefault)
 	{
-		widgetManager.remapTargets(compactLayout, Script.FORCE_UPDATE, Minimap.CONTAINERS);
-		widgetManager.setTargetsHidden(compactLayout, Minimap.COMPONENTS);
+		widgetManager.setTargetsHidden(!toDefault && isCompactLayout(), Minimap.COMPONENTS);
+		widgetManager.remapTargets(toDefault, Script.FORCE_UPDATE, Minimap.CONTAINERS);
 		widgetManager.revalidate(Minimap.COMPONENTS);
-	}
 
-	//TODO
-	//Orb.UNIVERSE parent width/height mode seems to cause an issue when setting dimensions
-	//causing the Orbs.UNIVERSE container be set to the dimensions of the tli (GAMEFRAME)
-	//this should alleviate that by setting the size temporarily until restored by a clientscript (clicking a side panel tab, etc)
-	public void setupOrbsContainer()
-	{
-		if (!isFixedMode() && !isMinimapMinimized() && isLoggedIn())
+		//TODO - seems like revalidation causes the width/height issue (on the orbsContainer)
+		//Orb.UNIVERSE parent width/height mode seems to cause an issue when setting dimensions
+		//causing the Orbs.UNIVERSE container be set to the dimensions of the tli (GAMEFRAME)
+		//this should alleviate that by setting the size temporarily until restored by a clientscript (clicking a side panel tab, etc)
+		if (!isFixedMode() && !isMinimapMinimized())
 		{
 			Widget orbsContainer = client.getWidget(Minimap.ORBS_UNIVERSE.getComponentId());
 			Widget parent = client.getWidget((isClassicResizable() ? Minimap.CLASSIC_ORBS_CONTAINER : Minimap.MODERN_ORBS_CONTAINER).getComponentId());
@@ -338,21 +305,25 @@ public class CompactOrbsManager
 
 	public void updateNoClickThrough()
 	{
-		boolean compact = isCompactLayout();
+		if (isFixedMode())
+		{
+			return;
+		}
+
 		boolean noClick = enableNoClickThrough ||
-			config.enableOrbSwapping() && compact && !getCurrentLayout().isCustom();
+			(config.enableOrbSwapping() && isCompactLayout() && !getCurrentLayout().isCustom());
 
 		for (TargetWidget orb : Orbs.SWAPPABLE_ORBS)
 		{
-			widgetManager.setNoClickThrough(orb.getComponentId(), noClick && compact);
+			widgetManager.setNoClickThrough(orb.getComponentId(), noClick && isCompactLayout());
 
-			if (!compact)
+			if (!isCompactLayout())
 			{
 				handleVanillaNoClickThrough(orb, noClick);
 			}
 			else
 			{
-				widgetManager.clearChildren(orb.getComponentId());
+				widgetManager.clearChild(noClickThroughChildren.remove(orb));
 			}
 		}
 	}
@@ -376,19 +347,18 @@ public class CompactOrbsManager
 
 		if (!config.enableNoClickthrough() || !button.isHidden())
 		{
-			widgetManager.clearChildren(layer.getId());
+			widgetManager.clearChild(noClickThroughChildren.remove(target));
 			return;
 		}
 
-		if (layer.getChild(0) == null)
+		Widget noClick = noClickThroughChildren.get(target);
+		if (noClick == null)
 		{
-			Widget noClick = layer.createChild(0, WidgetType.LAYER);
-			noClick.setOriginalX(button.getOriginalX());
-			noClick.setOriginalY(button.getOriginalY());
-			noClick.setOriginalWidth(button.getOriginalWidth());
-			noClick.setOriginalHeight(button.getOriginalHeight());
+			noClick = widgetManager.createNoClick(layer, button);
 			noClick.setNoClickThrough(true);
 			noClick.revalidate();
+
+			noClickThroughChildren.put(target, noClick);
 		}
 	}
 
@@ -443,97 +413,79 @@ public class CompactOrbsManager
 		Widget parent = widgetManager.getCurrentParent();
 		if (parent == null)
 		{
-			clearCustomChildren();
 			return;
 		}
 
-		if (parent.getId() != previousParentId)
+		if (minimapButton != null && minimapButton.getParent() != parent)
 		{
-			clearCustomChildren();
-			previousParentId = parent.getId();
+			minimapButton = null;
 		}
 
-		if (widgetManager.exists(minimapButton, parent))
+		if (minimapButton == null)
 		{
-			return;
-		}
-
-		minimapButton = parent.createChild(0, WidgetType.GRAPHIC);
-		minimapButton.setOriginalWidth(Layout.TOGGLE_BUTTON_SIZE);
-		minimapButton.setOriginalHeight(Layout.TOGGLE_BUTTON_SIZE);
-		minimapButton.setSpriteId(getSpriteId(config.hideMinimap()));
-		minimapButton.setOpacity(Layout.OPACITY);
-		minimapButton.setHidden(false);
-		minimapButton.setHasListener(true);
-		minimapButton.setAction(0, buildToggleOp(isMinimapHidden(), MenuOp.MINIMAP_OP));
-		minimapButton.setOnOpListener(
-			(JavaScriptCallback) e ->
-				onMinimapToggle()
-		);
-		minimapButton.setOnMouseOverListener(
-			(JavaScriptCallback) e ->
-			{
-				if (config.rightClickToggleButtons())
+			minimapButton = widgetManager.createMinimapButton(parent);
+			minimapButton.setAction(MenuOp.OP_INDEX_0, buildToggleOp(isMinimapHidden(), MenuOp.MINIMAP_OP));
+			minimapButton.setOnOpListener(
+				(JavaScriptCallback) e ->
 				{
-					//dont show on hover to distinguish between left / right click
-					return;
+					switch (e.getOp() - 1)
+					{
+						case MenuOp.OP_INDEX_0:
+							if (!isFixedMode())
+							{
+								onMinimapToggle();
+								minimapButton.setSpriteId(widgetManager.getSpriteId(!isMinimapHidden()));
+							}
+							break;
+
+						case MenuOp.EDIT_MODE_OP_INDEX:
+							if (isFixedMode())
+							{
+								editLayout.toggleEditMode(true);
+							}
+							break;
+					}
 				}
-				minimapButton.setOpacity(Layout.OPACITY_HOVER);
-			}
-		);
-		minimapButton.setOnMouseLeaveListener(
-			(JavaScriptCallback) e ->
-				minimapButton.setOpacity(Layout.OPACITY)
-		);
+			);
+			minimapButton.setOnMouseOverListener(
+				(JavaScriptCallback) e ->
+				{
+					minimapButton.setOpacity(Layout.OPACITY_HOVER);
+				}
+			);
+			minimapButton.setOnMouseLeaveListener(
+				(JavaScriptCallback) e ->
+					minimapButton.setOpacity(Layout.OPACITY)
+			);
+		}
 
 		//compass frame moved to the compass container
 		parent = client.getWidget(isClassicResizable() ? Classic.COMPASS_PARENT : Modern.COMPASS_PARENT);
-		if (parent != null)
+		if (parent == null)
 		{
-			compassFrame = parent.createChild(-1, WidgetType.GRAPHIC);
-			compassFrame.setOriginalWidth(Layout.COMPASS_FRAME_SIZE);
-			compassFrame.setOriginalHeight(Layout.COMPASS_FRAME_SIZE);
-			compassFrame.setSpriteId(Sprite.COMPASS_FRAME);
-			compassFrame.setOpacity(Layout.OPACITY);
-			compassFrame.setHidden(false);
-			compassFrame.revalidate();
-		}
-
-		//prevent de-sync
-		pendingChildrenUpdate = true;
-	}
-
-	//handle dynamic widget changes for visibility, positions, sprites, and menu actions for the
-	//compass frame and toggle buttons (logout X being an exception in native minimap hiding)
-	public void updateCustomChildren(boolean shouldUpdate)
-	{
-		//missing children -> create them; prevent updates until all exist
-		if (compassFrame == null || minimapButton == null)
-		{
-			//will trigger pendingChildrenUpdate when custom widgets are created
-			//for the next updateCustomChildren call
-			createCustomChildren();
+			if (compassFrame != null)
+			{
+				compassFrame = null;
+			}
 			return;
 		}
 
-		if (isMinimapMinimized())
+		if (compassFrame != null && compassFrame.getParent() != parent || isFixedMode())
 		{
-			//put logout button back when switching to native hiding
-			widgetManager.remapTargets(false, Script.FORCE_UPDATE, Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
+			compassFrame = null;
 		}
 
-		//make changes when pendingChildrenUpdate (or shouldUpdate = true is passed)
-		if (shouldUpdate)
+		if (compassFrame == null && !isFixedMode())
 		{
-			updateCompassFrameChild();
-			updateMinimapToggleButton();
-
-			//treat minimap overlay as 'custom'
-			updateMinimapOverlayVisibility(false);
-
-			//clear update flag
-			pendingChildrenUpdate = false;
+			compassFrame = widgetManager.createCompassFrame(parent);
 		}
+	}
+
+	public void updateCustomChildren()
+	{
+		updateCompassFrameChild();
+		updateMinimapToggleButton();
+		widgetManager.setHidden(MinimapOverlay.UNIVERSE, hideMinimapOverlay());
 	}
 
 	private void updateCompassFrameChild()
@@ -543,6 +495,7 @@ public class CompactOrbsManager
 			return;
 		}
 
+		log.debug("setting compass frame hidden: {}", !isMinimapHidden() || isCompassHidden() || isMinimapMinimized());
 		compassFrame.setHidden(!isMinimapHidden() || isCompassHidden() || isMinimapMinimized());
 	}
 
@@ -557,54 +510,60 @@ public class CompactOrbsManager
 
 		if (!config.hideMinimapToggle())
 		{
-			minimapButton.setSpriteId(getSpriteId(!isMinimapHidden()));
-			if (!config.rightClickToggleButtons())
+			if (!config.rightClickToggleButtons() || isFixedMode())
 			{
-				minimapButton.setAction(0, buildToggleOp(isMinimapHidden(), MenuOp.MINIMAP_OP));
+				int index = MenuOp.OP_INDEX_0;
+				if (isFixedMode())
+				{
+					index = MenuOp.EDIT_MODE_OP_INDEX;
+				}
+				minimapButton.setAction(
+					index == MenuOp.OP_INDEX_0
+						? MenuOp.EDIT_MODE_OP_INDEX
+						: MenuOp.OP_INDEX_0, "");
+
+				minimapButton.setAction(index,
+					isFixedMode()
+						? buildEditOp(false)
+						: buildToggleOp(isMinimapHidden(), MenuOp.MINIMAP_OP));
 			}
+
 			minimapButton.setNoClickThrough(!config.rightClickToggleButtons());
-			widgetManager.remapTargets(isCompactLayout(), Script.FORCE_UPDATE, Button.MINIMAP_BUTTON_MODERN, Button.MINIMAP_BUTTON_CLASSIC);
+			widgetManager.remapTargets(
+				Button.MINIMAP_BUTTON_MODERN,
+				Button.MINIMAP_BUTTON_CLASSIC,
+				Button.MINIMAP_BUTTON_FIXED
+			);
 		}
 	}
 
 	//clear any created children and reset previous parent id
-	private void clearCustomChildren()
+	void clearCustomChildren()
 	{
-		//clear toggle buttons
-		widgetManager.clearChildren(Modern.ORBS);
-		widgetManager.clearChildren(Classic.ORBS);
+		widgetManager.clearChild(minimapButton);
+		widgetManager.clearChild(compassFrame);
+		widgetManager.clearChild(overlayLogoutXIcon);
+		widgetManager.clearChild(overlayLogoutXStone);
 
-		//clear compass frame
-		widgetManager.clearChildren(Modern.COMPASS_PARENT);
-		widgetManager.clearChildren(Classic.COMPASS_PARENT);
+		//reset & clear the minimap overlay
+		configureMinimapOverlayContainer(false);
+		final Widget parent = client.getWidget(MinimapOverlay.UNIVERSE);
+		if (parent != null)
+		{
+			parent.deleteAllChildren();
+		}
 
-		compassFrame = null;
-		minimapButton = null;
-	}
-
-	private void clearMinimapOverlayChildren()
-	{
+		overlayCompass = null;
+		overlayCompassLayer = null;
+		overlayCompassNoClick = null;
+		overlayCompassMenuOp = null;
+		overlayMinimap = null;
+		overlayMinimapFrame = null;
 		overlayLogoutXStone = null;
 		overlayLogoutXIcon = null;
-	}
 
-	public void updateMinimapOverlayVisibility(boolean configChanged)
-	{
-		widgetManager.setHidden(MinimapOverlay.UNIVERSE, hideMinimapOverlay());
-
-		if (configChanged)
-		{
-			updateLogoutX();
-			updateLogoutXPosition();
-			updateLogoutXOverlay();
-		}
-	}
-
-	//set hooked layer back to default
-	private void resetMinimapOverlayContainer()
-	{
-		configureMinimapOverlayContainer(false);
-		widgetManager.clearChildren(MinimapOverlay.UNIVERSE);
+		minimapButton = null;
+		compassFrame = null;
 	}
 
 	//initial setup for the minimap overlay
@@ -617,8 +576,7 @@ public class CompactOrbsManager
 			return;
 		}
 
-		//don't modify if it already has been modified
-		if (enabled && parent.getXPositionMode() == WidgetPositionMode.ABSOLUTE_RIGHT)
+		if (enabled && overlayMinimap != null)
 		{
 			return;
 		}
@@ -629,7 +587,6 @@ public class CompactOrbsManager
 			parent.setHidden(false);
 		}
 
-		//set layer to be used for the minimap overlay
 		parent.setOriginalWidth(enabled ? Layout.MinimapOverlay.CONTAINER_WIDTH : 0);
 		parent.setOriginalHeight(enabled ? Layout.MinimapOverlay.CONTAINER_HEIGHT : 0);
 		parent.setWidthMode(enabled ? WidgetSizeMode.ABSOLUTE : WidgetSizeMode.MINUS);
@@ -638,8 +595,7 @@ public class CompactOrbsManager
 		parent.setYPositionMode(enabled ? WidgetPositionMode.ABSOLUTE_TOP : WidgetPositionMode.ABSOLUTE_CENTER);
 		parent.revalidate();
 
-		//flagged as ready for children
-		pendingMinimapOverlayChildren = true;
+		detachedMinimapParentIsReady = true;
 	}
 
 	//create necessary widgets for the minimap overlay
@@ -653,101 +609,21 @@ public class CompactOrbsManager
 
 		for (int index = 0; index < Layout.MinimapOverlay.NO_CLICK_Y.length; index++)
 		{
-			final Widget minimapNoClick = parent.createChild(-1, WidgetType.LAYER);
-			minimapNoClick.setOriginalX(0);
-			minimapNoClick.setOriginalY(Layout.MinimapOverlay.NO_CLICK_Y[index]);
-			minimapNoClick.setOriginalWidth(Layout.MinimapOverlay.NO_CLICK_WIDTH[index]);
-			minimapNoClick.setOriginalHeight(Layout.MinimapOverlay.NO_CLICK_HEIGHT[index]);
-			minimapNoClick.setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT);
-			minimapNoClick.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP);
-			minimapNoClick.setNoClickThrough(true);
-			minimapNoClick.revalidate();
+			final Widget mapNoClick = widgetManager.createOverlayNoClick(parent,
+				Layout.MinimapOverlay.NO_CLICK_Y[index],
+				Layout.MinimapOverlay.NO_CLICK_WIDTH[index],
+				Layout.MinimapOverlay.NO_CLICK_HEIGHT[index]
+			);
 		}
 
-		final int compassX = Layout.Original.COMPASS_X - (Layout.Original.MAP_CONTAINER_WIDTH - Layout.MinimapOverlay.CONTAINER_WIDTH);
-
-		final Widget compass = parent.createChild(-1, WidgetType.GRAPHIC);
-		compass.setContentType(Layout.MinimapOverlay.COMPASS_CONTENT);
-		compass.setSpriteId(Sprite.COMPASS_MASK);
-		compass.setOriginalX(compassX);
-		compass.setOriginalY(Layout.Original.COMPASS_Y);
-		compass.setOriginalWidth(Layout.Original.COMPASS_DIMENSION);
-		compass.setOriginalHeight(Layout.Original.COMPASS_DIMENSION);
-		compass.setXPositionMode(WidgetPositionMode.ABSOLUTE_LEFT);
-		compass.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP);
-		compass.revalidate();
-
-		final Widget compassLayer = parent.createChild(-1, WidgetType.LAYER);
-		compassLayer.setOriginalX(compassX);
-		compassLayer.setOriginalY(Layout.Original.COMPASS_Y);
-		compassLayer.setOriginalWidth(Layout.COMPASS_SIZE);
-		compassLayer.setOriginalHeight(Layout.COMPASS_SIZE);
-		compassLayer.revalidate();
-
-		final Widget compassNoClick = compassLayer.createChild(-1, WidgetType.TEXT);
-		compassNoClick.setXPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
-		compassNoClick.setYPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
-		compassNoClick.setWidthMode(WidgetSizeMode.MINUS);
-		compassNoClick.setHeightMode(WidgetSizeMode.MINUS);
-		compassNoClick.setHasListener(true);
-		compassNoClick.setNoClickThrough(true);
-		compassNoClick.revalidate();
-
-		final Widget compassMenuOp = compassLayer.createChild(-1, WidgetType.TEXT);
-		compassMenuOp.setXPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
-		compassMenuOp.setYPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
-		compassMenuOp.setWidthMode(WidgetSizeMode.MINUS);
-		compassMenuOp.setHeightMode(WidgetSizeMode.MINUS);
-		compassMenuOp.setHasListener(true);
-		compassMenuOp.setOnOpListener(Script.TOPLEVEL_COMPASS_OP, Script.OPINDEX0);
-		compassMenuOp.setOnVarTransmitListener(Script.TOPLEVEL_COMPASS_SETOP, Script.COMPONENT0, Script.COMSUBID1);
-		compassMenuOp.setVarTransmitTrigger(VarPlayer.MAP_FLAGS_CACHED);
-		compassMenuOp.revalidate();
-
-		final Widget minimap = parent.createChild(-1, WidgetType.GRAPHIC);
-		minimap.setContentType(Layout.MinimapOverlay.MINIMAP_CONTENT);
-		minimap.setSpriteId(Sprite.MINIMAP_MASK);
-		minimap.setOriginalX(Layout.Original.MINIMAP_X);
-		minimap.setOriginalY(Layout.Original.MINIMAP_Y);
-		minimap.setOriginalWidth(Layout.Original.MINIMAP_DIMENSION);
-		minimap.setOriginalHeight(Layout.Original.MINIMAP_DIMENSION);
-		minimap.setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT);
-		minimap.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP);
-		minimap.revalidate();
-
-		final Widget minimapFrame = parent.createChild(-1, WidgetType.GRAPHIC);
-		minimapFrame.setSpriteId(Sprite.MINIMAP_FRAME);
-		minimapFrame.setOriginalWidth(Layout.MinimapOverlay.CONTAINER_WIDTH);
-		minimapFrame.setOriginalHeight(Layout.MinimapOverlay.CONTAINER_HEIGHT);
-		minimapFrame.setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT);
-		minimapFrame.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP);
-		minimapFrame.revalidate();
-
-		overlayLogoutXStone = parent.createChild(-1, WidgetType.GRAPHIC);
-		overlayLogoutXStone.setOriginalX(Layout.Original.LOGOUT_X);
-		overlayLogoutXStone.setOriginalY(Layout.Original.LOGOUT_Y);
-		overlayLogoutXStone.setOriginalWidth(Layout.LOGOUT_X_WIDTH);
-		overlayLogoutXStone.setOriginalHeight(Layout.LOGOUT_X_HEIGHT);
-		overlayLogoutXStone.setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT);
-		overlayLogoutXStone.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP);
-		overlayLogoutXStone.setHidden(hideOverlayLogoutX());
-		overlayLogoutXStone.setHasListener(true);
-		overlayLogoutXStone.setAction(0, MenuOp.LOGOUT_OP);
-		overlayLogoutXStone.setOnOpListener(Script.TOPLEVEL_SIDEBUTTON_OP, Script.OPINDEX0, Enum.TOPLEVEL_COMPONENTS, 10);
-		widgetManager.syncSprite(overlayLogoutXStone, Modern.LOGOUT_X_STONE);
-		overlayLogoutXStone.revalidate();
-
-		overlayLogoutXIcon = parent.createChild(-1, WidgetType.GRAPHIC);
-		overlayLogoutXIcon.setOriginalX(Layout.Original.LOGOUT_X);
-		overlayLogoutXIcon.setOriginalY(Layout.Original.LOGOUT_Y);
-		overlayLogoutXIcon.setOriginalWidth(Layout.LOGOUT_X_WIDTH);
-		overlayLogoutXIcon.setOriginalHeight(Layout.LOGOUT_X_HEIGHT);
-		overlayLogoutXIcon.setXPositionMode(WidgetPositionMode.ABSOLUTE_RIGHT);
-		overlayLogoutXIcon.setYPositionMode(WidgetPositionMode.ABSOLUTE_TOP);
-		overlayLogoutXIcon.setSpriteId(Sprite.LOGOUT_X_BUTTON);
-		overlayLogoutXIcon.setHidden(hideOverlayLogoutX());
-		overlayLogoutXIcon.setOpacity(100);
-		overlayLogoutXIcon.revalidate();
+		overlayCompass = widgetManager.createOverlayCompass(parent);
+		overlayCompassLayer = widgetManager.createOverlayCompassLayer(parent);
+		overlayCompassNoClick = widgetManager.createOverlayCompassNoClick(overlayCompassLayer);
+		overlayCompassMenuOp = widgetManager.createOverlayCompassMenuOp(overlayCompassLayer);
+		overlayMinimap = widgetManager.createOverlayMinimap(parent);
+		overlayMinimapFrame = widgetManager.createOverlayMinimapFrame(parent);
+		overlayLogoutXStone = widgetManager.createOverlayLogoutXStone(parent, hideOverlayLogoutX());
+		overlayLogoutXIcon = widgetManager.createOverlayLogoutXIcon(parent, hideOverlayLogoutX());
 	}
 
 	public void setupMinimapOverlay()
@@ -755,10 +631,10 @@ public class CompactOrbsManager
 		configureMinimapOverlayContainer(true);
 		clientThread.invokeLater(() ->
 		{
-			if (pendingMinimapOverlayChildren)
+			if (detachedMinimapParentIsReady)
 			{
 				createMinimapOverlayChildren();
-				pendingMinimapOverlayChildren = false;
+				detachedMinimapParentIsReady = false;
 				return true;
 			}
 			return false;
@@ -800,11 +676,6 @@ public class CompactOrbsManager
 			return false;
 		}
 		return (container.getDynamicChildren() != null && container.getDynamicChildren().length > 0);
-	}
-
-	private int getSpriteId(boolean hidden)
-	{
-		return hidden ? Sprite.VISIBLE : Sprite.HIDDEN;
 	}
 
 	public String buildEditOp(boolean hidden)
@@ -854,37 +725,40 @@ public class CompactOrbsManager
 		}
 		else if (widget == minimapButton)
 		{
-			if (config.rightClickToggleButtons() && !isEditingLayout)
+			if (!isFixedMode())
 			{
-				entry
-					.setOption(buildToggleOp(isMinimapHidden(), MenuOp.MINIMAP_OP))
-					.setType(MenuAction.CC_OP_LOW_PRIORITY)
-					.setDeprioritized(true);
-			}
-
-			if (isCompactLayout())
-			{
-				if (config.showToggleOnMinimapButton())
+				if (!isEditingLayout)
 				{
-					menu.createMenuEntry(-2)
-						.setOption(buildToggleOp(!config.showMinimapInCompactView(), MenuOp.DETACHED_OP))
-						.setDeprioritized(config.rightClickToggleButtons() || isEditingLayout)
-						.setType(MenuAction.RUNELITE_LOW_PRIORITY)
-						.onClick(e ->
-							saveConfig(ConfigKeys.ENABLE_MINIMAP_OVERLAY, !config.showMinimapInCompactView())
-						);
+					if (config.rightClickToggleButtons())
+					{
+						entry
+							.setOption(buildToggleOp(isMinimapHidden(), MenuOp.MINIMAP_OP))
+							.setType(MenuAction.CC_OP_LOW_PRIORITY)
+							.setDeprioritized(true);
+					}
+
+					if (isMinimapHidden() && config.showToggleOnMinimapButton())
+					{
+						menu.createMenuEntry(-2)
+							.setOption(buildToggleOp(!config.showMinimapInCompactView(), MenuOp.DETACHED_OP))
+							.setDeprioritized(config.rightClickToggleButtons())
+							.setType(MenuAction.RUNELITE_LOW_PRIORITY)
+							.onClick(e ->
+								saveConfig(ConfigKeys.ENABLE_MINIMAP_OVERLAY, !config.showMinimapInCompactView())
+							);
+					}
 				}
+
+				int index = isCompactLayout() && config.showToggleOnMinimapButton() ? -3 : -2;
+				menu.createMenuEntry(index)
+					.setOption(buildEditOp(false))
+					.setForceLeftClick(false)
+					.setDeprioritized(config.rightClickToggleButtons())
+					.setType(MenuAction.RUNELITE_LOW_PRIORITY)
+					.onClick(e ->
+						editLayout.toggleEditMode(true)
+					);
 			}
-
-			int index = isCompactLayout() && config.showToggleOnMinimapButton() ? -3 : -2;
-
-			menu.createMenuEntry(index)
-				.setOption(buildEditOp(isEditingLayout))
-				.setDeprioritized(config.rightClickToggleButtons())
-				.setType(isEditingLayout ? MenuAction.RUNELITE_LOW_PRIORITY : MenuAction.RUNELITE)
-				.onClick(e ->
-					editLayout.toggleEditMode(!isEditingLayout)
-				);
 		}
 	}
 
@@ -902,12 +776,12 @@ public class CompactOrbsManager
 	public boolean isClassicResizable()
 	{
 		Widget parent = widgetManager.getCurrentParent();
-		if (parent == null)
+		if (parent == null || isFixedMode())
 		{
 			return false;
 		}
 
-		return parent.getId() != Modern.ORBS;
+		return parent.getId() == Classic.ORBS;
 	}
 
 	public boolean isLoggedIn()
@@ -918,6 +792,16 @@ public class CompactOrbsManager
 	public boolean isCompactLayout()
 	{
 		return !isFixedMode() && isMinimapHidden() && !isMinimapMinimized();
+	}
+
+	public boolean isCustomLayout()
+	{
+		return getCurrentLayout().isCustom() && isCompactLayout();
+	}
+
+	public boolean isVanillaCustom()
+	{
+		return !config.enableOrbSwapping() && !isCompactLayout() && !isMinimapMinimized();
 	}
 
 	public boolean isAnchorLeft()
@@ -947,6 +831,11 @@ public class CompactOrbsManager
 
 	public boolean isMinimapHidden()
 	{
+		if (isFixedMode())
+		{
+			return false;
+		}
+
 		return config.hideMinimap();
 	}
 
@@ -985,7 +874,7 @@ public class CompactOrbsManager
 		return config.hideMinimapToggle();
 	}
 
-	private boolean hideMinimapOverlay()
+	boolean hideMinimapOverlay()
 	{
 		return !(isMinimapOverlayEnabled() && isMinimapHidden() && !isMinimapMinimized()) || isFixedMode();
 	}
@@ -996,7 +885,7 @@ public class CompactOrbsManager
 	}
 
 	//prevent unintended state changes for the logout-x since it is treated as a side icon/stone, i.e. don't unhide when it should be hidden
-	public void updateLogoutX()
+	public void hideLogout()
 	{
 		if (isFixedMode() || isMinimapMinimized())
 		{
@@ -1016,8 +905,7 @@ public class CompactOrbsManager
 		{
 			return;
 		}
-
-		widgetManager.remapTargets(isCompactLayout(), Script.FORCE_UPDATE, Orbs.LOGOUT_X_STONE, Orbs.LOGOUT_X_ICON);
+		widgetManager.remapTargets(Orbs.LOGOUT_X_STONE, Orbs.LOGOUT_X_ICON);
 	}
 
 	public void updateLogoutXOverlay()
@@ -1094,9 +982,21 @@ public class CompactOrbsManager
 		return client.getVarbitValue(Varbit.MINIMAP_TOGGLE) == VarbitValue.MINIMAP_MINIMIZED;
 	}
 
-	public boolean isCutsceneActive()
+	public boolean getCutsceneStatus()
 	{
 		return client.getVarbitValue(Varbit.CUTSCENE_STATUS) == VarbitValue.CUTSCENE_ACTIVE;
+	}
+
+	public int getLayoutXOffset()
+	{
+		return isCompactLayout() && isAnchorRight()
+			? getCurrentLayout().getRightOffset() : 0;
+	}
+
+	public int getLayoutYOffset()
+	{
+		return isCompactLayout() && isAnchorBottom()
+			? getCurrentLayout().getBottomOffset() : 0;
 	}
 
 	public int clampVerticalY()
@@ -1137,6 +1037,11 @@ public class CompactOrbsManager
 		}
 
 		return y;
+	}
+
+	public boolean isHideConfig(String key)
+	{
+		return hideByConfigMap.containsKey(key);
 	}
 
 	enum UpdateType
@@ -1182,7 +1087,7 @@ public class CompactOrbsManager
 		}
 	}
 
-	public void registerOrbToggleEntries()
+	public void registerOrbsHidden()
 	{
 		registerOrbToggle(ConfigKeys.HIDE_HP, config::hideHp, UpdateType.BOTH,
 			"HP orb",
@@ -1238,9 +1143,10 @@ public class CompactOrbsManager
 		);
 
 		registerOrbToggle(ConfigKeys.MINIMAP_TOGGLE_BUTTON, config::hideMinimapToggle, UpdateType.CONFIG,
-			"Minimap button",
+			"Button",
 			Button.MINIMAP_BUTTON_CLASSIC,
-			Button.MINIMAP_BUTTON_MODERN
+			Button.MINIMAP_BUTTON_MODERN,
+			Button.MINIMAP_BUTTON_FIXED
 		);
 
 		registerOrbToggle(ConfigKeys.COMPASS, config::hideCompass, UpdateType.CONFIG,
@@ -1250,22 +1156,22 @@ public class CompactOrbsManager
 		);
 	}
 
-	private void updateOrbByScript(int scriptId)
+	private void hideOrbByScript(int scriptId)
 	{
 		if (scriptId == Script.FORCE_UPDATE)
 		{
-			hideByConfigMap.values().forEach(this::updateOrb);
+			hideByConfigMap.values().forEach(this::hideOrb);
 			return;
 		}
 
 		OrbToggle toggle = hideByScriptMap.get(scriptId);
 		if (toggle != null)
 		{
-			updateOrb(toggle);
+			hideOrb(toggle);
 		}
 	}
 
-	private void updateOrb(OrbToggle toggle)
+	private void hideOrb(OrbToggle toggle)
 	{
 		if (toggle.key.equals(ConfigKeys.HIDE_LOGOUT_X) ||
 			toggle.key.equals(ConfigKeys.HIDE_WORLD) ||
@@ -1285,23 +1191,25 @@ public class CompactOrbsManager
 		);
 	}
 
-	//apply toggle setting to orbs based on the config key in onConfigChanged
-	public void updateOrbByConfig(String key)
+	public void hideAllOrbsByScript()
 	{
-		if (isEditingLayout || key.equals(ConfigKeys.COMPASS))
+		hideByConfigMap.keySet().forEach(this::hideOrbByConfig);
+	}
+
+	public void hideOrbByConfig(String key)
+	{
+		if (isUpdatingProfile || isEditingLayout || key.equals(ConfigKeys.COMPASS))
 		{
 			return;
 		}
 
-		//world map config handling for onConfigChanged
 		switch (key)
 		{
 			case ConfigKeys.HIDE_WORLD:
 				hideWorldMap = config.hideWorld();
-				widgetManager.remapTarget(Orbs.WORLD_MAP_CONTAINER, isMinimapHidden() && !isFixedMode());
+				widgetManager.remapTargets(Orbs.WORLD_MAP_CONTAINER);
 				break;
 
-			//wiki banner config handling for onConfigChanged
 			case ConfigKeys.HIDE_WIKI:
 				updateWikiBannerVisibility(config.hideWiki());
 				warnWikiPluginConflict();
@@ -1318,41 +1226,28 @@ public class CompactOrbsManager
 				hideLogoutX = config.hideLogout();
 				if (!isClassicResizable())
 				{
-					updateLogoutX();
+					hideLogout();
 					updateLogoutXPosition();
 				}
 				break;
 
 			default:
 				OrbToggle toggle = hideByConfigMap.get(key);
-				if (toggle != null)
-				{
-					widgetManager.setTargetsHidden(
-						toggle.hidden.get(),
-						toggle.targets
-					);
+				widgetManager.setTargetsHidden(
+					toggle.hidden.get(),
+					toggle.targets
+				);
 
-					//update the minimap toggle button when hiding/showing store orb,
-					//while minimap is hidden, and button position is below map
-					if (key.equals(ConfigKeys.HIDE_STORE)
-						&& config.minimapTogglePlacement() == TogglePlacement.BELOW_MAP
-						&& !isMinimapHidden()
-						&& isLoggedIn())
-					{
-						updateMinimapToggleButton();
-					}
+				//update the minimap toggle button when hiding/showing store orb,
+				//while minimap is hidden, and button position is below map
+				if (key.equals(ConfigKeys.HIDE_STORE)
+					&& config.minimapTogglePlacement() == TogglePlacement.BELOW_MAP
+					&& !isMinimapHidden()
+					&& isLoggedIn())
+				{
+					updateMinimapToggleButton();
 				}
 				break;
-		}
-	}
-
-	//update a slots config for the passed widget value @SlotManager
-	public void updateConfigForSlot(Slot key, TargetWidget value, SlotManager.SlotLayoutMode layout)
-	{
-		SlotConfig entry = key.getSlotConfigMap().get(layout);
-		if (entry != null && entry.getConfigKey() != null)
-		{
-			saveConfig(entry.getConfigKey(), value);
 		}
 	}
 
@@ -1414,66 +1309,112 @@ public class CompactOrbsManager
 			.build());
 	}
 
-	public void resetCustomPositionForTarget(Binding binding, boolean remap)
+	public boolean useSavedPosition(Widget widget, int index)
 	{
-		clearCustomPosition(binding.getModern());
-		clearCustomPosition(binding.getClassic());
-
-		if (!remap)
+		if (isCompactLayout() || config.enableOrbSwapping())
 		{
-			return;
+			return false;
 		}
 
-		TargetWidget target = binding.get(isClassicResizable());
-		if (target == null)
+		if (widget == null)
 		{
-			return;
+			return false;
 		}
 
-		resetCustomPosition(binding, target);
+		for (TargetWidget[] targets : EditLayout.EDIT_TARGETS)
+		{
+			boolean classic = targets.length > 1 && isClassicResizable() && targets[1] != null;
+			boolean fixed = targets.length > 2 && isFixedMode() && targets[2] != null;
+
+			final TargetWidget target =
+				fixed ? targets[2] : classic ? targets[1] : targets[0];
+
+			if (editLayout.blockEditing(target))
+			{
+				continue;
+			}
+
+			if (widget.getId() == target.getComponentId()
+				&& index == target.getArrayId())
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
-	private void clearCustomPosition(TargetWidget target)
+	public void resetTargetsSavedPosition(Binding binding, boolean remap)
+	{
+		if (isFixedMode())
+		{
+			clearSavedPosition(binding.getFixed());
+			if (binding.getFixed() == null)
+			{
+				clearSavedPosition(binding.getModern());
+			}
+		}
+		else
+		{
+			clearSavedPosition(binding.getModern());
+			clearSavedPosition(binding.getClassic());
+		}
+
+		if (remap)
+		{
+			TargetWidget target = binding.get(this);
+			if (target == null)
+			{
+				return;
+			}
+
+			widgetManager.remapTargets(target);
+
+			Widget bound = widgetManager.getTargetWidget(target);
+			if (bound != null)
+			{
+				Widget handler = binding.getHandler();
+				if (handler != null)
+				{
+					int x = editLayout.setHandlerX(bound, handler.getParent());
+					int y = editLayout.setHandlerY(bound, handler.getParent());
+
+					binding.getHandler().setOriginalX(x);
+					binding.getHandler().setOriginalY(y);
+					binding.getHandler().revalidate();
+
+					if (binding.getRelated() != null)
+					{
+						Widget related = widgetManager.getTargetWidget(binding.getRelated());
+						related.setOriginalX(x);
+						related.setOriginalY(y);
+						related.revalidate();
+					}
+				}
+			}
+		}
+	}
+
+	private void clearSavedPosition(TargetWidget target)
 	{
 		if (target == null)
 		{
 			return;
 		}
 
-		String x = getCustomLayoutKey(target, ValueKey.X);
-		String y = getCustomLayoutKey(target, ValueKey.Y);
+		String x = getSavedKey(target, ValueKey.X);
+		String y = getSavedKey(target, ValueKey.Y);
 
 		configManager.unsetConfiguration(ConfigGroup.GROUP_NAME, x);
 		configManager.unsetConfiguration(ConfigGroup.GROUP_NAME, y);
 	}
 
-	private void resetCustomPosition(Binding binding, TargetWidget target)
-	{
-		widgetManager.remapTarget(target, true);
-
-		Widget bound = widgetManager.getTargetWidget(target);
-		if (bound != null)
-		{
-			binding.getHandler().setOriginalX(bound.getOriginalX());
-			binding.getHandler().setOriginalY(bound.getOriginalY());
-			binding.getHandler().revalidate();
-
-			if (binding.getRelated() != null)
-			{
-				Widget related = widgetManager.getTargetWidget(binding.getRelated());
-				related.setOriginalX(bound.getOriginalX());
-				related.setOriginalY(bound.getOriginalY());
-				related.revalidate();
-			}
-		}
-	}
-
 	//remap should only be false for profile swaps / full config resets
-	public void resetAllCustomPositions(boolean remap)
+	public void resetAllSavedPositions(boolean remap)
 	{
 		for (Binding binding : bindingManager.all())
 		{
-			resetCustomPositionForTarget(binding, remap);
+			resetTargetsSavedPosition(binding, remap);
 		}
 
 		if (!remap)
@@ -1483,14 +1424,63 @@ public class CompactOrbsManager
 		}
 	}
 
-	public int getCustomPosition(int componentId, int index, ValueKey key)
+	public void resetSavedPositionConfigs()
 	{
-		String configKey = buildCustomLayoutKey(componentId, index, key);
+		String[] prefixes =
+			{
+				ConfigKeys.CUSTOM_LAYOUT_PREFIX,
+				ConfigKeys.VANILLA_LAYOUT_PREFIX,
+				ConfigKeys.FIXED_LAYOUT_PREFIX
+			};
+
+		for (TargetWidget[] targets : EditLayout.EDIT_TARGETS)
+		{
+			for (TargetWidget target : targets)
+			{
+				if (target == null)
+				{
+					continue;
+				}
+
+				for (String prefix : prefixes)
+				{
+					configManager.unsetConfiguration(ConfigGroup.GROUP_NAME,
+						buildSavedKey(prefix, target.getComponentId(), target.getArrayId(), ValueKey.X));
+
+					configManager.unsetConfiguration(ConfigGroup.GROUP_NAME,
+						buildSavedKey(prefix, target.getComponentId(), target.getArrayId(), ValueKey.Y));
+				}
+			}
+		}
+	}
+
+	public int getSavedPosition(Widget widget, int index, ValueKey key)
+	{
+		if ((isCompactLayout() && !getCurrentLayout().isCustom()))
+		{
+			return -1;
+		}
+		else if (widget.getId() == Orbs.WORLD_MAP_CONTAINER.getComponentId())
+		{
+			if (hideWorldMap)
+			{
+				return -1;
+			}
+		}
+		else if (widget.getId() == Orbs.LOGOUT_X_ICON.getComponentId())
+		{
+			if (hideLogoutX)
+			{
+				return -1;
+			}
+		}
+
+		String configKey = buildSavedKey(getCurrentPrefix(), widget.getId(), index, key);
 		Integer value = configManager.getConfiguration(ConfigGroup.GROUP_NAME, configKey, Integer.class);
 		return value != null ? value : -1;
 	}
 
-	public void saveCustomPosition(Widget bound, Binding binding)
+	public void saveCurrentLayoutPosition(Widget bound, Binding binding)
 	{
 		if (bound == null || binding == null)
 		{
@@ -1500,40 +1490,48 @@ public class CompactOrbsManager
 		int x = bound.getOriginalX();
 		int y = bound.getOriginalY();
 
-		if (binding.getModern() != null)
+		if (isFixedMode())
 		{
-			saveCustomPosition(binding.getModern(), x, y);
-
-			if (binding.getClassic() != null)
+			savePosition(binding.getFixed(), x, y);
+			if (binding.getFixed() == null)
 			{
-				saveCustomPosition(binding.getClassic(), x, y);
+				savePosition(binding.getModern(), x, y);
 			}
+			return;
+		}
 
-			if (binding.getRelated() != null)
-			{
-				saveCustomPosition(binding.getRelated(), x, y);
-			}
+		savePosition(binding.getModern(), x, y);
+		savePosition(binding.getClassic(), x, y);
+		savePosition(binding.getRelated(), x, y);
+	}
+
+	private void savePosition(TargetWidget target, int x, int y)
+	{
+		if (target != null)
+		{
+			saveConfig(getSavedKey(target, com.compactorbs.util.ValueKey.X), x);
+			saveConfig(getSavedKey(target, com.compactorbs.util.ValueKey.Y), y);
 		}
 	}
 
-	private void saveCustomPosition(TargetWidget target, int x, int y)
-	{
-		saveConfig(getCustomLayoutKey(target, ValueKey.X), x);
-		saveConfig(getCustomLayoutKey(target, ValueKey.Y), y);
-	}
-
-	private String buildCustomLayoutKey(int componentId, int index, ValueKey key)
-	{
-		String suffix = key == ValueKey.X ? "_x" : "_y";
-		String id = componentId + "_" + index;
-		return ConfigKeys.CUSTOM_LAYOUT_PREFIX + id + suffix;
-	}
-
-	private String getCustomLayoutKey(TargetWidget target, ValueKey key)
+	private String getSavedKey(TargetWidget target, ValueKey key)
 	{
 		int id = target.getComponentId();
 		int index = target.getArrayId();
-		return buildCustomLayoutKey(id, index, key);
+		return buildSavedKey(getCurrentPrefix(), id, index, key);
+	}
+
+	private String buildSavedKey(String prefix, int componentId, int index, ValueKey key)
+	{
+		String suffix = key == com.compactorbs.util.ValueKey.X ? "_x" : "_y";
+		String id = componentId + "_" + index;
+		return prefix + id + suffix;
+	}
+
+	public String getCurrentPrefix()
+	{
+		return isCompactLayout() ? ConfigKeys.CUSTOM_LAYOUT_PREFIX :
+			!isFixedMode() ? ConfigKeys.VANILLA_LAYOUT_PREFIX : ConfigKeys.FIXED_LAYOUT_PREFIX;
 	}
 
 	public <T> void saveConfig(String key, T value)
@@ -1541,7 +1539,7 @@ public class CompactOrbsManager
 		configManager.setConfiguration(ConfigGroup.GROUP_NAME, key, value);
 	}
 
-	public void updateConfig()
+	public void migrateConfigs()
 	{
 		Integer version = configManager.getConfiguration(
 			ConfigGroup.GROUP_NAME, ConfigKeys.CONFIG_VERSION, Integer.class);

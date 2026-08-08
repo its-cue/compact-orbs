@@ -84,7 +84,7 @@ public class WikiContainerOffset implements OffsetTarget
 			if (manager.allowReordering() && !manager.isEditingLayout)
 			{
 				if (manager.isAnchorTop()
-					&& manager.getCurrentLayout().isLastVisible(Slot.WIKI_SLOT, slotManager.getHiddenCountAbove(Orbs.WIKI_ICON_CONTAINER)))
+					&& manager.getCurrentLayout().isLastVisible(Slot.WIKI_SLOT, slotManager.getHiddenCountAbove()))
 				{
 					y += 3;
 				}

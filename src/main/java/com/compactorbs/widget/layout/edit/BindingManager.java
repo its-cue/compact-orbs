@@ -40,9 +40,9 @@ public class BindingManager
 	private final Map<Widget, Binding> handlerBindings = new IdentityHashMap<>();
 	private final Set<Binding> bindings = new LinkedHashSet<>();
 
-	public void bind(Widget handler, TargetWidget modern, TargetWidget classic, TargetWidget related, boolean hidden)
+	public void bind(Widget handler, TargetWidget modern, TargetWidget classic, TargetWidget fixed, TargetWidget related, boolean hidden)
 	{
-		Binding binding = new Binding(handler, modern, classic, related, hidden);
+		Binding binding = new Binding(handler, modern, classic, fixed, related, hidden);
 
 		handlerBindings.put(handler, binding);
 		bindings.add(binding);

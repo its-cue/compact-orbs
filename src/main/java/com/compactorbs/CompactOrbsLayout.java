@@ -32,7 +32,6 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import lombok.Getter;
-import net.runelite.api.widgets.Widget;
 
 @Getter
 public enum CompactOrbsLayout
@@ -119,19 +118,6 @@ public enum CompactOrbsLayout
 	{
 		List<Slot> group = getGroup(slot);
 		return hiddenCount == group.indexOf(slot) && hiddenCount > 0;
-	}
-
-	//TODO
-	public int getSlotDimension(Widget widget)
-	{
-		if (isHorizontal() || isHorizontalWide())
-		{
-			return widget.getOriginalWidth();
-		}
-		else
-		{
-			return widget.getOriginalHeight();
-		}
 	}
 
 	public boolean isVertical()

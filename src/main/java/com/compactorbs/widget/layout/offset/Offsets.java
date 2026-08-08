@@ -99,7 +99,8 @@ public enum Offsets
 	),
 	MINIMAP_BUTTON(new MinimapButtonOffset(),
 		Button.MINIMAP_BUTTON_CLASSIC,
-		Button.MINIMAP_BUTTON_MODERN
+		Button.MINIMAP_BUTTON_MODERN,
+		Button.MINIMAP_BUTTON_FIXED
 	);
 
 	private final OffsetTarget offset;
@@ -125,9 +126,9 @@ public enum Offsets
 		}
 	}
 
-	public static Offsets fromWidget(Widget widget, int childIndex)
+	public static Offsets get(Widget widget, int index)
 	{
-		String id = widget.getId() + "_" + childIndex;
+		String id = widget.getId() + "_" + index;
 		return BY_WIDGET_ID.get(id);
 	}
 }

@@ -111,14 +111,14 @@ public enum Minimap implements TargetWidget
 				0
 			),
 			WIDTH, new SetValue(
-				Original.MAP_CONTAINER_WIDTH,
+				Original.ORBS_CONTAINER_WIDTH,
 				Vertical.MAP_CONTAINER_WIDTH,
 				Horizontal.MAP_CONTAINER_WIDTH,
 				HorizontalWide.MAP_CONTAINER_WIDTH,
 				HorizontalWide.MAP_CONTAINER_WIDTH//custom
 			),
 			HEIGHT, new SetValue(
-				Original.MAP_CONTAINER_HEIGHT,
+				Original.ORBS_CONTAINER_HEIGHT,
 				Vertical.MAP_CONTAINER_HEIGHT,
 				Horizontal.MAP_CONTAINER_HEIGHT,
 				HorizontalWide.MAP_CONTAINER_HEIGHT,
@@ -188,14 +188,14 @@ public enum Minimap implements TargetWidget
 				0
 			),
 			WIDTH, new SetValue(
-				Original.MAP_CONTAINER_WIDTH,
+				Original.ORBS_CONTAINER_WIDTH,
 				Vertical.MAP_CONTAINER_WIDTH,
 				Horizontal.MAP_CONTAINER_WIDTH,
 				HorizontalWide.MAP_CONTAINER_WIDTH,
 				HorizontalWide.MAP_CONTAINER_WIDTH //custom
 			),
 			HEIGHT, new SetValue(
-				Original.MAP_CONTAINER_HEIGHT,
+				Original.ORBS_CONTAINER_HEIGHT,
 				Vertical.MAP_CONTAINER_HEIGHT,
 				Horizontal.MAP_CONTAINER_HEIGHT,
 				HorizontalWide.MAP_CONTAINER_HEIGHT,

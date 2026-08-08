@@ -411,7 +411,7 @@ public enum Orbs implements TargetWidget
 		)
 	),
 	//TODO?
-	GRID_MASTER_ORB_CONTAINER(
+	/*GRID_MASTER_ORB_CONTAINER(
 		Orb.UNIVERSE,
 		0,
 		-1,
@@ -434,7 +434,7 @@ public enum Orbs implements TargetWidget
 				HorizontalWide.ACTIVITY_ORB_Y
 			)
 		)
-	);
+	)*/;
 
 	private final int componentId;
 	private final int arrayId;
@@ -447,12 +447,12 @@ public enum Orbs implements TargetWidget
 
 	private final Map<ValueKey, SetValue> valueMap;
 
-	public static final Set<Orbs> SWAPPABLE_ORBS = EnumSet.of(
+	public static final TargetWidget[] SWAPPABLE_ORBS = {
 		HP_ORB_CONTAINER,
 		PRAYER_ORB_CONTAINER,
 		RUN_ORB_CONTAINER,
 		SPEC_ORB_CONTAINER
-	);
+	};
 
 	public static boolean isSwappableOrb(int componentId)
 	{

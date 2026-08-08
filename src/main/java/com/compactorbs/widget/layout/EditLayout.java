@@ -42,16 +42,20 @@ import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.layout.edit.Binding;
 import com.compactorbs.widget.layout.edit.BindingManager;
 import com.compactorbs.widget.layout.edit.drag.DragState;
-import java.awt.Point;
+import java.util.HashMap;
+import java.util.Map;
 import javax.inject.Inject;
+import javax.inject.Singleton;
 import net.runelite.api.Client;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
 import static net.runelite.api.widgets.WidgetConfig.DRAG;
 import static net.runelite.api.widgets.WidgetConfig.DRAG_ON;
+import net.runelite.api.widgets.WidgetPositionMode;
 import net.runelite.api.widgets.WidgetType;
 import net.runelite.client.util.ColorUtil;
 
+@Singleton
 public class EditLayout
 {
 	@Inject
@@ -72,80 +76,74 @@ public class EditLayout
 	@Inject
 	private BindingManager bindingManager;
 
-	//format: {modern, classic}
-	private static final TargetWidget[][] EDIT_TARGETS =
+	private Widget editBackground;
+	private Widget blackoutMinimapRight;
+	private Widget blackoutMinimapLeft;
+	private final Map<TargetWidget, Widget> handlers = new HashMap<>();
+
+	//format: {modern, classic, fixed}
+	public static final TargetWidget[][] EDIT_TARGETS =
 		{
 			//same for all display modes
-			{Orbs.HP_ORB_CONTAINER, null},
-			{Orbs.PRAYER_ORB_CONTAINER, null},
-			{Orbs.RUN_ORB_CONTAINER, null},
-			{Orbs.SPEC_ORB_CONTAINER, null},
-			{Orbs.STORE_ORB_CONTAINER, null},
-			{Orbs.ACTIVITY_ORB_CONTAINER, null},
-			{Orbs.WORLD_MAP_CONTAINER, null},
-			{Orbs.WIKI_ICON_CONTAINER, null},
-			{Orbs.XP_DROPS_CONTAINER, null},
+			{Orbs.HP_ORB_CONTAINER},
+			{Orbs.PRAYER_ORB_CONTAINER},
+			{Orbs.RUN_ORB_CONTAINER},
+			{Orbs.SPEC_ORB_CONTAINER},
+			{Orbs.STORE_ORB_CONTAINER},
+			{Orbs.ACTIVITY_ORB_CONTAINER},
+			{Orbs.WORLD_MAP_CONTAINER},
+			{Orbs.WIKI_ICON_CONTAINER},
+			{Orbs.XP_DROPS_CONTAINER},
 
 			//not visible in classic
-			{Orbs.LOGOUT_X_ICON, null},
+			{Orbs.LOGOUT_X_ICON},
 
-			//differ between display modes
-			{Button.MINIMAP_BUTTON_MODERN, Button.MINIMAP_BUTTON_CLASSIC},
+			//each button is different in the respective modes
+			{Button.MINIMAP_BUTTON_MODERN, Button.MINIMAP_BUTTON_CLASSIC, Button.MINIMAP_BUTTON_FIXED},
+
+			//compass when in compact-view
 			{Minimap.MODERN_MAP_MINIMAP, Minimap.CLASSIC_MAP_MINIMAP}
 		};
 
-	private boolean blockEditing(TargetWidget target)
+	public boolean blockEditing(TargetWidget target)
 	{
-		return (manager.isClassicResizable() && target.isLogoutX()) ||
-			(!manager.isCompactLayout() && target.isCompass()) ||
-			(manager.isStoreOrbDisabled() && target == Orbs.STORE_ORB_CONTAINER) ||
-			(manager.isActivityOrbDisabled() && target == Orbs.ACTIVITY_ORB_CONTAINER) ||
-			(manager.isWikiBannerDisabled() && !manager.isWikiPluginBannerActive() && target.isWiki());
+		return (target.isLogoutX() && (manager.isClassicResizable() || manager.isFixedMode())) ||
+			(target.isCompass() && !manager.isCompactLayout()) ||
+			(target == Orbs.STORE_ORB_CONTAINER && manager.isStoreOrbDisabled()) ||
+			(target == Orbs.ACTIVITY_ORB_CONTAINER && manager.isActivityOrbDisabled()) ||
+			(target.isWiki() && manager.isWikiBannerDisabled() && !manager.isWikiPluginBannerActive());
 	}
 
 	public void toggleEditMode(boolean state)
 	{
 		final Widget parent = widgetManager.getMapParent();
-		if (parent == null)
+		if (parent == null || !state)
 		{
-			manager.isEditingLayout = false;
+			closeEditMode();
 			return;
 		}
 
-		if (state)
-		{
-			enableEditMode(parent);
-		}
-		else
-		{
-			closeEditMode(true);
-		}
-	}
-
-	//effectively cancel the current edit-mode without saving changes
-	public void cancelEditMode()
-	{
-		if (manager.isEditingLayout)
-		{
-			closeEditMode(false);
-		}
+		enableEditMode(parent);
 	}
 
 	private void enableEditMode(Widget parent)
 	{
 		bindingManager.clear();
 		manager.isEditingLayout = true;
-		setConfigFlags();
-		manager.updateLayout(manager.isCompactLayout());
+		disableMinimap();
+		manager.hideWorldMap = false;
+		manager.hideLogoutX = false;
+		manager.rebuildLayout();
 		updateBackground();
 		parent.setNoClickThrough(true);
 
 		for (TargetWidget[] targets : EDIT_TARGETS)
 		{
+			boolean classic = targets.length > 1 && manager.isClassicResizable() && targets[1] != null;
+			boolean fixed = targets.length > 2 && manager.isFixedMode() && targets[2] != null;
+
 			final TargetWidget target =
-				manager.isClassicResizable() && targets[1] != null
-					? targets[1] //classic
-					: targets[0];//modern
+				fixed ? targets[2] : classic ? targets[1] : targets[0];
 
 			if (blockEditing(target))
 			{
@@ -158,13 +156,14 @@ public class EditLayout
 				continue;
 			}
 
-			final Point handlerPos = toHandlerPosition(bound, parent);
 			final Widget handler = widgetManager.createHandler(parent,
-				handlerPos.x,
-				handlerPos.y,
+				setHandlerX(bound, parent),
+				setHandlerY(bound, parent),
 				bound.getOriginalWidth(), bound.getOriginalHeight(),
 				bound.getXPositionMode(), bound.getYPositionMode(),
 				true);
+
+			handlers.put(target, handler);
 
 			final OrbToggle toggle = manager.toggleByTarget.get(target);
 			if (toggle != null)
@@ -172,7 +171,8 @@ public class EditLayout
 				bindingManager.bind(
 					handler,
 					targets[0],
-					targets[1],
+					targets.length > 1 ? targets[1] : null,
+					targets.length > 2 ? targets[2] : null,
 					target.isLogoutX() ? Orbs.LOGOUT_X_STONE : null,
 					toggle.hidden.get());
 
@@ -183,8 +183,11 @@ public class EditLayout
 					setupHiddenOrbs(target, hidden);
 					setupHandlerActions(handler, target, toggle, hidden);
 
-					if (isCustomLayout() ||
-						Orbs.isSwappableOrb(bound.getId()) && config.enableOrbSwapping())
+					boolean swapping = config.enableOrbSwapping();
+
+					if (manager.isCustomLayout()
+						|| (swapping && Orbs.isSwappableOrb(bound.getId()))
+						|| (!swapping && !manager.isCompactLayout() && !target.isLogoutX()))
 					{
 						//set draggable
 						handler.setClickMask(DRAG | DRAG_ON);
@@ -193,10 +196,7 @@ public class EditLayout
 			}
 		}
 
-		if (isCustomLayout())
-		{
-			dragState.boundIndicator = widgetManager.createIndicator(parent);
-		}
+		dragState.boundIndicator = widgetManager.createIndicator(parent);
 	}
 
 	private void setupHiddenOrbs(TargetWidget target, boolean isHidden)
@@ -236,7 +236,7 @@ public class EditLayout
 			MenuOp.HANDLER_TOGGLE_OP_INDEX,
 			manager.buildToggleOp(isHidden, toggle.name));
 
-		if (isCustomLayout())
+		if (!config.enableOrbSwapping() && !manager.isCompactLayout() || manager.isCustomLayout())
 		{
 			handler.setAction(
 				MenuOp.RESET_POSITION_OP_INDEX,
@@ -246,10 +246,10 @@ public class EditLayout
 		if (target.isMinimapButton())
 		{
 			handler.setAction(
-				MenuOp.DISABLE_EDIT_MODE_OP_INDEX,
+				MenuOp.EDIT_MODE_OP_INDEX,
 				manager.buildEditOp(manager.isEditingLayout));
 
-			if (isCustomLayout())
+			if (!config.enableOrbSwapping() || manager.isCustomLayout())
 			{
 				handler.setAction(
 					RESET_ALL_OP_INDEX,
@@ -276,14 +276,14 @@ public class EditLayout
 					break;
 
 				case MenuOp.RESET_POSITION_OP_INDEX:
-					manager.resetCustomPositionForTarget(binding, true);
+					manager.resetTargetsSavedPosition(binding, true);
 					break;
 
 				case RESET_ALL_OP_INDEX:
-					manager.resetAllCustomPositions(true);
+					manager.resetAllSavedPositions(true);
 					break;
 
-				case MenuOp.DISABLE_EDIT_MODE_OP_INDEX:
+				case MenuOp.EDIT_MODE_OP_INDEX:
 					toggleEditMode(false);
 					break;
 			}
@@ -291,11 +291,12 @@ public class EditLayout
 	}
 
 	//handle whether edit-mode was triggered (save changes) or cancelled (config event, display mode changed, etc)
-	private void closeEditMode(boolean save)
+	private void closeEditMode()
 	{
 		manager.isEditingLayout = false;
 
-		setConfigFlags();
+		manager.hideWorldMap = config.hideWorld();
+		manager.hideLogoutX = config.hideLogout();
 
 		for (Binding binding : bindingManager.all())
 		{
@@ -303,15 +304,15 @@ public class EditLayout
 			final OrbToggle toggle = manager.toggleByTarget.get(target);
 			if (toggle != null)
 			{
-				if (save)
+				if (binding.isHidden() != toggle.hidden.get())
 				{
-					if (binding.isHidden() != toggle.hidden.get())
+					if (!manager.isUpdatingProfile)
 					{
 						manager.saveConfig(toggle.key, binding.isHidden());
 					}
 				}
 
-				manager.updateOrbByConfig(toggle.key);
+				manager.hideOrbByConfig(toggle.key);
 			}
 
 			widgetManager.setTargetOpacity(target, target.isLogoutX() ? LOGOUT_X_ICON_OPACITY : 0);
@@ -323,40 +324,65 @@ public class EditLayout
 	//restore the minimap to a clean state post-edit
 	private void cleanupEditMode()
 	{
-		manager.updateLayout(manager.isCompactLayout());
+		widgetManager.restoreMinimapRendering();
+		manager.rebuildLayout();
 		clearEditChildren();
 		widgetManager.getMapParent().setNoClickThrough(manager.isEditingLayout);
 		dragState.clear();
 	}
 
-	//remove handlers, indicators, and the background
-	private void clearEditChildren()
+	//should probably not do this, but i cba with minimap clicks
+	private void disableMinimap()
 	{
-		if (!manager.isEditingLayout)
-		{
-			Widget parent = widgetManager.getMapParent();
-			if (parent.getChildren() != null)
-			{
-				parent.deleteAllChildren();
-			}
+		widgetManager.removeMinimapRendering();
 
-			parent = client.getWidget(Minimap.ORBS_UNIVERSE.getComponentId());
-			if (parent != null)
-			{
-				if (parent.getChildren() != null)
-				{
-					parent.deleteAllChildren();
-				}
-			}
+		if (!manager.isFixedMode())
+		{
+			return;
 		}
+
+		Widget parent = widgetManager.getMinimapMask();
+		if (parent == null)
+		{
+			return;
+		}
+
+		//prevent visual artifacts while dragging over the empty space
+		blackoutMinimapRight = parent.createChild(-1, WidgetType.RECTANGLE)
+			.setOriginalX(10).setOriginalY(0)
+			.setOriginalWidth(142).setOriginalHeight(152)
+			.setTextColor(0)
+			.setFilled(true);
+		blackoutMinimapRight.revalidate();
+
+		blackoutMinimapLeft = parent.createChild(-1, WidgetType.RECTANGLE)
+			.setOriginalX(0).setOriginalY(36)
+			.setOriginalWidth(10).setOriginalHeight(68)
+			.setTextColor(0)
+			.setFilled(true);
+		blackoutMinimapLeft.revalidate();
+
 	}
 
-	//remove positional offsets for the world map/logout-x when hidden during edit-mode,
-	//or restore them based on the config when exiting edit-mode
-	private void setConfigFlags()
+	//remove handlers, indicators, and background
+	public void clearEditChildren()
 	{
-		manager.hideWorldMap = !manager.isEditingLayout && config.hideWorld();
-		manager.hideLogoutX = !manager.isEditingLayout && config.hideLogout();
+		for (Widget handler : handlers.values())
+		{
+			widgetManager.clearChild(handler);
+		}
+
+		handlers.clear();
+
+		widgetManager.clearChild(dragState.boundIndicator);
+		widgetManager.clearChild(editBackground);
+		widgetManager.clearChild(blackoutMinimapRight);
+		widgetManager.clearChild(blackoutMinimapLeft);
+
+		dragState.boundIndicator = null;
+		editBackground = null;
+		blackoutMinimapRight = null;
+		blackoutMinimapLeft = null;
 	}
 
 	private TargetWidget getBoundTarget(Binding binding)
@@ -366,19 +392,33 @@ public class EditLayout
 			: binding.getModern();
 	}
 
-	public void updateBackground()
+	private int getBackgroundParentId()
 	{
-		final int parentId = manager.isCompactLayout()
+		return manager.isCompactLayout() || manager.isFixedMode()
 			? Minimap.ORBS_UNIVERSE.getComponentId()
 			: widgetManager.getMapParent().getId();
+	}
 
-		final Widget parent = client.getWidget(parentId);
+	public void updateBackground()
+	{
+		final Widget parent = client.getWidget(getBackgroundParentId());
 		if (parent == null)
 		{
 			return;
 		}
 
-		final Widget editBackground = parent.createChild(0, WidgetType.RECTANGLE);
+		if (editBackground == null)
+		{
+			editBackground = parent.createChild(-1, WidgetType.RECTANGLE)
+				.setXPositionMode(parent.getXPositionMode())
+				.setYPositionMode(parent.getYPositionMode())
+				.setWidthMode(parent.getWidthMode())
+				.setHeightMode(parent.getHeightMode())
+				.setTextColor(0xff0000)
+				.setFilled(true)
+				.setOpacity(EDIT_MODE_BACKGROUND_OPACITY);
+		}
+
 		if (!manager.isCompactLayout())
 		{
 			editBackground
@@ -388,68 +428,38 @@ public class EditLayout
 				.setOriginalHeight(parent.getOriginalHeight());
 		}
 
-		editBackground
-			.setXPositionMode(parent.getXPositionMode())
-			.setYPositionMode(parent.getYPositionMode())
-			.setWidthMode(parent.getWidthMode())
-			.setHeightMode(parent.getHeightMode())
-			.setTextColor(0xff0000)
-			.setFilled(true)
-			.setOpacity(EDIT_MODE_BACKGROUND_OPACITY)
-			.revalidate();
+		editBackground.revalidate();
 	}
 
-	//translate the handlers position into coordinates for the bound widget
-	public Point toBoundPosition(Widget handler, Widget boundParent)
-	{
-		int x = handler.getOriginalX();
-		int y = handler.getOriginalY();
-		if (handler.getParent() != boundParent)
-		{
-			Point offset = getLayoutOffset();
-			x -= offset.x;
-			y -= offset.y;
-			if (!manager.isCompactLayout())
-			{
-				y -= ORBS_CONTAINER_OFFSET_Y;
-			}
-		}
-
-		return new Point(x, y);
-	}
-
-	//translate the bound widgets position into coordinates for the handler
-	public Point toHandlerPosition(Widget bound, Widget handlerParent)
+	public int setHandlerX(Widget bound, Widget parent)
 	{
 		int x = bound.getOriginalX();
-		int y = bound.getOriginalY();
-		if (bound.getParent() != handlerParent)
+		if (bound.getParent() != parent)
 		{
-			Point offset = getLayoutOffset();
-			x += offset.x;
-			y += offset.y;
-			if (!manager.isCompactLayout())
+			if (bound.getXPositionMode() == WidgetPositionMode.ABSOLUTE_RIGHT)
+			{
+				x = x + (parent.getWidth() - bound.getParent().getWidth());
+			}
+
+			x += manager.getLayoutXOffset();
+		}
+
+		return x;
+	}
+
+	public int setHandlerY(Widget bound, Widget parent)
+	{
+		int y = bound.getOriginalY();
+		if (bound.getParent() != parent)
+		{
+			if (!manager.isCompactLayout() && !manager.isFixedMode())
 			{
 				y += ORBS_CONTAINER_OFFSET_Y;
 			}
+
+			y += manager.getLayoutYOffset();
 		}
 
-		return new Point(x, y);
-	}
-
-	private Point getLayoutOffset()
-	{
-		int x = manager.isCompactLayout() && manager.isAnchorRight()
-			? manager.getCurrentLayout().getRightOffset() : 0;
-
-		int y = manager.isCompactLayout() && manager.isAnchorBottom()
-			? manager.getCurrentLayout().getBottomOffset() : 0;
-
-		return new Point(x, y);
-	}
-
-	public boolean isCustomLayout()
-	{
-		return manager.isCompactLayout() && manager.getCurrentLayout().isCustom();
+		return y;
 	}
 }

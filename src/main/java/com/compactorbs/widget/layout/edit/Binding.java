@@ -25,6 +25,7 @@
 
 package com.compactorbs.widget.layout.edit;
 
+import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.TargetWidget;
 import lombok.Getter;
 import lombok.Setter;
@@ -36,22 +37,35 @@ public class Binding
 	private final Widget handler;
 	private final TargetWidget modern;
 	private final TargetWidget classic;
+	private final TargetWidget fixed;
 	private final TargetWidget related;
 
 	@Setter
 	private boolean hidden;
 
-	public Binding(Widget handler, TargetWidget modern, TargetWidget classic, TargetWidget related, boolean hidden)
+	public Binding(Widget handler, TargetWidget modern, TargetWidget classic, TargetWidget fixed, TargetWidget related, boolean hidden)
 	{
 		this.handler = handler;
 		this.modern = modern;
 		this.classic = classic;
+		this.fixed = fixed;
 		this.related = related;
 		this.hidden = hidden;
 	}
 
-	public TargetWidget get(boolean isClassic)
+	public TargetWidget get(CompactOrbsManager manager)
 	{
-		return (isClassic && classic != null) ? classic : modern;
+		if (manager.isFixedMode() && fixed != null)
+		{
+			return fixed;
+		}
+		else if (manager.isClassicResizable() && classic != null)
+		{
+			return classic;
+		}
+		else
+		{
+			return modern;
+		}
 	}
 }

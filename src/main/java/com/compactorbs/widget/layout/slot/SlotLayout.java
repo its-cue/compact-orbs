@@ -25,17 +25,58 @@
 
 package com.compactorbs.widget.layout.slot;
 
-import com.compactorbs.widget.layout.slot.SlotManager.SlotLayoutMode;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import com.compactorbs.widget.TargetWidget;
+import java.util.EnumMap;
+import java.util.Map;
 
-@Getter
-@RequiredArgsConstructor
 public class SlotLayout
 {
-	//slot being referenced
-	public final Slot slot;
+	private final EnumMap<Slot, TargetWidget> assignments = new EnumMap<>(Slot.class);
 
-	//layout the slot belongs to
-	public final SlotLayoutMode layout;
+	public SlotLayout()
+	{
+		reset();
+	}
+
+	public TargetWidget get(Slot slot)
+	{
+		return assignments.get(slot);
+	}
+
+	public void set(Slot slot, TargetWidget target)
+	{
+		assignments.put(slot, target);
+	}
+
+	public void swap(Slot first, Slot second)
+	{
+		TargetWidget a = get(first);
+		TargetWidget b = get(second);
+
+		assignments.put(first, b);
+		assignments.put(second, a);
+	}
+
+	public Slot find(TargetWidget target)
+	{
+		for (Map.Entry<Slot, TargetWidget> entry : assignments.entrySet())
+		{
+			if (entry.getValue() == target)
+			{
+				return entry.getKey();
+			}
+		}
+
+		return null;
+	}
+
+	public void reset()
+	{
+		assignments.clear();
+
+		for (Slot slot : Slot.values())
+		{
+			set(slot, slot.getDefaultTarget());
+		}
+	}
 }
