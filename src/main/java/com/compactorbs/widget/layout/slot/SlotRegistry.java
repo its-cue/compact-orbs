@@ -26,12 +26,11 @@
 package com.compactorbs.widget.layout.slot;
 
 import com.compactorbs.CompactOrbsConfig;
-import com.compactorbs.CompactOrbsConfig.FilteredOrb;
 import static com.compactorbs.CompactOrbsConstants.ConfigGroup.GROUP_NAME;
 import com.compactorbs.CompactOrbsConstants.ConfigKeys;
 import com.compactorbs.widget.TargetWidget;
 import com.compactorbs.widget.elements.Orbs;
-import com.compactorbs.widget.layout.slot.SlotManager.SlotsLayoutMode;
+import com.compactorbs.widget.layout.slot.SlotManager.SlotLayoutMode;
 import com.google.inject.Inject;
 import java.util.EnumMap;
 import java.util.Map;
@@ -46,10 +45,10 @@ public class SlotRegistry
 	@Inject
 	private ConfigManager configManager;
 
-	private final Map<SlotsLayoutMode, EnumMap<Slot, SlotConfig>> configs =
+	private final Map<SlotLayoutMode, EnumMap<Slot, SlotConfig>> configs =
 		Map.of(
-			SlotsLayoutMode.COMPACT, compactConfigs(),
-			SlotsLayoutMode.VANILLA, vanillaConfigs()
+			SlotLayoutMode.COMPACT, compactConfigs(),
+			SlotLayoutMode.VANILLA, vanillaConfigs()
 		);
 
 	private final Set<String> slotConfigKeys =
@@ -112,7 +111,7 @@ public class SlotRegistry
 		return configs;
 	}
 
-	public TargetWidget resolve(Slot slot, SlotsLayoutMode layout, CompactOrbsConfig config)
+	public TargetWidget resolve(Slot slot, SlotLayoutMode layout, CompactOrbsConfig config)
 	{
 		SlotConfig slotConfig = getConfig(layout, slot);
 		if (slotConfig == null)
@@ -120,31 +119,24 @@ public class SlotRegistry
 			return slot.getDefaultTarget();
 		}
 
-		FilteredOrb orb = slotConfig.getGetter().apply(config);
-		if (orb == null)
-		{
-			return slot.getDefaultTarget();
-		}
-
-		return Orbs.valueOf(orb.name());
+		Orbs orb = slotConfig.getGetter().apply(config);
+		return orb != null ? orb : slot.getDefaultTarget();
 	}
 
-	public SlotConfig getConfig(SlotsLayoutMode layout, Slot slot)
+	public SlotConfig getConfig(SlotLayoutMode layout, Slot slot)
 	{
 		return configs.get(layout).get(slot);
 	}
 
-	public void save(SlotsLayoutMode layout, SlotLayout state)
+	public void save(SlotLayoutMode layout, SlotLayout state)
 	{
 		for (Slot slot : Slot.values())
 		{
-			TargetWidget target = state.get(slot);
-
-			save(layout, slot, target);
+			save(layout, slot, state.get(slot));
 		}
 	}
 
-	private void save(SlotsLayoutMode layout, Slot slot, TargetWidget target)
+	private void save(SlotLayoutMode layout, Slot slot, TargetWidget target)
 	{
 		SlotConfig slotConfig = getConfig(layout, slot);
 
@@ -153,7 +145,7 @@ public class SlotRegistry
 			return;
 		}
 
-		configManager.setConfiguration(GROUP_NAME, slotConfig.getConfigKey(), toFilteredOrb(target));
+		configManager.setConfiguration(GROUP_NAME, slotConfig.getConfigKey(), target);
 	}
 
 	public boolean isSwapConfig(String key)
@@ -161,8 +153,4 @@ public class SlotRegistry
 		return slotConfigKeys.contains(key);
 	}
 
-	private FilteredOrb toFilteredOrb(TargetWidget target)
-	{
-		return FilteredOrb.valueOf(target.toString());
-	}
 }

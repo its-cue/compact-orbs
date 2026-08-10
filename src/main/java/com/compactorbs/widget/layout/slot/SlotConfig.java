@@ -26,7 +26,7 @@
 package com.compactorbs.widget.layout.slot;
 
 import com.compactorbs.CompactOrbsConfig;
-import com.compactorbs.CompactOrbsConfig.FilteredOrb;
+import com.compactorbs.widget.elements.Orbs;
 import java.util.function.Function;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -35,9 +35,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SlotConfig
 {
-	//key for the given slot
 	private final String configKey;
-
-	//function to read the current orb from the config
-	private final Function<CompactOrbsConfig, FilteredOrb> getter;
+	private final Function<CompactOrbsConfig, Orbs> getter;
 }

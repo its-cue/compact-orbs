@@ -27,19 +27,15 @@ package com.compactorbs.widget.layout;
 
 import com.compactorbs.widget.TargetWidget;
 import java.util.function.Supplier;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
-public final class OrbToggle
+@Getter
+@RequiredArgsConstructor
+public final class HideOrbConfig
 {
-	public final String key;
-	public final Supplier<Boolean> hidden;
-	public final String name;
-	public final TargetWidget[] targets;
-
-	public OrbToggle(String key, Supplier<Boolean> hidden, String name, TargetWidget[] targets)
-	{
-		this.key = key;
-		this.hidden = hidden;
-		this.name = name;
-		this.targets = targets;
-	}
+	private final String configKey;
+	private final Supplier<Boolean> getter;
+	private final String menuName;
+	private final TargetWidget[] targets;
 }

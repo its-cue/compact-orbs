@@ -27,16 +27,10 @@ package com.compactorbs.widget.layout.slot;
 
 import com.compactorbs.widget.TargetWidget;
 import java.util.EnumMap;
-import java.util.Map;
 
 public class SlotLayout
 {
 	private final EnumMap<Slot, TargetWidget> assignments = new EnumMap<>(Slot.class);
-
-	public SlotLayout()
-	{
-		reset();
-	}
 
 	public TargetWidget get(Slot slot)
 	{
@@ -55,28 +49,5 @@ public class SlotLayout
 
 		assignments.put(first, b);
 		assignments.put(second, a);
-	}
-
-	public Slot find(TargetWidget target)
-	{
-		for (Map.Entry<Slot, TargetWidget> entry : assignments.entrySet())
-		{
-			if (entry.getValue() == target)
-			{
-				return entry.getKey();
-			}
-		}
-
-		return null;
-	}
-
-	public void reset()
-	{
-		assignments.clear();
-
-		for (Slot slot : Slot.values())
-		{
-			set(slot, slot.getDefaultTarget());
-		}
 	}
 }

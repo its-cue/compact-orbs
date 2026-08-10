@@ -23,7 +23,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.layout.edit.drag;
+package com.compactorbs.widget.layout.edit;
 
 import java.awt.Point;
 import javax.inject.Singleton;

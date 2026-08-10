@@ -23,7 +23,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.layout.edit.drag;
+package com.compactorbs.widget.layout.edit;
 
 import com.compactorbs.CompactOrbsConfig;
 import static com.compactorbs.CompactOrbsConstants.Layout.ORBS_CONTAINER_OFFSET_Y;
@@ -31,8 +31,6 @@ import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.TargetWidget;
 import com.compactorbs.widget.WidgetManager;
 import com.compactorbs.widget.elements.Minimap;
-import com.compactorbs.widget.layout.edit.Binding;
-import com.compactorbs.widget.layout.edit.BindingManager;
 import com.compactorbs.widget.layout.slot.SlotManager;
 import java.awt.Point;
 import java.awt.Rectangle;
@@ -86,7 +84,7 @@ public class DragListener implements MouseListener
 						dragState.offset.y = dragState.origin.y - (container.getBounds().y + dragged.getRelativeY());
 					}
 
-					if (manager.isCustomLayout() || !config.enableOrbSwapping())
+					if (manager.isCustomLayout() || !manager.enableOrbSwapping)
 					{
 						if (!manager.isCompactLayout() || manager.isFixedMode())
 						{
@@ -159,7 +157,7 @@ public class DragListener implements MouseListener
 					Widget bound = widgetManager.getTargetWidget(binding.get(manager));
 					if (bound != null)
 					{
-						if (manager.isCustomLayout() || !config.enableOrbSwapping())
+						if (manager.isCustomLayout() || !manager.enableOrbSwapping)
 						{
 							manager.saveCurrentLayoutPosition(bound, binding);
 						}

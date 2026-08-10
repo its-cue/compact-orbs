@@ -31,7 +31,8 @@ import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.TargetWidget;
 import com.compactorbs.widget.WidgetManager;
 import com.compactorbs.widget.elements.Orbs;
-import com.compactorbs.widget.layout.OrbToggle;
+import com.compactorbs.widget.layout.HideOrbConfig;
+import com.compactorbs.widget.layout.HideOrbRegistry;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.EnumMap;
@@ -54,97 +55,119 @@ public class SlotManager
 	@Inject
 	private SlotRegistry registry;
 
-	public enum SlotsLayoutMode
+	@Inject
+	private HideOrbRegistry hideConfig;
+
+	public enum SlotLayoutMode
 	{
 		COMPACT,
 		VANILLA
 	}
 
 	@Getter
-	private SlotsLayoutMode currentLayoutMode;
+	private SlotLayoutMode currentLayoutMode;
 
 	@Getter
 	private int hiddenCountAbove;
 
-	private final EnumMap<SlotsLayoutMode, SlotLayout> layouts = new EnumMap<>(SlotsLayoutMode.class);
+	private final EnumMap<SlotLayoutMode, SlotLayout> layouts = new EnumMap<>(SlotLayoutMode.class);
 
-	public void initSlots()
+	public void clear()
 	{
 		layouts.clear();
+		currentLayoutMode = null;
+	}
 
-		updateCurrentLayout();
+	public void init()
+	{
+		clear();
 
-		for (SlotsLayoutMode mode : SlotsLayoutMode.values())
+		for (SlotLayoutMode mode : SlotLayoutMode.values())
 		{
-			SlotLayout state = new SlotLayout();
-			load(state, mode);
-			layouts.put(mode, state);
+			layouts.put(mode, new SlotLayout());
 		}
 
-		updateOrbPositions();
+		update();
+
+		remapOrbPositions();
 	}
 
-	public void updateCurrentLayout()
+	public void update()
+	{
+		updateCurrentLayoutMode();
+		updateLayouts();
+	}
+
+	public void updateCurrentLayoutMode()
 	{
 		currentLayoutMode = manager.isCompactLayout()
-			? SlotsLayoutMode.COMPACT
-			: SlotsLayoutMode.VANILLA;
+			? SlotLayoutMode.COMPACT
+			: SlotLayoutMode.VANILLA;
 	}
 
-	public SlotLayout getLayout(SlotsLayoutMode mode)
+	private void updateLayouts()
+	{
+		for (SlotLayoutMode mode : SlotLayoutMode.values())
+		{
+			SlotLayout layout = getLayout(mode);
+
+			for (Slot slot : Slot.values())
+			{
+				TargetWidget target = manager.enableOrbSwapping
+					? registry.resolve(slot, mode, config)
+					: slot.getDefaultTarget();
+
+				layout.set(slot, target);
+			}
+		}
+	}
+
+	private SlotLayout getLayout(SlotLayoutMode mode)
 	{
 		return layouts.get(mode);
 	}
 
-	public SlotLayout getCurrentLayout()
+	private SlotLayout getCurrentLayout()
 	{
 		return getLayout(currentLayoutMode);
 	}
 
-	public TargetWidget get(Slot slot)
+	private TargetWidget getTarget(Slot slot)
 	{
-		if (!manager.allowReordering())
-		{
-			return slot.getDefaultTarget();
-		}
-
 		return getCurrentLayout().get(slot);
 	}
 
-	public Slot find(TargetWidget target)
+	public Slot findSlot(TargetWidget target)
 	{
-		return getCurrentLayout().find(target);
+		for (Slot slot : Slot.values())
+		{
+			if (getTarget(slot) == target)
+			{
+				return slot;
+			}
+		}
+
+		return null;
 	}
 
 	public void swap(TargetWidget first, TargetWidget second)
 	{
-		Slot firstSlot = find(first);
-		Slot secondSlot = find(second);
+		Slot firstSlot = findSlot(first);
+		Slot secondSlot = findSlot(second);
 
 		if (firstSlot == null || secondSlot == null)
 		{
 			return;
 		}
 
-		SlotLayout layout = getCurrentLayout();
-		layout.swap(firstSlot, secondSlot);
+		getCurrentLayout().swap(firstSlot, secondSlot);
 
-		save(currentLayoutMode);
+		registry.save(currentLayoutMode, getCurrentLayout());
 
-		updateOrbPositions();
+		remapOrbPositions();
 	}
 
-	public void save(SlotsLayoutMode mode)
-	{
-		registry.save(mode, getLayout(mode));
-	}
-
-	public void reset()
-	{
-		getLayout(currentLayoutMode).reset();
-	}
-
-	private void updateOrbPositions()
+	private void remapOrbPositions()
 	{
 		if (!manager.isLoggedIn())
 		{
@@ -154,27 +177,14 @@ public class SlotManager
 		widgetManager.remapTargets(Orbs.SWAPPABLE_ORBS);
 	}
 
-	private void load(SlotLayout state, SlotsLayoutMode mode)
-	{
-		for (Slot slot : Slot.values())
-		{
-			TargetWidget target =
-				config.enableOrbSwapping()
-					? registry.resolve(slot, mode, config)
-					: slot.getDefaultTarget();
-
-			state.set(slot, target);
-		}
-	}
-
-	private int computeHiddenOffset(TargetWidget target, boolean isBelow)
+	private int getHiddenOffset(TargetWidget target, boolean isBelow)
 	{
 		if (target == null || !manager.allowReordering())
 		{
 			return 0;
 		}
 
-		Slot slot = find(target);
+		Slot slot = findSlot(target);
 		if (slot == null)
 		{
 			return 0;
@@ -189,11 +199,11 @@ public class SlotManager
 		}
 
 		return isBelow
-			? sumHiddenInRange(group, targetIndex + 1, group.size())
-			: sumHiddenInRange(group, 0, targetIndex);
+			? getHiddenSize(group, targetIndex + 1, group.size())
+			: getHiddenSize(group, 0, targetIndex);
 	}
 
-	private int sumHiddenInRange(List<Slot> group, int start, int end)
+	private int getHiddenSize(List<Slot> group, int start, int end)
 	{
 		int total = 0;
 		hiddenCountAbove = 0;
@@ -207,9 +217,9 @@ public class SlotManager
 				continue;
 			}
 
-			if (isOrbHidden(slot))
+			if (isHidden(slot))
 			{
-				total += getSlotDimension(slot);
+				total += getTargetDimension(slot);
 				hiddenCountAbove++;
 			}
 		}
@@ -217,9 +227,9 @@ public class SlotManager
 		return total;
 	}
 
-	private boolean isOrbHidden(Slot slot)
+	private boolean isHidden(Slot slot)
 	{
-		TargetWidget target = get(slot);
+		TargetWidget target = getTarget(slot);
 		if (target == null)
 		{
 			return false;
@@ -235,19 +245,21 @@ public class SlotManager
 			return config.hideStore() && manager.allowReordering();
 		}
 
-		OrbToggle toggle = manager.toggleByTarget.get(target);
-		return toggle != null && toggle.hidden.get();
+		HideOrbConfig toggle = hideConfig.getByTarget(target);
+		return toggle != null && toggle.getGetter().get();
 	}
 
-	private int getSlotDimension(Slot slot)
+	private int getTargetDimension(Slot slot)
 	{
-		TargetWidget target = get(slot);
+		TargetWidget target = getTarget(slot);
+
 		if (target == null)
 		{
 			return 0;
 		}
 
 		Widget widget = widgetManager.getTargetWidget(target);
+
 		if (widget == null)
 		{
 			return 0;
@@ -258,10 +270,8 @@ public class SlotManager
 		{
 			return widget.getOriginalWidth();
 		}
-		else
-		{
-			return widget.getOriginalHeight();
-		}
+
+		return widget.getOriginalHeight();
 	}
 
 	public int getHiddenSize()
@@ -273,12 +283,12 @@ public class SlotManager
 
 		CompactOrbsLayout layout = manager.getCurrentLayout();
 		return Math.min(
-			sumHiddenSize(layout.getA()),
-			sumHiddenSize(layout.getB())
+			getHiddenSize(layout.getA()),
+			getHiddenSize(layout.getB())
 		);
 	}
 
-	private int sumHiddenSize(List<Slot> columnOrRow)
+	private int getHiddenSize(List<Slot> columnOrRow)
 	{
 		int total = 0;
 
@@ -289,9 +299,9 @@ public class SlotManager
 				continue;
 			}
 
-			if (isOrbHidden(slot))
+			if (isHidden(slot))
 			{
-				total += getSlotDimension(slot);
+				total += getTargetDimension(slot);
 			}
 		}
 
@@ -307,12 +317,12 @@ public class SlotManager
 
 		if (manager.isAnchorLeft())
 		{
-			return x - computeHiddenOffset(target, false);
+			return x - getHiddenOffset(target, false);
 		}
 
 		if (manager.isAnchorRight())
 		{
-			return x + computeHiddenOffset(target, true);
+			return x + getHiddenOffset(target, true);
 		}
 
 		return x;
@@ -327,12 +337,12 @@ public class SlotManager
 
 		if (manager.isAnchorTop())
 		{
-			return y - computeHiddenOffset(target, false);
+			return y - getHiddenOffset(target, false);
 		}
 
 		if (manager.isAnchorBottom())
 		{
-			return y + computeHiddenOffset(target, true);
+			return y + getHiddenOffset(target, true);
 		}
 
 		return y;

@@ -23,7 +23,7 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package com.compactorbs.widget.layout;
+package com.compactorbs.widget.layout.edit;
 
 import com.compactorbs.CompactOrbsConfig;
 import static com.compactorbs.CompactOrbsConstants.Layout.EDIT_MODE_BACKGROUND_OPACITY;
@@ -39,13 +39,13 @@ import com.compactorbs.widget.elements.Button;
 import com.compactorbs.widget.elements.Compass;
 import com.compactorbs.widget.elements.Minimap;
 import com.compactorbs.widget.elements.Orbs;
-import com.compactorbs.widget.layout.edit.Binding;
-import com.compactorbs.widget.layout.edit.BindingManager;
-import com.compactorbs.widget.layout.edit.drag.DragState;
+import com.compactorbs.widget.layout.HideOrbConfig;
+import com.compactorbs.widget.layout.HideOrbRegistry;
 import java.util.HashMap;
 import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
@@ -55,8 +55,9 @@ import net.runelite.api.widgets.WidgetPositionMode;
 import net.runelite.api.widgets.WidgetType;
 import net.runelite.client.util.ColorUtil;
 
+@Slf4j
 @Singleton
-public class EditLayout
+public class EditManager
 {
 	@Inject
 	private Client client;
@@ -75,6 +76,9 @@ public class EditLayout
 
 	@Inject
 	private BindingManager bindingManager;
+
+	@Inject
+	private HideOrbRegistry hideConfig;
 
 	private Widget editBackground;
 	private Widget blackoutMinimapRight;
@@ -165,7 +169,7 @@ public class EditLayout
 
 			handlers.put(target, handler);
 
-			final OrbToggle toggle = manager.toggleByTarget.get(target);
+			final HideOrbConfig toggle = hideConfig.getByTarget(target);
 			if (toggle != null)
 			{
 				bindingManager.bind(
@@ -174,7 +178,7 @@ public class EditLayout
 					targets.length > 1 ? targets[1] : null,
 					targets.length > 2 ? targets[2] : null,
 					target.isLogoutX() ? Orbs.LOGOUT_X_STONE : null,
-					toggle.hidden.get());
+					toggle.getGetter().get());
 
 				final Binding binding = bindingManager.getByHandler(handler);
 				if (binding != null)
@@ -183,7 +187,7 @@ public class EditLayout
 					setupHiddenOrbs(target, hidden);
 					setupHandlerActions(handler, target, toggle, hidden);
 
-					boolean swapping = config.enableOrbSwapping();
+					boolean swapping = manager.enableOrbSwapping;
 
 					if (manager.isCustomLayout()
 						|| (swapping && Orbs.isSwappableOrb(bound.getId()))
@@ -230,17 +234,17 @@ public class EditLayout
 		}
 	}
 
-	private void setupHandlerActions(Widget handler, TargetWidget target, OrbToggle toggle, boolean isHidden)
+	private void setupHandlerActions(Widget handler, TargetWidget target, HideOrbConfig toggle, boolean isHidden)
 	{
 		handler.setAction(
 			MenuOp.HANDLER_TOGGLE_OP_INDEX,
-			manager.buildToggleOp(isHidden, toggle.name));
+			manager.buildToggleOp(isHidden, toggle.getMenuName()));
 
-		if (!config.enableOrbSwapping() && !manager.isCompactLayout() || manager.isCustomLayout())
+		if (!manager.enableOrbSwapping && !manager.isCompactLayout() || manager.isCustomLayout())
 		{
 			handler.setAction(
 				MenuOp.RESET_POSITION_OP_INDEX,
-				manager.buildMenuOp(MenuOp.RESET, toggle.name));
+				manager.buildMenuOp(MenuOp.RESET, toggle.getMenuName()));
 		}
 
 		if (target.isMinimapButton())
@@ -249,7 +253,7 @@ public class EditLayout
 				MenuOp.EDIT_MODE_OP_INDEX,
 				manager.buildEditOp(manager.isEditingLayout));
 
-			if (!config.enableOrbSwapping() || manager.isCustomLayout())
+			if (!manager.enableOrbSwapping || manager.isCustomLayout())
 			{
 				handler.setAction(
 					RESET_ALL_OP_INDEX,
@@ -271,7 +275,7 @@ public class EditLayout
 			{
 				case MenuOp.HANDLER_TOGGLE_OP_INDEX:
 					binding.setHidden(!binding.isHidden());
-					handler.setAction(MenuOp.HANDLER_TOGGLE_OP_INDEX, manager.buildToggleOp(binding.isHidden(), toggle.name));
+					handler.setAction(MenuOp.HANDLER_TOGGLE_OP_INDEX, manager.buildToggleOp(binding.isHidden(), toggle.getMenuName()));
 					widgetManager.setTargetOpacity(target, binding.isHidden() ? EDIT_MODE_HIDDEN_OPACITY : 0);
 					break;
 
@@ -301,18 +305,18 @@ public class EditLayout
 		for (Binding binding : bindingManager.all())
 		{
 			final TargetWidget target = getBoundTarget(binding);
-			final OrbToggle toggle = manager.toggleByTarget.get(target);
+			final HideOrbConfig toggle = hideConfig.getByTarget(target);
 			if (toggle != null)
 			{
-				if (binding.isHidden() != toggle.hidden.get())
+				if (binding.isHidden() != toggle.getGetter().get())
 				{
 					if (!manager.isUpdatingProfile)
 					{
-						manager.saveConfig(toggle.key, binding.isHidden());
+						manager.saveConfig(toggle.getConfigKey(), binding.isHidden());
 					}
 				}
 
-				manager.hideOrbByConfig(toggle.key);
+				manager.hideOrbByConfig(toggle.getConfigKey());
 			}
 
 			widgetManager.setTargetOpacity(target, target.isLogoutX() ? LOGOUT_X_ICON_OPACITY : 0);

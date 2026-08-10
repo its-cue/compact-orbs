@@ -38,9 +38,10 @@ import com.compactorbs.CompactOrbsConstants.Widgets.Orb;
 import com.compactorbs.widget.WidgetManager;
 import com.compactorbs.widget.elements.Compass;
 import com.compactorbs.widget.elements.Orbs;
-import com.compactorbs.widget.layout.EditLayout;
-import com.compactorbs.widget.layout.edit.drag.DragListener;
-import com.compactorbs.widget.layout.edit.drag.DragState;
+import com.compactorbs.widget.layout.HideOrbRegistry;
+import com.compactorbs.widget.layout.edit.DragListener;
+import com.compactorbs.widget.layout.edit.DragState;
+import com.compactorbs.widget.layout.edit.EditManager;
 import com.compactorbs.widget.layout.slot.SlotManager;
 import com.compactorbs.widget.layout.slot.SlotRegistry;
 import com.compactorbs.widget.overlay.MinimapOverlay;
@@ -113,7 +114,10 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	private SlotRegistry slotRegistry;
 
 	@Inject
-	private EditLayout editLayout;
+	private HideOrbRegistry orbRegistry;
+
+	@Inject
+	private EditManager editManager;
 
 	@Inject
 	private DragListener dragListener;
@@ -131,7 +135,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		overlayManager.add(minimapOverlay);
 		keyManager.registerKeyListener(this);
 		mouseManager.registerMouseListener(dragListener);
-		manager.registerOrbsHidden();
+		orbRegistry.registerAll();
 
 		if (!manager.isLoggedIn())
 		{
@@ -143,11 +147,11 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		manager.hideWorldMap = config.hideWorld();
 		manager.hideLogoutX = config.hideLogout();
 		manager.enableNoClickThrough = config.enableNoClickthrough();
+		manager.enableOrbSwapping = config.enableOrbSwapping();
 
 		clientThread.invoke(() ->
 		{
-			slotManager.initSlots();
-
+			slotManager.init();
 			if (manager.isLoggedIn())
 			{
 				manager.update(Script.FORCE_UPDATE);
@@ -253,7 +257,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				//ideally for display mode change
 				if (manager.isEditingLayout)
 				{
-					editLayout.toggleEditMode(false);
+					editManager.toggleEditMode(false);
 				}
 				break;
 
@@ -337,7 +341,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				//might need to add other varbit triggers (toggle wiki, toggle data orbs?)
 				if (manager.isEditingLayout)
 				{
-					editLayout.toggleEditMode(false);
+					editManager.toggleEditMode(false);
 				}
 
 				if (manager.allowReordering())
@@ -384,7 +388,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				{
 					if (manager.isEditingLayout)
 					{
-						editLayout.toggleEditMode(false);
+						editManager.toggleEditMode(false);
 					}
 					widgetManager.remapTargets(Orbs.WIKI_ICON_CONTAINER);
 					manager.updateWikiBannerVisibility(config.hideWiki());
@@ -398,13 +402,14 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			return;
 		}
 
-		if (slotRegistry.isSwapConfig(key) || manager.isHideConfig(key))
+		if (slotRegistry.isSwapConfig(key) || orbRegistry.isHideConfig(key))
 		{
-			if (key.equals(ConfigKeys.MINIMAP_TOGGLE_BUTTON) && !manager.isEditingLayout)
+			if (!manager.isEditingLayout)
 			{
 				clientThread.invokeLater(() ->
 				{
 					manager.hideOrbByConfig(key);
+
 					if (!manager.isFixedMode())
 					{
 						manager.rebuildLayout();
@@ -420,7 +425,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			{
 				if (!key.contains(manager.getCurrentPrefix()))
 				{
-					editLayout.toggleEditMode(false);
+					editManager.toggleEditMode(false);
 				}
 			});
 		}
@@ -456,7 +461,8 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 					}
 					else
 					{
-						slotManager.initSlots();
+						manager.enableOrbSwapping = config.enableOrbSwapping();
+						slotManager.update();
 						manager.rebuildLayout();
 					}
 
@@ -534,7 +540,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		{
 			if (manager.isEditingLayout)
 			{
-				editLayout.toggleEditMode(false);
+				editManager.toggleEditMode(false);
 			}
 			else
 			{
@@ -566,7 +572,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				{
 					e.consume();
 				}
-				clientThread.invokeLater(() -> editLayout.toggleEditMode(false));
+				clientThread.invokeLater(() -> editManager.toggleEditMode(false));
 			}
 			return;
 		}
@@ -601,7 +607,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				break;
 
 			case EDIT_MODE:
-				clientThread.invokeLater(() -> editLayout.toggleEditMode(true));
+				clientThread.invokeLater(() -> editManager.toggleEditMode(true));
 				break;
 		}
 	}

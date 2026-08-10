@@ -91,7 +91,10 @@ public class WidgetManager
 	//should only be called on shutdown with toDefault being true
 	public void remapTargets(boolean toDefault, int scriptId, TargetWidget... targets)
 	{
-		slotManager.updateCurrentLayout();
+		if (!toDefault)
+		{
+			slotManager.updateCurrentLayoutMode();
+		}
 
 		for (TargetWidget target : targets)
 		{
@@ -141,12 +144,12 @@ public class WidgetManager
 
 	private TargetWidget getSlotTarget(TargetWidget target)
 	{
-		if (!Orbs.isSwappableOrb(target.getComponentId()) || !config.enableOrbSwapping())
+		if (!Orbs.isSwappableOrb(target.getComponentId()) || !manager.enableOrbSwapping)
 		{
 			return target;
 		}
 
-		Slot slot = slotManager.find(target);
+		Slot slot = slotManager.findSlot(target);
 		if (slot == null)
 		{
 			return target;
@@ -500,12 +503,8 @@ public class WidgetManager
 		Widget[] children = widget.getChildren();
 		if (children == null || children.length <= child.getIndex() || children[child.getIndex()] != child)
 		{
-			log.debug("no child found that matched: {}={}[{}]", child, child.getId(), child.getIndex());
 			return;
 		}
-
-		log.debug("clearing child: {}({}), on parent={}({}), at index={}",
-			child, child.getId(), widget, widget.getId(), child.getIndex());
 
 		children[child.getIndex()] = null;
 	}
