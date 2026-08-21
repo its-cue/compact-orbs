@@ -40,9 +40,7 @@ import static com.compactorbs.util.ValueKey.X_POSITION_MODE;
 import static com.compactorbs.util.ValueKey.Y;
 import static com.compactorbs.util.ValueKey.Y_POSITION_MODE;
 import com.compactorbs.widget.TargetWidget;
-import java.util.EnumSet;
 import java.util.Map;
-import java.util.Set;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.runelite.api.widgets.WidgetPositionMode;
@@ -174,7 +172,7 @@ public enum Orbs implements TargetWidget
 	STORE_ORB_CONTAINER(
 		Orb.STORE_ORB,
 		-1,
-		Script.STORE_ORB_UPDATE,
+		Script.ORBS_UPDATE_STORE,
 		Orb.STORE_ORB_BACKING,
 		Orb.STORE_ORB_INDICATOR,
 		-1,
@@ -198,7 +196,7 @@ public enum Orbs implements TargetWidget
 	ACTIVITY_ORB_CONTAINER(
 		Orb.ACTIVITY_ORB,
 		-1,
-		Script.ACTIVITY_ORB_UPDATE,
+		Script.ORBS_UPDATE_ACTIVITY,
 		Orb.ACTIVITY_ORB_BACKING,
 		Orb.ACTIVITY_ORB_INDICATOR,
 		-1,

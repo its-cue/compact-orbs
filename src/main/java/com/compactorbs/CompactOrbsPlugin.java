@@ -32,6 +32,7 @@ import static com.compactorbs.CompactOrbsConstants.ConfigGroup.GROUP_NAME;
 import com.compactorbs.CompactOrbsConstants.ConfigKeys;
 import static com.compactorbs.CompactOrbsConstants.Layout.EDIT_MODE_HIDDEN_OPACITY;
 import com.compactorbs.CompactOrbsConstants.Script;
+import com.compactorbs.CompactOrbsConstants.VarClient;
 import com.compactorbs.CompactOrbsConstants.Varbit;
 import com.compactorbs.CompactOrbsConstants.Widgets;
 import com.compactorbs.CompactOrbsConstants.Widgets.Orb;
@@ -47,6 +48,7 @@ import com.compactorbs.widget.layout.slot.SlotRegistry;
 import com.compactorbs.widget.overlay.MinimapOverlay;
 import com.google.inject.Provides;
 import java.awt.event.KeyEvent;
+import java.util.Locale;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -56,6 +58,7 @@ import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.ScriptPreFired;
+import net.runelite.api.events.VarClientIntChanged;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.WidgetLoaded;
 import net.runelite.client.callback.ClientThread;
@@ -156,6 +159,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			{
 				manager.update(Script.FORCE_UPDATE);
 				manager.setupMinimapOverlay();
+				manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
 			}
 		});
 	}
@@ -228,8 +232,8 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				scriptId == Script.WIKI_ICON_INIT ||
 				scriptId == Script.WORLD_MAP_UPDATE ||
 				scriptId == Script.WIKI_ICON_UPDATE ||
-				scriptId == Script.STORE_ORB_UPDATE ||
-				scriptId == Script.ACTIVITY_ORB_UPDATE))
+				scriptId == Script.ORBS_UPDATE_STORE ||
+				scriptId == Script.ORBS_UPDATE_ACTIVITY))
 		{
 			widgetManager.remapTargets(
 				Orbs.WIKI_ICON_CONTAINER,
@@ -262,13 +266,12 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				break;
 
 			case Script.TOPLEVEL_REDRAW:
-				//check for an active cutscene
-				manager.isCutsceneActive = manager.getCutsceneStatus();
-
+			case Script.TOPLEVEL_RESIZE_CUSTOMIZE:
 			case Script.PROC_TOPLEVEL_SUBCHANGE:
 			case Script.TOPLEVEL_SIDE_CUSTOMIZE:
 				manager.hideLogout();
 				manager.updateLogoutXOverlay();
+				manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
 				break;
 
 			case Script.WIKI_ICON_INIT:
@@ -294,10 +297,10 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 					widgetManager.remapTargets(Orbs.WORLD_MAP_CONTAINER);
 					return;
 				}
-			case Script.STORE_ORB_UPDATE:
-			case Script.ACTIVITY_ORB_UPDATE:
+			case Script.ORBS_UPDATE_STORE:
+			case Script.ORBS_UPDATE_ACTIVITY:
 			case Script.WIKI_ICON_UPDATE:
-			case Script.GRID_MASTER_ORB_UPDATE:
+				//case Script.GRID_MASTER_ORB_UPDATE:
 				if (!manager.isMinimapMinimized())
 				{
 					manager.update(scriptId);
@@ -326,10 +329,12 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	@Subscribe
 	public void onVarbitChanged(VarbitChanged event)
 	{
-		int varbitId = event.getVarbitId();
-
-		switch (varbitId)
+		switch (event.getVarbitId())
 		{
+			case Varbit.CUTSCENE_STATUS:
+				manager.isCutsceneActive = manager.isCutsceneActive();
+				break;
+
 			case Varbit.MINIMAP_TOGGLE:
 				widgetManager.remapTargets(Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
 				manager.updateCustomChildren();
@@ -357,6 +362,19 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		}
 	}
 
+	@Subscribe
+	public void onVarClientIntChanged(VarClientIntChanged event)
+	{
+		if (event.getIndex() == VarClient.SIDE_PANEL_ID)
+		{
+			if (manager.isEditingLayout &&
+				config.hideMinimapWithSidePanel() && manager.isSidePanelHidden())
+			{
+				editManager.toggleEditMode(false);
+			}
+		}
+	}
+
 	@Subscribe(priority = -1.0f)
 	public void onWidgetLoaded(WidgetLoaded event)
 	{
@@ -379,9 +397,17 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		String group = event.getGroup();
 		String key = event.getKey();
 
-		if (group.equals(ConfigGroup.Wiki.GROUP_NAME))
+		if (group.equals(ConfigGroup.Core.MINIMAP))
 		{
-			if (key.equals(ConfigKeys.Wiki.SHOW_WIKI_MINIMAP_BUTTON))
+			if (key.equals(ConfigKeys.Core.HIDE_MINIMAP))
+			{
+				clientThread.invokeLater(() -> manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel()));
+			}
+		}
+
+		if (group.equals(ConfigGroup.Core.WIKI))
+		{
+			if (key.equals(ConfigKeys.Core.SHOW_WIKI_MINIMAP_BUTTON))
 			{
 				manager.warnWikiPluginConflict();
 				clientThread.invokeLater(() ->
@@ -494,6 +520,10 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				});
 				break;
 
+			case ConfigKeys.HIDE_MINIMAP_WITH_SIDE_PANEL:
+				clientThread.invokeLater(() -> manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel()));
+				break;
+
 			case ConfigKeys.ORB_LAYOUT:
 			case ConfigKeys.VERTICAL_Y_ADJUSTMENT:
 			case ConfigKeys.HORIZONTAL_ANCHOR:
@@ -530,24 +560,29 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	@Subscribe
 	public void onPluginChanged(PluginChanged event)
 	{
-		String plugin = event.getPlugin().getName();
-		if (!plugin.equalsIgnoreCase(ConfigGroup.Wiki.GROUP_NAME))
+		String name = event.getPlugin().getName().toLowerCase(Locale.ROOT);
+		switch (name)
 		{
-			return;
-		}
+			case ConfigGroup.Core.WIKI:
+				clientThread.invokeLater(() ->
+				{
+					if (manager.isEditingLayout)
+					{
+						editManager.toggleEditMode(false);
+					}
+					else
+					{
+						manager.rebuildLayout();
+					}
+					manager.updateWikiBannerVisibility(config.hideWiki());
+				});
+				break;
 
-		clientThread.invokeLater(() ->
-		{
-			if (manager.isEditingLayout)
-			{
-				editManager.toggleEditMode(false);
-			}
-			else
-			{
-				manager.rebuildLayout();
-			}
-			manager.updateWikiBannerVisibility(config.hideWiki());
-		});
+			case ConfigGroup.Core.MINIMAP:
+				//keep minimap hidden when the core minimap plugin is toggled (somewhat edge case)
+				clientThread.invokeLater(() -> manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel()));
+				break;
+		}
 	}
 
 	@Subscribe

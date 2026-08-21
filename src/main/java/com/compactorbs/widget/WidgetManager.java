@@ -41,7 +41,6 @@ import com.compactorbs.CompactOrbsLayout;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.util.SetValue;
 import com.compactorbs.util.ValueKey;
-import com.compactorbs.widget.elements.Minimap;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.layout.offset.OffsetManager;
 import com.compactorbs.widget.layout.slot.Slot;
@@ -425,65 +424,37 @@ public class WidgetManager
 		return widget.getChild(target.getArrayId());
 	}
 
-	//returns the current visible parent widget
-	public Widget getCurrentParent()
-	{
-		if (manager.isFixedMode())
-		{
-			return getParent(Fixed.ORBS);
-		}
-
-		Widget parent = getParent(Modern.ORBS);
-		if (parent != null && !parent.isHidden())
-		{
-			return parent;
-		}
-
-		return getParent(Classic.ORBS);
-	}
-
-	//returns the parent widget for the given component ID
-//can exist and be hidden, so check for visibility
-	public Widget getParent(int componentId)
-	{
-		Widget parent = client.getWidget(componentId);
-		if (parent != null && !parent.isHidden())
-		{
-			return parent;
-		}
-
-		return null;
-	}
-
 	public Widget getMapParent()
 	{
-		if (manager.isFixedMode())
-		{
-			return getParent(Fixed.MAP_CONTAINER);
-		}
-		else if (manager.isClassicResizable())
-		{
-			return getParent(Minimap.CLASSIC_MAP_CONTAINER.getComponentId());
-		}
-		else
-		{
-			return getParent(Minimap.MODERN_MAP_CONTAINER.getComponentId());
-		}
+		return getWidgetByDisplayMode(Fixed.MAP_CONTAINER, Classic.MAP_CONTAINER, Modern.MAP_CONTAINER);
+	}
+
+	public Widget getOrbsParent()
+	{
+		return getWidgetByDisplayMode(Fixed.ORBS, Classic.ORBS, Modern.ORBS);
 	}
 
 	public Widget getMinimapMask()
 	{
+		return getWidgetByDisplayMode(Fixed.MINIMAP_MASK, Classic.MINIMAP_MASK, Modern.MINIMAP_MASK);
+	}
+
+	private Widget getWidgetByDisplayMode(int fixed, int classic, int modern)
+	{
 		if (manager.isFixedMode())
 		{
-			return client.getWidget(Fixed.MINIMAP_MASK);
-		}
-		else if (manager.isClassicResizable())
-		{
-			return client.getWidget(Classic.MINIMAP_MASK);
+			return client.getWidget(fixed);
 		}
 		else
 		{
-			return client.getWidget(Modern.MINIMAP_MASK);
+			if (manager.isClassicResizable())
+			{
+				return client.getWidget(classic);
+			}
+			else
+			{
+				return client.getWidget(modern);
+			}
 		}
 	}
 
@@ -679,7 +650,7 @@ public class WidgetManager
 			.setHeightMode(WidgetSizeMode.MINUS)
 			.setHasListener(true);
 		widget.setOnOpListener(Script.TOPLEVEL_COMPASS_OP, Script.OPINDEX0);
-		widget.setOnVarTransmitListener(Script.TOPLEVEL_COMPASS_SETOP, Script.COMPONENT0, Script.COMSUBID1);
+		widget.setOnVarTransmitListener(Script.TOPLEVEL_COMPASS_SETOPS, Script.COMPONENT0, Script.COMSUBID1);
 		widget.setVarTransmitTrigger(VarPlayer.MAP_FLAGS_CACHED);
 		widget.revalidate();
 		return widget;

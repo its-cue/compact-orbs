@@ -198,6 +198,15 @@ public interface CompactOrbsConfig extends Config
 		return false;
 	}
 
+	@ConfigItem(
+		keyName = ConfigKeys.HIDE_MINIMAP_WITH_SIDE_PANEL,
+		name = "Hide orbs with inventory tab",
+		description = "Hide the compact layout when the side panel tab is hidden (only works in resizable-modern).",
+		section = layout,
+		position = 7
+	)
+	default boolean hideMinimapWithSidePanel() { return false; }
+
 	@ConfigSection(
 		name = "Toggle Button",
 		description = "",

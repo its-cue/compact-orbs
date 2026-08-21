@@ -115,7 +115,7 @@ public class EditManager
 			(target.isCompass() && !manager.isCompactLayout()) ||
 			(target == Orbs.STORE_ORB_CONTAINER && manager.isStoreOrbDisabled()) ||
 			(target == Orbs.ACTIVITY_ORB_CONTAINER && manager.isActivityOrbDisabled()) ||
-			(target.isWiki() && manager.isWikiBannerDisabled() && !manager.isWikiPluginBannerActive());
+			(target.isWiki() && manager.isWikiBannerDisabled() && !manager.isWikiPluginConfigEnabled());
 	}
 
 	public void toggleEditMode(boolean state)
@@ -331,7 +331,13 @@ public class EditManager
 		widgetManager.restoreMinimapRendering();
 		manager.rebuildLayout();
 		clearEditChildren();
-		widgetManager.getMapParent().setNoClickThrough(manager.isEditingLayout);
+
+		Widget parent = widgetManager.getMapParent();
+		if (parent != null)
+		{
+			parent.setNoClickThrough(manager.isEditingLayout);
+		}
+
 		dragState.clear();
 	}
 

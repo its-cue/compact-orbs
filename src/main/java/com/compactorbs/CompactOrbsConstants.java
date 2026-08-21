@@ -29,6 +29,7 @@ import java.awt.Color;
 import net.runelite.api.ScriptID;
 import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.gameval.SpriteID;
+import net.runelite.api.gameval.VarClientID;
 import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.api.gameval.VarbitID;
 import net.runelite.client.ui.JagexColors;
@@ -40,14 +41,11 @@ public class CompactOrbsConstants
 		public static final String GROUP_NAME = "compactorbs";
 		public static final int CONFIG_VERSION = 2;
 
-		public static final class Wiki
+		public static final class Core
 		{
-			public static final String GROUP_NAME = "wiki";
-		}
-
-		public static final class RuneLite
-		{
-			public static final String GROUP_NAME = "runelite";
+			public static final String WIKI = "wiki";
+			public static final String MINIMAP = "minimap";
+			public static final String RUNELITE = "runelite";
 		}
 	}
 
@@ -69,6 +67,7 @@ public class CompactOrbsConstants
 		public static final String LEAVE_EMPTY_SPACE = "leaveEmptySpace";
 		public static final String ENABLE_NO_CLICKTHROUGH = "enableNoClickthrough";
 		public static final String ENABLE_ORB_SWAPPING = "enableOrbSwapping";
+		public static final String HIDE_MINIMAP_WITH_SIDE_PANEL = "hideMinimapWithSidePanel";
 		public static final String HP_ORB_SLOT = "hpOrbSlot";
 		public static final String PRAYER_ORB_SLOT = "prayerOrbSlot";
 		public static final String RUN_ORB_SLOT = "runOrbSlot";
@@ -97,14 +96,13 @@ public class CompactOrbsConstants
 		public static final String VANILLA_LAYOUT_PREFIX = "vanilla_layout_";
 		public static final String FIXED_LAYOUT_PREFIX = "fixed_layout_";
 
-		public static final class Wiki
+		public static final class Core
 		{
+			public static final String WIKI_PLUGIN = ConfigGroup.Core.WIKI + "plugin";
 			public static final String SHOW_WIKI_MINIMAP_BUTTON = "showWikiMinimapButton";
-		}
 
-		public static final class RuneLite
-		{
-			public static final String WIKI_PLUGIN = "wikiplugin";
+			public static final String MINIMAP_PLUGIN = ConfigGroup.Core.MINIMAP + "plugin";
+			public static final String HIDE_MINIMAP = "hideMinimap";
 		}
 	}
 
@@ -119,27 +117,25 @@ public class CompactOrbsConstants
 		public static final int CUTSCENE_STATUS = VarbitID.CUTSCENE_STATUS;
 		public static final int MINIMAP_TOGGLE = VarbitID.MINIMAP_TOGGLE;
 
+		//used to determine classic-resizable display mode
+		public static final int RESIZABLE_STONE_ARRANGEMENT = VarbitID.RESIZABLE_STONE_ARRANGEMENT;
+
 		//orb in-game settings
 		public static final int ACTIVITY_ORB_TOGGLE = VarbitID.OPTION_CONTENT_RECOMMENDER_HIDE;
 		public static final int STORE_ORB_TOGGLE = VarbitID.TLI_STOREBUTTON_TOGGLE_DESKTOP;
 		public static final int WIKI_ICON_TOGGLE = VarbitID.WIKI_ICON_DISABLED;
 	}
 
+	public static final class VarClient
+	{
+		//which side panel tab is currently active (-1 is hidden)
+		public static final int SIDE_PANEL_ID = VarClientID.TOPLEVEL_PANEL;
+	}
+
 	public static final class VarPlayer
 	{
 		//var trigger for the compass menu options
 		public static final int MAP_FLAGS_CACHED = VarPlayerID.MAP_FLAGS_CACHED;
-	}
-
-	public static final class VarbitValue
-	{
-		public static final int CUTSCENE_ACTIVE = 1;
-		public static final int MINIMAP_MINIMIZED = 1;
-
-		//orb in-game settings
-		public static final int ACTIVITY_ORB_VISIBLE = 0;
-		public static final int STORE_ORB_VISIBLE = 1;
-		public static final int WIKI_ICON_VISIBLE = 0;
 	}
 
 	public static final class Script
@@ -154,21 +150,38 @@ public class CompactOrbsConstants
 		public static final int ORBS_UPDATE_HEALTH = 446;
 		public static final int ORBS_UPDATE_SPECENERGY = 2069;
 
-		//relevant orb update scripts
-		public static final int TOPLEVEL_SUBCHANGE = 903;
-		public static final int TOPLEVEL_REDRAW = ScriptID.TOPLEVEL_REDRAW;
-		public static final int PROC_TOPLEVEL_SUBCHANGE = 908;
-		public static final int TOPLEVEL_SIDEBUTTON_OP = 914;
-		public static final int TOPLEVEL_SIDE_CUSTOMIZE = 919;
-		public static final int WORLD_MAP_UPDATE = 1700;
-		public static final int TOOLTIP_MOUSE_RELEASE = 837;
-		public static final int STORE_ORB_UPDATE = 2396;
-		public static final int ACTIVITY_ORB_UPDATE = 2480;
+		//orb specific updating
+		public static final int ORBS_UPDATE_STORE = 2396;
+		public static final int ORBS_UPDATE_ACTIVITY = 2480;
 		public static final int WIKI_ICON_INIT = 3304;
 		public static final int WIKI_ICON_UPDATE = ScriptID.WIKI_ICON_UPDATE;
-		public static final int GRID_MASTER_ORB_UPDATE = 8222;
+		public static final int WORLD_MAP_UPDATE = 1700;
+		//public static final int GRID_MASTER_ORB_UPDATE = 8222;
+
+		//world map tooltip
+		public static final int TOOLTIP_MOUSE_RELEASE = 837;
+
+		//display mode change? used to cancel edit-mode when display mode change has fired (drop down)
+		public static final int TOPLEVEL_SUBCHANGE = 903;
+
+		//configure the current displays chat/side panel (init?)
+		public static final int PROC_TOPLEVEL_SUBCHANGE = 908;
+
+		//does a lot of top level widget state management
+		public static final int TOPLEVEL_REDRAW = ScriptID.TOPLEVEL_REDRAW;
+
+		//handles the menu op for the side panel tabs
+		public static final int TOPLEVEL_SIDEBUTTON_OP = 914;
+
+		//update the side panel tab icon/stones state
+		public static final int TOPLEVEL_SIDE_CUSTOMIZE = 919;
+
+		//on window resize, updates clickmasks/positions for the store/wiki and hides/shows the minimap (varbit checks)
+		public static final int TOPLEVEL_RESIZE_CUSTOMIZE = 920;
+
+		//detached minimap scripts for the compass menu op
 		public static final int TOPLEVEL_COMPASS_OP = 1050;
-		public static final int TOPLEVEL_COMPASS_SETOP = 7044;
+		public static final int TOPLEVEL_COMPASS_SETOPS = 7044;
 
 		//cs2
 		public static final int COMSUBID1 = -2147483643;

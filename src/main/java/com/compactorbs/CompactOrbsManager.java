@@ -35,8 +35,8 @@ import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsConstants.MenuOp;
 import com.compactorbs.CompactOrbsConstants.Script;
 import com.compactorbs.CompactOrbsConstants.Sprite;
+import com.compactorbs.CompactOrbsConstants.VarClient;
 import com.compactorbs.CompactOrbsConstants.Varbit;
-import com.compactorbs.CompactOrbsConstants.VarbitValue;
 import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
 import com.compactorbs.CompactOrbsConstants.Widgets.MinimapOverlay;
 import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
@@ -204,13 +204,15 @@ public class CompactOrbsManager
 
 		bindingManager.clear();
 		orbHidden.clear();
-		slotManager.clear();
 
 		clearCustomChildren();
 
 		resetVisibility();
 		resetPositioning();
 		resetNoClickThrough();
+
+		//save for last to prevent potential NPE with offsets
+		slotManager.clear();
 	}
 
 	//used for profile swap/full config reset
@@ -244,6 +246,7 @@ public class CompactOrbsManager
 	{
 		widgetManager.setTargetsHidden(false, Orbs.values());
 		widgetManager.setTargetsHidden(false, Compass.values());
+		hideMinimapOnTabClose(false);
 		updateWikiBannerVisibility(false);
 		widgetManager.setTargetsHidden(hideStonesAndIcons(), Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
 	}
@@ -276,6 +279,7 @@ public class CompactOrbsManager
 	{
 		saveConfig(ConfigKeys.MINIMAP, !isMinimapHidden());
 		rebuildLayout();
+		hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
 	}
 
 	public void setupMinimapContainer(boolean toDefault)
@@ -298,6 +302,30 @@ public class CompactOrbsManager
 				widgetManager.updateValue(orbsContainer::getHeight, orbsContainer::setHeight, parent.getHeight());
 			}
 		}
+	}
+
+	public void hideMinimapOnTabClose(boolean hide)
+	{
+		if (!isFixedMode() && !isClassicResizable())
+		{
+			updateLogoutXPosition();
+
+			if (isCutsceneActive || isMinimapMinimized() || isMinimapPluginConfigEnabled())
+			{
+				return;
+			}
+
+			boolean hidden = hide && isCompactLayout() && isSidePanelHidden();
+
+			//only hide the parent not the children (do not use setTargetsHidden/setHidden(target...))
+			widgetManager.setHidden(Minimap.MODERN_MAP_MINIMAP.getComponentId(), hidden);
+			widgetManager.setHidden(Minimap.MODERN_ORBS_CONTAINER.getComponentId(), hidden);
+		}
+	}
+
+	public boolean hideMinimapWithSidePanel()
+	{
+		return config.hideMinimapWithSidePanel();
 	}
 
 	public void updateNoClickThrough()
@@ -407,7 +435,7 @@ public class CompactOrbsManager
 	//and only creating widgets if missing from the current parent
 	public void createCustomChildren()
 	{
-		Widget parent = widgetManager.getCurrentParent();
+		Widget parent = widgetManager.getOrbsParent();
 		if (parent == null)
 		{
 			return;
@@ -476,6 +504,8 @@ public class CompactOrbsManager
 		{
 			compassFrame = widgetManager.createCompassFrame(parent);
 		}
+
+		updateCustomChildren();
 	}
 
 	public void updateCustomChildren()
@@ -767,13 +797,13 @@ public class CompactOrbsManager
 
 	public boolean isClassicResizable()
 	{
-		Widget parent = widgetManager.getCurrentParent();
-		if (parent == null || isFixedMode())
+		if (!isLoggedIn() || isFixedMode())
 		{
 			return false;
 		}
 
-		return parent.getId() == Classic.ORBS;
+		final int classicArrangement = 0;
+		return client.getVarbitValue(Varbit.RESIZABLE_STONE_ARRANGEMENT) == classicArrangement;
 	}
 
 	public boolean isLoggedIn()
@@ -916,7 +946,7 @@ public class CompactOrbsManager
 	//restrict the overlays logout-x visibility to the same conditions as the original
 	private boolean hideOverlayLogoutX()
 	{
-		if (widgetManager.getCurrentParent() == null)
+		if (widgetManager.getOrbsParent() == null)
 		{
 			return true;
 		}
@@ -950,17 +980,20 @@ public class CompactOrbsManager
 
 	public boolean isActivityOrbDisabled()
 	{
-		return client.getVarbitValue(Varbit.ACTIVITY_ORB_TOGGLE) != VarbitValue.ACTIVITY_ORB_VISIBLE;
+		final int activityOrbVisible = 0;
+		return client.getVarbitValue(Varbit.ACTIVITY_ORB_TOGGLE) != activityOrbVisible;
 	}
 
 	public boolean isStoreOrbDisabled()
 	{
-		return client.getVarbitValue(Varbit.STORE_ORB_TOGGLE) != VarbitValue.STORE_ORB_VISIBLE;
+		final int storeOrbVisible = 1;
+		return client.getVarbitValue(Varbit.STORE_ORB_TOGGLE) != storeOrbVisible;
 	}
 
 	public boolean isWikiBannerDisabled()
 	{
-		return client.getVarbitValue(Varbit.WIKI_ICON_TOGGLE) != VarbitValue.WIKI_ICON_VISIBLE;
+		final int wikiIconVisible = 0;
+		return client.getVarbitValue(Varbit.WIKI_ICON_TOGGLE) != wikiIconVisible;
 	}
 
 	public boolean isMinimapMinimized()
@@ -971,12 +1004,25 @@ public class CompactOrbsManager
 			return false;
 		}
 
-		return client.getVarbitValue(Varbit.MINIMAP_TOGGLE) == VarbitValue.MINIMAP_MINIMIZED;
+		final int minimapMinimized = 1;
+		return client.getVarbitValue(Varbit.MINIMAP_TOGGLE) == minimapMinimized;
 	}
 
-	public boolean getCutsceneStatus()
+	public boolean isCutsceneActive()
 	{
-		return client.getVarbitValue(Varbit.CUTSCENE_STATUS) == VarbitValue.CUTSCENE_ACTIVE;
+		final int cutsceneActive = 1;
+		return client.getVarbitValue(Varbit.CUTSCENE_STATUS) == cutsceneActive;
+	}
+
+	public boolean isSidePanelHidden()
+	{
+		if (!isLoggedIn())
+		{
+			return false;
+		}
+
+		final int sidePanelHidden = -1;
+		return client.getVarcIntValue(VarClient.SIDE_PANEL_ID) == sidePanelHidden;
 	}
 
 	public int getLayoutXOffset()
@@ -1126,22 +1172,34 @@ public class CompactOrbsManager
 		}
 	}
 
-	public boolean isWikiPluginBannerActive()
+	public boolean isWikiPluginConfigEnabled()
 	{
-		boolean wikiPluginActive = Boolean.TRUE.equals(
-			configManager.getConfiguration(ConfigGroup.RuneLite.GROUP_NAME, ConfigKeys.RuneLite.WIKI_PLUGIN, Boolean.class)
-		);
+		return isPluginConfigEnabled(
+			ConfigKeys.Core.WIKI_PLUGIN,
+			ConfigGroup.Core.WIKI, ConfigKeys.Core.SHOW_WIKI_MINIMAP_BUTTON);
+	}
 
-		boolean showWikiMinimapButton = Boolean.TRUE.equals(
-			configManager.getConfiguration(ConfigGroup.Wiki.GROUP_NAME, ConfigKeys.Wiki.SHOW_WIKI_MINIMAP_BUTTON, Boolean.class)
-		);
+	public boolean isMinimapPluginConfigEnabled()
+	{
+		return isPluginConfigEnabled(
+			ConfigKeys.Core.MINIMAP_PLUGIN,
+			ConfigGroup.Core.MINIMAP, ConfigKeys.Core.HIDE_MINIMAP);
+	}
 
-		return wikiPluginActive && showWikiMinimapButton;
+	private boolean isPluginConfigEnabled(String pluginKey, String configGroup, String configKey)
+	{
+		boolean isPluginEnabled = Boolean.TRUE.equals(
+			configManager.getConfiguration(ConfigGroup.Core.RUNELITE, pluginKey, Boolean.class));
+
+		boolean isConfigEnabled = Boolean.TRUE.equals(
+			configManager.getConfiguration(configGroup, configKey, Boolean.class));
+
+		return isPluginEnabled && isConfigEnabled;
 	}
 
 	public void warnWikiPluginConflict()
 	{
-		if (!hasSeenWikiWarning && isWikiPluginBannerActive() && config.hideWiki())
+		if (!hasSeenWikiWarning && isWikiPluginConfigEnabled() && config.hideWiki())
 		{
 			sendMessage(msg ->
 				msg
