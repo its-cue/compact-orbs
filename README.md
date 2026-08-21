@@ -3,28 +3,12 @@
 
 ![](https://imgur.com/iiNx0m3.gif)
 
-<table>
-  <tr>
-    <td><b><a href="#layout">Layout</a></b></td>
-    <td> Choose from a few presets or create a custom layout. <br/> See below for more options</td>
-  </tr>
-
-  <tr>
-    <td><b><a href="#toggle-button">Toggle Button</a></b></td>
-    <td> Switches between <code>vanilla</code> or <code>compact</code> view. <br/> Also used to enable/leave <code>edit-mode</code></td>
-  </tr>
-
-  <tr>
-    <td><b>Hotkey</b></td>
-    <td> A configurable keybind, by default: <code>shift + insert</code></td>
-  </tr>
-
-  <tr>
-    <td><b><a href="#detached-minimap">Detached Minimap</a></b></td>
-    <td> Enable a detached minimap while in <code>compact-view</code>. <br/> See limitations below</td>
-  </tr>
-
-</table>
+|                                           |                                                                                       |
+|-------------------------------------------|---------------------------------------------------------------------------------------|
+| **[Layout](#layout)**                     | Choose from a few presets or create a custom layout.<br/>See below for more           |
+| **[Toggle Button](#toggle-button)**       | Switches between `vanilla` or `compact` view.<br/>Also used to enter/exit `edit-mode` |
+| **Hotkey**                                | A configurable keybind, by default: `shift + insert`                                  |
+| **[Detached Minimap](#detached-minimap)** | Enable a detached minimap while in `compact-view`.<br/>See below for more             |
 
 <br/>
 
@@ -74,6 +58,15 @@ https://github.com/user-attachments/assets/27feee3c-b658-4ae9-a9bb-5d1af8dcd5d5
   - automatically enabled in `compact-layout` when `orb-swapping` is enabled
 
   ![](https://imgur.com/8lvJoGk.gif)
+
+<br/>
+
+### Hide with Inventory tab
+- Hide the `compact-layout` when a side panel tab is hidden.
+  - does not affect the `detached-minimap`
+  - only works in `modern-resizable` display mode
+  
+  ![](https://imgur.com/Ezhkz0O.gif)
 
 <br/>
 
