@@ -146,7 +146,6 @@ public class CompactOrbsManager
 	//update on startup, onWidgetLoaded, and onScriptPostFired
 	public void update(int scriptId)
 	{
-		updateWikiBannerVisibility(config.hideWiki());
 		hideOrbByScript(scriptId);
 		createCustomChildren();
 
@@ -154,6 +153,11 @@ public class CompactOrbsManager
 		{
 			rebuildLayout();
 			return;
+		}
+
+		if (scriptId == Script.WIKI_ICON_INIT || scriptId == Script.WIKI_ICON_UPDATE)
+		{
+			updateWikiBannerVisibility(config.hideWiki());
 		}
 
 		widgetManager.remapTargetsByScriptId(scriptId, Orbs.values());

@@ -274,10 +274,6 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
 				break;
 
-			case Script.WIKI_ICON_INIT:
-				manager.updateWikiBannerVisibility(config.hideWiki());
-				break;
-
 			case Script.ORBS_UPDATE_SPECENERGY:
 				if (manager.isEditingLayout && config.hideSpec())
 				{
@@ -299,6 +295,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				}
 			case Script.ORBS_UPDATE_STORE:
 			case Script.ORBS_UPDATE_ACTIVITY:
+			case Script.WIKI_ICON_INIT:
 			case Script.WIKI_ICON_UPDATE:
 				//case Script.GRID_MASTER_ORB_UPDATE:
 				if (!manager.isMinimapMinimized())
