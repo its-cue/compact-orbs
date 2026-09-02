@@ -69,13 +69,14 @@ public class MinimapOverlay extends Overlay
 	public Dimension render(Graphics2D graphics)
 	{
 		final Widget widget = client.getWidget(componentId);
-		if (widget == null)
+		final Rectangle parent = getParentBounds(widget);
+
+		if (parent.isEmpty())
 		{
 			return null;
 		}
 
-		final Rectangle parent = getParentBounds(widget);
-		if (parent.isEmpty())
+		if (widget == null)
 		{
 			return null;
 		}
@@ -89,13 +90,10 @@ public class MinimapOverlay extends Overlay
 		}
 
 		final Rectangle bounds = getBounds();
-
-		// OverlayRenderer sets the overlay bounds to where it would like the overlay to render at prior to calling
-		// render(). If the overlay has a preferred location or position set we update the widget position to that.
-		if (getPreferredLocation() != null || getPreferredPosition() != null)
+		if (getPreferredLocation() != null || getPreferredPosition() != null || (getPosition() != OverlayPosition.DYNAMIC && manager.snapCornerRepositioned))
 		{
-			// The widget relative pos is relative to the parent
-			widget.setForcedPosition(bounds.x - parent.x, bounds.y - parent.y);
+			// If the widget is manually moved or the snapcorner it is in is moved, force the widget to be in the snapcorner bounds
+			widget.setForcedPosition(bounds.x - parent.x, bounds.y - parent.y); // the widget relative pos is relative to its parent
 		}
 		else
 		{
@@ -108,9 +106,7 @@ public class MinimapOverlay extends Overlay
 				widget.revalidate();
 			}
 
-			// Update the overlay bounds to the widget bounds so the drag overlay renders correctly.
-			// Note OverlayManager uses original bounds reference to render managing mode and for
-			// onMouseOver, so update the existing bounds vs. replacing the reference.
+			// Otherwise allow the widget to draw where it wants to, and update the overlay bounds to reflect that.
 			Rectangle widgetBounds = widget.getBounds();
 			bounds.setBounds(widgetBounds.x, widgetBounds.y, widgetBounds.width, widgetBounds.height);
 		}
@@ -120,26 +116,25 @@ public class MinimapOverlay extends Overlay
 
 	private Rectangle getParentBounds(final Widget widget)
 	{
-		if (widget == null)
+		if (widget == null || widget.isHidden())
 		{
-			parentBounds.setBounds(new Rectangle());
+			parentBounds.setBounds(0, 0, 0, 0);
 			return parentBounds;
 		}
 
 		final Widget parent = widget.getParent();
-		final Rectangle bounds;
 
 		if (parent == null)
 		{
-			bounds = new Rectangle(client.getRealDimensions());
+			var d = client.getRealDimensions();
+			parentBounds.setBounds(0, 0, d.width, d.height);
 		}
 		else
 		{
-			bounds = parent.getBounds();
+			parentBounds.setBounds(parent.getBounds());
 		}
 
-		parentBounds.setBounds(bounds);
-		return bounds;
+		return parentBounds;
 	}
 
 	@Override

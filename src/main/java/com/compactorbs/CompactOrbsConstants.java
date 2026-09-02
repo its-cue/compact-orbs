@@ -103,6 +103,9 @@ public class CompactOrbsConstants
 
 			public static final String MINIMAP_PLUGIN = ConfigGroup.Core.MINIMAP + "plugin";
 			public static final String HIDE_MINIMAP = "hideMinimap";
+
+			public static final String SNAPCORNER_PREFIX = "snapcorner_";
+			public static final String SNAPCORNER_CONFIG_LOCATION = "_location";
 		}
 	}
 

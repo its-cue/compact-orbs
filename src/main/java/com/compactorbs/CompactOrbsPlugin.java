@@ -73,6 +73,7 @@ import net.runelite.client.input.MouseManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.ui.overlay.OverlayPosition;
 
 @Slf4j
 @PluginDescriptor(
@@ -151,6 +152,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		manager.hideLogoutX = config.hideLogout();
 		manager.enableNoClickThrough = config.enableNoClickthrough();
 		manager.enableOrbSwapping = config.enableOrbSwapping();
+		manager.snapCornerRepositioned = manager.isSnapCornerRepositioned();
 
 		clientThread.invoke(() ->
 		{
@@ -393,6 +395,14 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	{
 		String group = event.getGroup();
 		String key = event.getKey();
+
+		if (group.equals(ConfigGroup.Core.RUNELITE))
+		{
+			if (key.equals(ConfigKeys.Core.SNAPCORNER_PREFIX + OverlayPosition.CANVAS_TOP_RIGHT + ConfigKeys.Core.SNAPCORNER_CONFIG_LOCATION))
+			{
+				manager.snapCornerRepositioned = event.getNewValue() != null;
+			}
+		}
 
 		if (group.equals(ConfigGroup.Core.MINIMAP))
 		{

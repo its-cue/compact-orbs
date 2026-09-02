@@ -81,6 +81,7 @@ import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.config.Keybind;
+import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.util.ColorUtil;
 
 @Slf4j
@@ -120,6 +121,7 @@ public class CompactOrbsManager
 	@Inject
 	private BindingManager bindingManager;
 
+	public boolean snapCornerRepositioned;
 	public boolean isUpdatingProfile;
 	public boolean isEditingLayout;
 	public boolean hideWorldMap;
@@ -1174,6 +1176,16 @@ public class CompactOrbsManager
 				}
 				break;
 		}
+	}
+
+	public boolean isSnapCornerRepositioned()
+	{
+		final java.awt.Point p = configManager.getConfiguration(
+			ConfigGroup.Core.RUNELITE,
+			ConfigKeys.Core.SNAPCORNER_PREFIX + OverlayPosition.CANVAS_TOP_RIGHT + ConfigKeys.Core.SNAPCORNER_CONFIG_LOCATION,
+			java.awt.Point.class);
+
+		return p != null;
 	}
 
 	public boolean isWikiPluginConfigEnabled()
