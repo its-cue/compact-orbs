@@ -28,7 +28,6 @@ package com.compactorbs.widget.layout;
 
 import com.compactorbs.CompactOrbsConfig;
 import com.compactorbs.CompactOrbsConstants.ConfigKeys;
-import com.compactorbs.CompactOrbsConstants.Script;
 import com.compactorbs.widget.TargetWidget;
 import com.compactorbs.widget.elements.Button;
 import com.compactorbs.widget.elements.Minimap;
@@ -48,15 +47,7 @@ public final class HideOrbRegistry
 	@Inject
 	private CompactOrbsConfig config;
 
-	public enum UpdateType
-	{
-		CONFIG,
-		SCRIPT,
-		BOTH
-	}
-
 	private final Map<String, HideOrbConfig> byConfig = new HashMap<>();
-	private final Map<Integer, HideOrbConfig> byScript = new HashMap<>();
 	private final Map<TargetWidget, HideOrbConfig> byTarget = new HashMap<>();
 
 	public void registerAll()
@@ -64,7 +55,6 @@ public final class HideOrbRegistry
 		register(
 			ConfigKeys.HIDE_HP,
 			config::hideHp,
-			UpdateType.BOTH,
 			"HP orb",
 			Orbs.HP_ORB_CONTAINER
 		);
@@ -72,7 +62,6 @@ public final class HideOrbRegistry
 		register(
 			ConfigKeys.HIDE_PRAYER,
 			config::hidePray,
-			UpdateType.BOTH,
 			"Prayer orb",
 			Orbs.PRAYER_ORB_CONTAINER
 		);
@@ -80,7 +69,6 @@ public final class HideOrbRegistry
 		register(
 			ConfigKeys.HIDE_RUN,
 			config::hideRun,
-			UpdateType.BOTH,
 			"Run orb",
 			Orbs.RUN_ORB_CONTAINER
 		);
@@ -88,7 +76,6 @@ public final class HideOrbRegistry
 		register(
 			ConfigKeys.HIDE_SPEC,
 			config::hideSpec,
-			UpdateType.BOTH,
 			"Special orb",
 			Orbs.SPEC_ORB_CONTAINER
 		);
@@ -96,7 +83,6 @@ public final class HideOrbRegistry
 		register(
 			ConfigKeys.HIDE_STORE,
 			config::hideStore,
-			UpdateType.BOTH,
 			"Store",
 			Orbs.STORE_ORB_CONTAINER
 		);
@@ -104,7 +90,6 @@ public final class HideOrbRegistry
 		register(
 			ConfigKeys.HIDE_ACTIVITY,
 			config::hideActivity,
-			UpdateType.BOTH,
 			"Activity advisor",
 			Orbs.ACTIVITY_ORB_CONTAINER
 		);
@@ -112,7 +97,6 @@ public final class HideOrbRegistry
 		register(
 			ConfigKeys.HIDE_WORLD,
 			config::hideWorld,
-			UpdateType.CONFIG,
 			"World map",
 			Orbs.WORLD_MAP_CONTAINER
 		);
@@ -120,7 +104,6 @@ public final class HideOrbRegistry
 		register(
 			ConfigKeys.HIDE_WIKI,
 			config::hideWiki,
-			UpdateType.CONFIG,
 			"Wiki banner",
 			Orbs.WIKI_VANILLA_ICON,
 			Orbs.WIKI_VANILLA_CONTAINER,
@@ -130,7 +113,6 @@ public final class HideOrbRegistry
 		register(
 			ConfigKeys.HIDE_XP,
 			config::hideXp,
-			UpdateType.BOTH,
 			"XP",
 			Orbs.XP_DROPS_CONTAINER
 		);
@@ -138,7 +120,6 @@ public final class HideOrbRegistry
 		register(
 			ConfigKeys.HIDE_LOGOUT_X,
 			config::hideLogout,
-			UpdateType.BOTH,
 			"Logout",
 			Orbs.LOGOUT_X_ICON,
 			Orbs.LOGOUT_X_STONE
@@ -147,7 +128,6 @@ public final class HideOrbRegistry
 		register(
 			ConfigKeys.MINIMAP_TOGGLE_BUTTON,
 			config::hideMinimapToggle,
-			UpdateType.CONFIG,
 			"Button",
 			Button.MINIMAP_BUTTON_CLASSIC,
 			Button.MINIMAP_BUTTON_MODERN,
@@ -157,7 +137,6 @@ public final class HideOrbRegistry
 		register(
 			ConfigKeys.COMPASS,
 			config::hideCompass,
-			UpdateType.CONFIG,
 			"Compass",
 			Minimap.MODERN_MAP_MINIMAP,
 			Minimap.CLASSIC_MAP_MINIMAP
@@ -167,7 +146,6 @@ public final class HideOrbRegistry
 	private void register(
 		String key,
 		Supplier<Boolean> isHidden,
-		UpdateType type,
 		String name,
 		TargetWidget... targets)
 	{
@@ -180,23 +158,9 @@ public final class HideOrbRegistry
 
 		byConfig.put(key, hideOrbConfig);
 
-		int scriptId = Script.FORCE_UPDATE;
-
 		for (TargetWidget target : targets)
 		{
 			byTarget.put(target, hideOrbConfig);
-
-			if ((type == UpdateType.SCRIPT || type == UpdateType.BOTH)
-				&& scriptId == Script.FORCE_UPDATE
-				&& target instanceof Orbs)
-			{
-				scriptId = target.getScriptId();
-			}
-		}
-
-		if (scriptId != Script.FORCE_UPDATE)
-		{
-			byScript.put(scriptId, hideOrbConfig);
 		}
 	}
 
@@ -208,11 +172,6 @@ public final class HideOrbRegistry
 	public HideOrbConfig getByConfig(String key)
 	{
 		return byConfig.get(key);
-	}
-
-	public HideOrbConfig getByScript(int scriptId)
-	{
-		return byScript.get(scriptId);
 	}
 
 	public HideOrbConfig getByTarget(TargetWidget target)
@@ -233,7 +192,6 @@ public final class HideOrbRegistry
 	public void clear()
 	{
 		byConfig.clear();
-		byScript.clear();
 		byTarget.clear();
 	}
 }

@@ -148,18 +148,12 @@ public class CompactOrbsManager
 	//update on startup, onWidgetLoaded, and onScriptPostFired
 	public void update(int scriptId)
 	{
-		hideOrbByScript(scriptId);
 		createCustomChildren();
 
 		if (scriptId == Script.FORCE_UPDATE)
 		{
 			rebuildLayout();
 			return;
-		}
-
-		if (scriptId == Script.WIKI_ICON_INIT || scriptId == Script.WIKI_ICON_UPDATE)
-		{
-			updateWikiBannerVisibility(config.hideWiki());
 		}
 
 		widgetManager.remapTargetsByScriptId(scriptId, Orbs.values());
@@ -1081,41 +1075,6 @@ public class CompactOrbsManager
 		}
 
 		return y;
-	}
-
-	private void hideOrbByScript(int scriptId)
-	{
-		if (scriptId == Script.FORCE_UPDATE)
-		{
-			orbHidden.values().forEach(this::hideOrb);
-			return;
-		}
-
-		HideOrbConfig config = orbHidden.getByScript(scriptId);
-		if (config != null)
-		{
-			hideOrb(config);
-		}
-	}
-
-	private void hideOrb(HideOrbConfig config)
-	{
-		if (config.getConfigKey().equals(ConfigKeys.HIDE_LOGOUT_X)
-			|| config.getConfigKey().equals(ConfigKeys.HIDE_WORLD)
-			|| config.getConfigKey().equals(ConfigKeys.HIDE_WIKI))
-		{
-			return;
-		}
-
-		if (!isEditingLayout && config.getConfigKey().equals(ConfigKeys.COMPASS))
-		{
-			return;
-		}
-
-		widgetManager.setTargetsHidden(
-			config.getGetter().get(),
-			config.getTargets()
-		);
 	}
 
 	public void hideAllOrbsByConfig()

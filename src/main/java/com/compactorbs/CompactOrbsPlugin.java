@@ -157,9 +157,11 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		clientThread.invoke(() ->
 		{
 			slotManager.init();
+
 			if (manager.isLoggedIn())
 			{
 				manager.update(Script.FORCE_UPDATE);
+				manager.hideAllOrbsByConfig();
 				manager.setupMinimapOverlay();
 				manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
 			}
@@ -303,6 +305,11 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				if (!manager.isMinimapMinimized())
 				{
 					manager.update(scriptId);
+
+					if (scriptId == Script.WIKI_ICON_INIT || scriptId == Script.WIKI_ICON_UPDATE)
+					{
+						manager.updateWikiBannerVisibility(config.hideWiki());
+					}
 				}
 				break;
 		}
@@ -382,6 +389,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		{
 			case Orb.UNIVERSE >> 16:
 				manager.update(Script.FORCE_UPDATE);
+				manager.hideAllOrbsByConfig();
 				break;
 
 			case Widgets.MinimapOverlay.UNIVERSE >> 16:
