@@ -30,6 +30,7 @@ import com.compactorbs.CompactOrbsLayout;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.TargetWidget;
 import com.compactorbs.widget.WidgetManager;
+import com.compactorbs.widget.elements.Button;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.layout.HideOrbConfig;
 import com.compactorbs.widget.layout.HideOrbRegistry;
@@ -212,7 +213,7 @@ public class SlotManager
 		{
 			Slot slot = group.get(index);
 
-			if (slot == Slot.WIKI_SLOT && index > start)
+			if (slot == Slot.WIKI_SLOT && (!isHidden(Slot.WIKI_SLOT) || !isHidden(Slot.TOGGLE_BUTTON)))
 			{
 				continue;
 			}
@@ -253,7 +254,7 @@ public class SlotManager
 	{
 		TargetWidget target = getTarget(slot);
 
-		if (target == null)
+		if (target == null || target == Button.MINIMAP_BUTTON_CLASSIC)
 		{
 			return 0;
 		}
@@ -294,7 +295,7 @@ public class SlotManager
 
 		for (Slot slot : columnOrRow)
 		{
-			if (slot == Slot.WIKI_SLOT)
+			if (slot == Slot.WIKI_SLOT && (!isHidden(Slot.WIKI_SLOT) || !isHidden(Slot.TOGGLE_BUTTON)))
 			{
 				continue;
 			}

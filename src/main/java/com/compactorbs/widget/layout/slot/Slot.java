@@ -26,6 +26,7 @@
 package com.compactorbs.widget.layout.slot;
 
 import com.compactorbs.widget.TargetWidget;
+import com.compactorbs.widget.elements.Button;
 import com.compactorbs.widget.elements.Compass;
 import com.compactorbs.widget.elements.Orbs;
 import lombok.Getter;
@@ -45,7 +46,8 @@ public enum Slot
 	ACTIVITY_SLOT(Orbs.ACTIVITY_ORB_CONTAINER),
 	WIKI_SLOT(Orbs.WIKI_ICON_CONTAINER),
 	COMPASS_SLOT(Compass.CLASSIC_COMPASS),
-	LOGOUT_X_SLOT(Orbs.LOGOUT_X_ICON);
+	LOGOUT_X_SLOT(Orbs.LOGOUT_X_ICON),
+	TOGGLE_BUTTON(Button.MINIMAP_BUTTON_CLASSIC);
 
 	private final TargetWidget defaultTarget;
 }
