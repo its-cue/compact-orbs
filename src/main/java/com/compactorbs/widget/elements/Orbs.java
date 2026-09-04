@@ -475,4 +475,10 @@ public enum Orbs implements TargetWidget
 	{
 		return this == WIKI_ICON_CONTAINER;
 	}
+
+	@Override
+	public boolean isSpec()
+	{
+		return this == SPEC_ORB_CONTAINER;
+	}
 }

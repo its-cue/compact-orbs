@@ -416,6 +416,7 @@ public class CompactOrbsConstants
 
 		public static final int ORBS_CONTAINER_OFFSET_Y = 10;
 		public static final int LOGOUT_X_ICON_OPACITY = 100;
+		public static final int SPEC_ORB_INDICATOR_OPACITY = 50;
 		public static final int EDIT_MODE_HIDDEN_OPACITY = 160;
 		public static final int EDIT_MODE_BACKGROUND_OPACITY = 220;
 	}

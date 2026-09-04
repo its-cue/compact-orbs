@@ -88,5 +88,10 @@ public interface TargetWidget
 		return false;
 	}
 
+	default boolean isSpec()
+	{
+		return false;
+	}
+
 	Map<ValueKey, SetValue> getValueMap();
 }

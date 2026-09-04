@@ -30,6 +30,7 @@ import com.compactorbs.CompactOrbsConstants.Enum;
 import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsConstants.Layout.MinimapOverlay;
 import com.compactorbs.CompactOrbsConstants.Layout.Original;
+import static com.compactorbs.CompactOrbsConstants.Layout.SPEC_ORB_INDICATOR_OPACITY;
 import com.compactorbs.CompactOrbsConstants.MenuOp;
 import com.compactorbs.CompactOrbsConstants.Script;
 import com.compactorbs.CompactOrbsConstants.Sprite;
@@ -374,6 +375,11 @@ public class WidgetManager
 		}
 		if (target.getIndicatorId() != -1)
 		{
+			if (target.isSpec())
+			{
+				opacity = SPEC_ORB_INDICATOR_OPACITY;
+			}
+
 			setOpacity(target.getIndicatorId(), opacity);
 		}
 		if (target.getIconId() != -1)
