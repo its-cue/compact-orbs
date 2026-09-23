@@ -1272,12 +1272,14 @@ public class CompactOrbsManager
 			if (binding.getFixed() == null)
 			{
 				clearSavedPosition(binding.getModern());
+				clearSavedPosition(binding.getRelated());
 			}
 		}
 		else
 		{
-			clearSavedPosition(binding.getModern());
 			clearSavedPosition(binding.getClassic());
+			clearSavedPosition(binding.getModern());
+			clearSavedPosition(binding.getRelated());
 		}
 
 		if (remap)
@@ -1387,7 +1389,8 @@ public class CompactOrbsManager
 				return -1;
 			}
 		}
-		else if (widget.getId() == Orbs.LOGOUT_X_ICON.getComponentId())
+		else if (widget.getId() == Orbs.LOGOUT_X_ICON.getComponentId() ||
+			widget.getId() == Orbs.LOGOUT_X_STONE.getComponentId())
 		{
 			if (hideLogoutX)
 			{
@@ -1420,8 +1423,8 @@ public class CompactOrbsManager
 			return;
 		}
 
-		savePosition(binding.getModern(), x, y);
 		savePosition(binding.getClassic(), x, y);
+		savePosition(binding.getModern(), x, y);
 		savePosition(binding.getRelated(), x, y);
 	}
 
