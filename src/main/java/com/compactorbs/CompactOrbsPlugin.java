@@ -214,6 +214,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			event.getGameState() == GameState.LOGGING_IN)
 		{
 			manager.isLoggingIn = true;
+			manager.wikiPluginBannerExists = false;
 			manager.clearCustomChildren();
 		}
 		else if (manager.isLoggedIn() && manager.isLoggingIn)

@@ -106,6 +106,7 @@ public final class HideOrbRegistry
 			config::hideWiki,
 			"Wiki banner",
 			Orbs.WIKI_VANILLA_ICON,
+			Orbs.WIKI_PLUGIN_ICON,
 			Orbs.WIKI_VANILLA_CONTAINER,
 			Orbs.WIKI_ICON_CONTAINER
 		);

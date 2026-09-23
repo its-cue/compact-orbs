@@ -121,6 +121,8 @@ public class CompactOrbsManager
 	@Inject
 	private BindingManager bindingManager;
 
+	public boolean wikiPluginBannerExists;
+
 	public boolean snapCornerRepositioned;
 	public boolean isUpdatingProfile;
 	public boolean isEditingLayout;
@@ -308,6 +310,25 @@ public class CompactOrbsManager
 	{
 		if (!isFixedMode() && !isClassicResizable())
 		{
+			//wait for the wiki plugin to create its banner
+			// - side panel appears to be flagged as 'closed' on world-hop(other?), which will hide the minimap container
+			//   and cause the wiki plugin to return early when it tries to create its widget
+			if (isWikiPluginConfigEnabled() && !wikiPluginBannerExists)
+			{
+				Widget container = widgetManager.getTargetWidget(Orbs.WIKI_ICON_CONTAINER);
+				if (container == null)
+				{
+					return;
+				}
+
+				if (!widgetManager.hasChildren(container))
+				{
+					return;
+				}
+
+				wikiPluginBannerExists = true;
+			}
+
 			updateLogoutXPosition();
 
 			if (isCutsceneActive || isMinimapMinimized() || isMinimapPluginConfigEnabled())
@@ -672,7 +693,7 @@ public class CompactOrbsManager
 		}
 
 		Widget banner = widgetManager.getTargetWidget(Orbs.WIKI_VANILLA_CONTAINER);
-		if (customWikiBanner(container))
+		if (widgetManager.hasChildren(container))
 		{
 			banner = container.getChild(0);
 		}
@@ -683,21 +704,12 @@ public class CompactOrbsManager
 		}
 
 		//vanilla banner should be hidden if the in-game setting is disabled
-		if (isWikiBannerDisabled() && !customWikiBanner(container) && !isEditingLayout)
+		if (isWikiBannerDisabled() && !widgetManager.hasChildren(container) && !isEditingLayout)
 		{
 			hidden = true;
 		}
 
 		banner.setHidden(hidden);
-	}
-
-	private boolean customWikiBanner(Widget container)
-	{
-		if (container == null)
-		{
-			return false;
-		}
-		return (container.getDynamicChildren() != null && container.getDynamicChildren().length > 0);
 	}
 
 	public String buildEditOp(boolean hidden)

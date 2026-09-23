@@ -486,6 +486,17 @@ public class WidgetManager
 		children[child.getIndex()] = null;
 	}
 
+	public boolean hasChildren(Widget widget)
+	{
+		if (widget == null)
+		{
+			return false;
+		}
+
+		Widget[] children = widget.getChildren();
+		return children != null && children.length > 0;
+	}
+
 	public Widget createHandler(Widget parent, int x, int y, int width, int height, int xMode, int yMode, boolean noClickThrough)
 	{
 		Widget child = parent.createChild(-1, WidgetType.RECTANGLE);
