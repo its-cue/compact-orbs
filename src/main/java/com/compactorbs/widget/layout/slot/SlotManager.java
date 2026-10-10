@@ -34,10 +34,10 @@ import com.compactorbs.widget.elements.Button;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.layout.HideOrbConfig;
 import com.compactorbs.widget.layout.HideOrbRegistry;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import java.util.EnumMap;
 import java.util.List;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import lombok.Getter;
 import net.runelite.api.widgets.Widget;
 
