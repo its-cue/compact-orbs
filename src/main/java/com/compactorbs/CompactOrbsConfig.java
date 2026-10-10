@@ -329,6 +329,18 @@ public interface CompactOrbsConfig extends Config
 		return false;
 	}
 
+	@ConfigItem(
+		keyName = ConfigKeys.DETACH_UTILITY_ORBS,
+		name = "Detach utility orbs",
+		description = "Position the `utility` orbs around the detached minimap",
+		section = minimapOverlay,
+		position = 3
+	)
+	default boolean detachUtilityOrbs()
+	{
+		return false;
+	}
+
 	@ConfigSection(
 		name = "Orb Visibility / Swapping",
 		description = "",
@@ -339,7 +351,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = "hideAndSwapUpdate",
 		name = "<html>Orb hiding/swapping has been moved to the in-game Edit-mode. <br/> <br/>" +
-			"Enable Edit-mode (either works): <br/>" +
+			"To enable Edit-mode (either works): <br/>" +
 			"- Right-click the toggle-button (eye) <br/>" +
 			"- Configure the Hotkey for Edit-mode </html>",
 		description = "",

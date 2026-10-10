@@ -55,6 +55,7 @@ import com.compactorbs.widget.layout.edit.BindingManager;
 import com.compactorbs.widget.layout.edit.DragState;
 import com.compactorbs.widget.layout.edit.EditManager;
 import com.compactorbs.widget.layout.slot.SlotManager;
+import com.compactorbs.widget.overlay.DetachedHandler;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -110,6 +111,9 @@ public class CompactOrbsManager
 	private SlotManager slotManager;
 
 	@Inject
+	private DetachedHandler detachedHandler;
+
+	@Inject
 	private HideOrbRegistry orbHidden;
 
 	@Inject
@@ -120,6 +124,11 @@ public class CompactOrbsManager
 
 	@Inject
 	private BindingManager bindingManager;
+
+	public boolean isNativeDragActive;
+	public boolean isResizingCanvas;
+	//TODO - test profile swapping
+	public boolean isSidePanelHiddenOnInit;
 
 	public boolean wikiPluginBannerExists;
 
@@ -159,6 +168,19 @@ public class CompactOrbsManager
 		}
 
 		widgetManager.remapTargetsByScriptId(scriptId, Orbs.values());
+
+		//should prevent flickering when utility orbs are detached (ex: tab switching)
+		if (applyDetachedOffset())
+		{
+			Widget container = widgetManager.getMapParent();
+			if (container != null)
+			{
+				container.revalidate();
+				container.setWidth(detachedUnionWidth());
+				container.setHeight(detachedUnionHeight());
+			}
+		}
+
 		updateNoClickThrough();
 	}
 
@@ -203,11 +225,16 @@ public class CompactOrbsManager
 		enableNoClickThrough = false;
 		isUpdatingProfile = false;
 		enableOrbSwapping = false;
+		isSidePanelHiddenOnInit = false;
 
 		bindingManager.clear();
 		orbHidden.clear();
 
 		clearCustomChildren();
+
+		isResizingCanvas = false;
+		isNativeDragActive = false;
+		detachedHandler.restore(true);
 
 		resetVisibility();
 		resetPositioning();
@@ -236,6 +263,7 @@ public class CompactOrbsManager
 		//update based on config
 		hideAllOrbsByConfig();
 		slotManager.update();
+		detachedHandler.restore(false);
 
 		if (reset)
 		{
@@ -280,6 +308,7 @@ public class CompactOrbsManager
 	public void onMinimapToggle()
 	{
 		saveConfig(ConfigKeys.MINIMAP, !isMinimapHidden());
+		detachedHandler.invalidate();
 		rebuildLayout();
 		hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
 	}
@@ -534,6 +563,13 @@ public class CompactOrbsManager
 		updateCompassFrameChild();
 		updateMinimapToggleButton();
 		widgetManager.setHidden(MinimapOverlay.UNIVERSE, hideMinimapOverlay());
+		if (hideMinimapOverlay() && config.detachUtilityOrbs())
+		{
+			clientThread.invokeLater(() ->
+			{
+				detachedHandler.restore(false);
+			});
+		}
 	}
 
 	private void updateCompassFrameChild()
@@ -908,7 +944,7 @@ public class CompactOrbsManager
 		return config.hideMinimapToggle();
 	}
 
-	boolean hideMinimapOverlay()
+	public boolean hideMinimapOverlay()
 	{
 		return !(isMinimapOverlayEnabled() && isMinimapHidden() && !isMinimapMinimized()) || isFixedMode();
 	}
@@ -916,6 +952,76 @@ public class CompactOrbsManager
 	public boolean isMinimapOverlayEnabled()
 	{
 		return config.showMinimapInCompactView();
+	}
+
+	public boolean applyDetachedOffset()
+	{
+		return !isResizingCanvas &&
+			!isNativeDragActive &&
+			detachedHandler.isCached() &&
+			(!hideMinimapOverlay() && detachUtilityOrbs()) &&
+			!isEditingLayout;
+	}
+
+	public boolean detachUtilityOrbs()
+	{
+		return config.detachUtilityOrbs();
+	}
+
+	public int detachedX()
+	{
+		return detachedHandler.getDetachedRelX();
+	}
+
+	public int detachedY()
+	{
+		return detachedHandler.getDetachedRelY();
+	}
+
+	public int detachedUnionWidth()
+	{
+		return detachedHandler.getUnionWidth();
+	}
+
+	public int detachedUnionHeight()
+	{
+		return detachedHandler.getUnionHeight();
+	}
+
+	public int detachedSnapshotX()
+	{
+		return detachedSnapshotX(true);
+	}
+
+	public int detachedSnapshotY()
+	{
+		return detachedSnapshotY(true);
+	}
+
+	//TODO
+	public int detachedSnapshotX(boolean offset)
+	{
+		if (offset)
+		{
+			if (isAnchorRight() && getCurrentLayout().isVertical())
+			{
+				return detachedHandler.getSnapshotRelX() + getCurrentLayout().getRightOffset();
+			}
+		}
+		return detachedHandler.getSnapshotRelX();
+	}
+
+	public int detachedSnapshotY(boolean offset)
+	{
+		if (offset)
+		{
+			if (isAnchorBottom() && (getCurrentLayout().isHorizontal() || getCurrentLayout().isHorizontalWide()))
+			{
+				return detachedHandler.getSnapshotRelY() + getCurrentLayout().getBottomOffset() - clampVerticalY();
+			}
+		}
+
+		return detachedHandler.getSnapshotRelY();
 	}
 
 	//prevent unintended state changes for the logout-x since it is treated as a side icon/stone, i.e. don't unhide when it should be hidden
@@ -1147,6 +1253,11 @@ public class CompactOrbsManager
 				}
 				break;
 		}
+	}
+
+	public Keybind getNativeDragHotkey()
+	{
+		return configManager.getConfiguration(ConfigGroup.Core.RUNELITE, ConfigKeys.Core.DRAG_HOTKEY, Keybind.class);
 	}
 
 	public boolean isSnapCornerRepositioned()
@@ -1400,7 +1511,28 @@ public class CompactOrbsManager
 
 		String configKey = buildSavedKey(getCurrentPrefix(), widget.getId(), index, key);
 		Integer value = configManager.getConfiguration(ConfigGroup.GROUP_NAME, configKey, Integer.class);
-		return value != null ? value : -1;
+
+		if (value != null)
+		{
+			if (applyDetachedOffset() && value != -1)
+			{
+				if (key == com.compactorbs.util.ValueKey.X)
+				{
+					value += detachedSnapshotX();
+				}
+
+				if (key == ValueKey.Y)
+				{
+					value += detachedSnapshotY();
+				}
+			}
+		}
+		else
+		{
+			value = -1;
+		}
+
+		return value;
 	}
 
 	public void saveCurrentLayoutPosition(Widget bound, Binding binding)

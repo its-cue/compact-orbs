@@ -42,6 +42,11 @@ public class HPOrbOffset implements OffsetTarget
 			return x;
 		}
 
+		if (manager.applyDetachedOffset())
+		{
+			x += manager.detachedSnapshotX();
+		}
+
 		if (manager.getCurrentLayout().isHorizontal() || manager.getCurrentLayout().isHorizontalWide())
 		{
 			x = slotManager.applyHiddenXOffset(Orbs.HP_ORB_CONTAINER, x);
@@ -56,6 +61,11 @@ public class HPOrbOffset implements OffsetTarget
 		if (!compactLayout)
 		{
 			return y;
+		}
+
+		if (manager.applyDetachedOffset())
+		{
+			y += manager.detachedSnapshotY();
 		}
 
 		if (manager.getCurrentLayout().isVertical())

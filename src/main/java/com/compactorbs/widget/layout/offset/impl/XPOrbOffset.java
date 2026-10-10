@@ -43,6 +43,12 @@ public class XPOrbOffset implements OffsetTarget
 			return x;
 		}
 
+		if (manager.applyDetachedOffset())
+		{
+			x = manager.detachedX();
+			return x;
+		}
+
 		if (manager.allowReordering() && !manager.isEditingLayout)
 		{
 			if (manager.getCurrentLayout().isHorizontal())
@@ -117,6 +123,12 @@ public class XPOrbOffset implements OffsetTarget
 			{
 				y -= 2;
 			}
+			return y;
+		}
+
+		if (manager.applyDetachedOffset())
+		{
+			y = 45 + manager.detachedY();
 			return y;
 		}
 

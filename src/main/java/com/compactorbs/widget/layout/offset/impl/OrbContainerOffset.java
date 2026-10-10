@@ -48,7 +48,8 @@ public class OrbContainerOffset implements OffsetTarget
 			return offsetX;
 		}
 
-		if (manager.isAnchorRight() && !manager.getCurrentLayout().isCustom())
+		if (!manager.applyDetachedOffset() &&
+			manager.isAnchorRight() && !manager.getCurrentLayout().isCustom())
 		{
 			offsetX += manager.getCurrentLayout().getRightOffset();
 		}
@@ -66,7 +67,8 @@ public class OrbContainerOffset implements OffsetTarget
 			return offsetY;
 		}
 
-		if (manager.isAnchorBottom() && !manager.getCurrentLayout().isCustom())
+		if (!manager.applyDetachedOffset() &&
+			manager.isAnchorBottom() && !manager.getCurrentLayout().isCustom())
 		{
 			offsetY += manager.getCurrentLayout().getBottomOffset() - manager.clampVerticalY();
 		}
@@ -77,6 +79,11 @@ public class OrbContainerOffset implements OffsetTarget
 	@Override
 	public int widthOffset(int w, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
 	{
+		if (compact && manager.applyDetachedOffset())
+		{
+			w += manager.detachedUnionWidth();
+		}
+
 		offsetWidth = w;
 		return offsetWidth;
 	}
@@ -84,6 +91,11 @@ public class OrbContainerOffset implements OffsetTarget
 	@Override
 	public int heightOffset(int h, boolean compact, CompactOrbsManager manager, SlotManager slotManager)
 	{
+		if (compact && manager.applyDetachedOffset())
+		{
+			h += manager.detachedUnionHeight();
+		}
+
 		offsetHeight = h;
 		return offsetHeight;
 	}

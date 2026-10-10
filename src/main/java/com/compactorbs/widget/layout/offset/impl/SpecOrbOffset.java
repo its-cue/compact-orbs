@@ -42,6 +42,11 @@ public class SpecOrbOffset implements OffsetTarget
 			return x;
 		}
 
+		if (manager.applyDetachedOffset())
+		{
+			x += manager.detachedSnapshotX();
+		}
+
 		if (manager.getCurrentLayout().isHorizontal() || manager.getCurrentLayout().isHorizontalWide())
 		{
 			x = slotManager.applyHiddenXOffset(Orbs.SPEC_ORB_CONTAINER, x);
@@ -56,6 +61,11 @@ public class SpecOrbOffset implements OffsetTarget
 		if (!compactLayout)
 		{
 			return y;
+		}
+
+		if (manager.applyDetachedOffset())
+		{
+			y += manager.detachedSnapshotY();
 		}
 
 		if (manager.getCurrentLayout().isVertical())

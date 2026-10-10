@@ -44,6 +44,12 @@ public class WikiContainerOffset implements OffsetTarget
 			return manager.isFixedMode() ? 8 : x;
 		}
 
+		if (manager.applyDetachedOffset())
+		{
+			x = 140 + manager.detachedX();
+			return x;
+		}
+
 		if (manager.allowReordering() && !manager.isEditingLayout)
 		{
 			if (manager.getCurrentLayout().isHorizontal()
@@ -75,6 +81,12 @@ public class WikiContainerOffset implements OffsetTarget
 		if (!compactLayout)
 		{
 			return manager.isFixedMode() ? 135 : y;
+		}
+
+		if (manager.applyDetachedOffset())
+		{
+			y = 152 + manager.detachedY();
+			return y;
 		}
 
 		if (manager.getCurrentLayout().isVertical())

@@ -55,6 +55,12 @@ public class WorldMapOffset implements OffsetTarget
 			return manager.isFixedMode() ? 10 : x;
 		}
 
+		if (manager.applyDetachedOffset())
+		{
+			x = 151 + manager.detachedX();
+			return x;
+		}
+
 		if (manager.allowReordering() && !manager.isEditingLayout)
 		{
 			if (manager.getCurrentLayout().isHorizontal())
@@ -122,6 +128,12 @@ public class WorldMapOffset implements OffsetTarget
 
 		if (!compactLayout)
 		{
+			return y;
+		}
+
+		if (manager.applyDetachedOffset())
+		{
+			y = 123 + manager.detachedY();
 			return y;
 		}
 

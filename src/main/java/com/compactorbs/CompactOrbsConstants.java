@@ -90,6 +90,7 @@ public class CompactOrbsConstants
 		public static final String ENABLE_MINIMAP_OVERLAY = "enableMinimapOverlay";
 		public static final String ENABLE_OVERLAY_TOGGLE_OPTION = "enableOverlayToggleOption";
 		public static final String ENABLE_LOGOUT_X_OVERLAY = "enableLogoutXOverlay";
+		public static final String DETACH_UTILITY_ORBS = "detachUtilityOrbs";
 
 		//edit-modes custom positioning
 		public static final String CUSTOM_LAYOUT_PREFIX = "custom_layout_";
@@ -106,6 +107,8 @@ public class CompactOrbsConstants
 
 			public static final String SNAPCORNER_PREFIX = "snapcorner_";
 			public static final String SNAPCORNER_CONFIG_LOCATION = "_location";
+
+			public static final String DRAG_HOTKEY = "dragHotkey";
 		}
 	}
 
@@ -583,6 +586,11 @@ public class CompactOrbsConstants
 			public static final int LOGOUT_X_ICON = InterfaceID.ToplevelPreEoc.ICON10;
 			public static final int LOGOUT_X_STONE = InterfaceID.ToplevelPreEoc.STONE10;
 			public static final int SIDE_MOVABLE = InterfaceID.ToplevelPreEoc.SIDE_MOVABLE;
+		}
+
+		public static final class SidePanel
+		{
+			public static final int SIDE_PANEL_CONTAINER = InterfaceID.ToplevelPreEoc.SIDE_CONTAINER;
 		}
 	}
 }

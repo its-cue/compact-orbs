@@ -42,6 +42,12 @@ public class StoreOrbOffset implements OffsetTarget
 			return manager.isFixedMode() ? 0 : x;
 		}
 
+		if (manager.applyDetachedOffset())
+		{
+			x = manager.detachedX();
+			return x;
+		}
+
 		if (manager.getCurrentLayout().isHorizontal())
 		{
 			x = slotManager.applyHiddenXOffset(Orbs.STORE_ORB_CONTAINER, x);
@@ -55,6 +61,12 @@ public class StoreOrbOffset implements OffsetTarget
 		if (!compactLayout)
 		{
 			return manager.isFixedMode() ? 83 : y;
+		}
+
+		if (manager.applyDetachedOffset())
+		{
+			y = 100 + manager.detachedY();
+			return y;
 		}
 
 		if (manager.getCurrentLayout().isVertical())

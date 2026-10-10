@@ -61,6 +61,12 @@ public class MinimapButtonOffset implements OffsetTarget
 			return x;
 		}
 
+		if (manager.applyDetachedOffset())
+		{
+			x = 48 + manager.detachedX();
+			return x;
+		}
+
 		if (manager.getCurrentLayout().isHorizontal())
 		{
 			if (manager.allowReordering() && !manager.isEditingLayout)
@@ -112,6 +118,12 @@ public class MinimapButtonOffset implements OffsetTarget
 				}
 			}
 
+			return y;
+		}
+
+		if (manager.applyDetachedOffset())
+		{
+			y = 150 + manager.detachedY();
 			return y;
 		}
 

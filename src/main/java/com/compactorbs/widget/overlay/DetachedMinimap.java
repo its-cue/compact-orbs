@@ -38,20 +38,22 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 
 @Slf4j
-public class MinimapOverlay extends Overlay
+public class DetachedMinimap extends Overlay
 {
 	private final Client client;
 	private final CompactOrbsManager manager;
+	private final DetachedHandler handler;
 
 	private final int componentId = Widgets.MinimapOverlay.UNIVERSE;
 	private final Rectangle parentBounds = new Rectangle();
 	private boolean revalidate;
 
 	@Inject
-	private MinimapOverlay(Client client, CompactOrbsManager manager)
+	private DetachedMinimap(Client client, CompactOrbsManager manager, DetachedHandler handler)
 	{
 		this.client = client;
 		this.manager = manager;
+		this.handler = handler;
 		setPriority(Overlay.PRIORITY_HIGHEST);
 		setLayer(OverlayLayer.UNDER_WIDGETS);
 		setPosition(OverlayPosition.CANVAS_TOP_RIGHT);
@@ -111,6 +113,7 @@ public class MinimapOverlay extends Overlay
 			bounds.setBounds(widgetBounds.x, widgetBounds.y, widgetBounds.width, widgetBounds.height);
 		}
 
+		handler.update(bounds);
 		return new Dimension(widget.getWidth(), widget.getHeight());
 	}
 

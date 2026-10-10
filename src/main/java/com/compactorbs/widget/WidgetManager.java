@@ -42,6 +42,7 @@ import com.compactorbs.CompactOrbsLayout;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.util.SetValue;
 import com.compactorbs.util.ValueKey;
+import com.compactorbs.widget.elements.Minimap;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.layout.offset.OffsetManager;
 import com.compactorbs.widget.layout.slot.Slot;
@@ -187,7 +188,22 @@ public class WidgetManager
 		int saved = getSavedValue(widget, index, key, useSavedPosition);
 		if (saved != -1)
 		{
-			return saved;
+			if (Orbs.isSwappableOrb(widget.getId()) ||
+				widget.getId() == Minimap.CLASSIC_MAP_MINIMAP.getComponentId() ||
+				widget.getId() == Minimap.MODERN_MAP_MINIMAP.getComponentId() ||
+				(
+					!manager.hideLogoutX && (widget.getId() == Orbs.LOGOUT_X_ICON.getComponentId() || widget.getId() == Orbs.LOGOUT_X_STONE.getComponentId())
+				))
+			{
+				return saved;
+			}
+			else
+			{
+				if (!manager.applyDetachedOffset())
+				{
+					return saved;
+				}
+			}
 		}
 
 		//offsets return fixed mode positions early (not stored in the Orbs enum)

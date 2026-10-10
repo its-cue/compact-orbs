@@ -45,7 +45,8 @@ import com.compactorbs.widget.layout.edit.DragState;
 import com.compactorbs.widget.layout.edit.EditManager;
 import com.compactorbs.widget.layout.slot.SlotManager;
 import com.compactorbs.widget.layout.slot.SlotRegistry;
-import com.compactorbs.widget.overlay.MinimapOverlay;
+import com.compactorbs.widget.overlay.DetachedHandler;
+import com.compactorbs.widget.overlay.DetachedMinimap;
 import com.google.inject.Provides;
 import java.awt.event.KeyEvent;
 import java.util.Locale;
@@ -103,7 +104,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	private KeyManager keyManager;
 
 	@Inject
-	private MinimapOverlay minimapOverlay;
+	private DetachedMinimap detachedMinimap;
 
 	@Inject
 	private OverlayManager overlayManager;
@@ -130,13 +131,16 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	private DragState dragState;
 
 	@Inject
+	private DetachedHandler detachedHandler;
+
+	@Inject
 	private MouseManager mouseManager;
 
 	@Override
 	protected void startUp() throws Exception
 	{
 		manager.migrateConfigs();
-		overlayManager.add(minimapOverlay);
+		overlayManager.add(detachedMinimap);
 		keyManager.registerKeyListener(this);
 		mouseManager.registerMouseListener(dragListener);
 		orbRegistry.registerAll();
@@ -164,6 +168,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				manager.hideAllOrbsByConfig();
 				manager.setupMinimapOverlay();
 				manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
+				manager.isSidePanelHiddenOnInit = manager.isSidePanelHidden();
 			}
 		});
 	}
@@ -171,7 +176,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	@Override
 	protected void shutDown() throws Exception
 	{
-		overlayManager.remove(minimapOverlay);
+		overlayManager.remove(detachedMinimap);
 		keyManager.unregisterKeyListener(this);
 		mouseManager.unregisterMouseListener(dragListener);
 		clientThread.invoke(manager::reset);
@@ -216,6 +221,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			manager.isLoggingIn = true;
 			manager.wikiPluginBannerExists = false;
 			manager.clearCustomChildren();
+			detachedHandler.restore(false);
 		}
 		else if (manager.isLoggedIn() && manager.isLoggingIn)
 		{
@@ -379,6 +385,16 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			{
 				editManager.toggleEditMode(false);
 			}
+
+			if (manager.isSidePanelHiddenOnInit && !manager.isSidePanelHidden())
+			{
+				manager.isSidePanelHiddenOnInit = false;
+
+				if (config.detachUtilityOrbs() && !manager.hideMinimapOverlay())
+				{
+					detachedHandler.restore(false);
+				}
+			}
 		}
 	}
 
@@ -391,10 +407,16 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			case Orb.UNIVERSE >> 16:
 				manager.update(Script.FORCE_UPDATE);
 				manager.hideAllOrbsByConfig();
+
+				detachedHandler.invalidate();
 				break;
 
 			case Widgets.MinimapOverlay.UNIVERSE >> 16:
 				manager.setupMinimapOverlay();
+				break;
+
+			case Widgets.SidePanel.SIDE_PANEL_CONTAINER >> 16:
+				manager.isSidePanelHiddenOnInit = manager.isSidePanelHidden();
 				break;
 		}
 	}
@@ -520,6 +542,12 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			case ConfigKeys.ENABLE_MINIMAP_OVERLAY:
 				clientThread.invokeLater(() ->
 				{
+					if (config.detachUtilityOrbs() &&
+						(manager.isEditingLayout || manager.hideMinimapOverlay() || detachedHandler.isCached()))
+					{
+						detachedHandler.restore(false);
+					}
+
 					widgetManager.setHidden(Widgets.MinimapOverlay.UNIVERSE, manager.hideMinimapOverlay());
 					manager.hideLogout();
 					manager.updateLogoutXPosition();
@@ -540,8 +568,17 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				clientThread.invokeLater(() -> manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel()));
 				break;
 
-			case ConfigKeys.ORB_LAYOUT:
 			case ConfigKeys.VERTICAL_Y_ADJUSTMENT:
+				clientThread.invokeLater(() ->
+				{
+					if (!manager.isFixedMode())
+					{
+						manager.rebuildLayout();
+					}
+				});
+				break;
+
+			case ConfigKeys.ORB_LAYOUT:
 			case ConfigKeys.HORIZONTAL_ANCHOR:
 			case ConfigKeys.VERTICAL_ANCHOR:
 			case ConfigKeys.DISABLE_REORDERING:
@@ -550,6 +587,14 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				{
 					if (!manager.isFixedMode())
 					{
+						if (config.detachUtilityOrbs() && !manager.hideMinimapOverlay()
+							&& manager.isLoggedIn())
+						{
+							detachedHandler.restore(false);
+							detachedHandler.invalidate();
+							return;
+						}
+
 						manager.rebuildLayout();
 					}
 				});
@@ -615,6 +660,14 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	@Override
 	public void keyPressed(KeyEvent e)
 	{
+		//holding shift allows the interface origin menu to be visible,
+		//but it's a bit jarring when shift-dropping or other actions with shift-bound,
+		//likely a non-issue, just hide the detached minimap to set the origin
+		if (manager.getNativeDragHotkey().matches(e))
+		{
+			manager.isNativeDragActive = true;
+		}
+
 		if (manager.isEditingLayout)
 		{
 			if (e.getKeyCode() == KeyEvent.VK_ESCAPE || config.hotkeyKeybind().matches(e))
@@ -666,5 +719,10 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	@Override
 	public void keyReleased(KeyEvent e)
 	{
+		if (manager.getNativeDragHotkey().matches(e))
+		{
+			manager.isNativeDragActive = false;
+			detachedHandler.invalidate();
+		}
 	}
 }

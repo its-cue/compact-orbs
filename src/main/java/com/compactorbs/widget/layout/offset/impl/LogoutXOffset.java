@@ -49,6 +49,11 @@ public class LogoutXOffset implements OffsetTarget
 			return x;
 		}
 
+		if (manager.applyDetachedOffset())
+		{
+			x += manager.detachedSnapshotX(false);
+		}
+
 		if (manager.isAnchorRight() && !manager.getCurrentLayout().isCustom())
 		{
 			x += manager.getCurrentLayout().getRightOffset();
@@ -87,6 +92,11 @@ public class LogoutXOffset implements OffsetTarget
 		if (!compactLayout)
 		{
 			return y;
+		}
+
+		if (manager.applyDetachedOffset())
+		{
+			y += manager.detachedSnapshotY(false);
 		}
 
 		if (manager.isAnchorBottom() && !manager.getCurrentLayout().isCustom())

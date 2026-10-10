@@ -53,6 +53,12 @@ public class ActivityOrbOffset implements OffsetTarget
 			return x;
 		}
 
+		if (manager.applyDetachedOffset())
+		{
+			x = 13 + manager.detachedX();
+			return x;
+		}
+
 		if (manager.getCurrentLayout().isHorizontal())
 		{
 			x = slotManager.applyHiddenXOffset(Orbs.ACTIVITY_ORB_CONTAINER, x);
@@ -76,6 +82,12 @@ public class ActivityOrbOffset implements OffsetTarget
 				y = Layout.Original.STORE_ORB_Y;
 			}
 
+			return y;
+		}
+
+		if (manager.applyDetachedOffset())
+		{
+			y = 131 + manager.detachedY();
 			return y;
 		}
 
