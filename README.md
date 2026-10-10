@@ -102,9 +102,14 @@ https://github.com/user-attachments/assets/27feee3c-b658-4ae9-a9bb-5d1af8dcd5d5
     - the `logout-x` will open the logout tab or world switcher
   
   ![](https://imgur.com/MpxTcDI.gif)
-  
+
 > There is no compatibility with plugins that modify, overlay, or add indicators to the original `vanilla` minimap
 >>- Examples include `Quest Helper`, `Shortest Path`, `Ground Markers`, and `Player Indicators`.
+
+### Detach 'Utility' Orbs
+- Reposition the utility orbs around the detached minimap, separating them from the current layout
+ - utility orbs: [`world-map`, `wiki`, `toggle-button`, `store`, `activity`, `xp`]
+  ![](https://imgur.com/yV0XRkB.png)
 
 ---
 
