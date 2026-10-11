@@ -221,12 +221,15 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			manager.isLoggingIn = true;
 			manager.wikiPluginBannerExists = false;
 			manager.clearCustomChildren();
+			manager.isGraphicsReset = false;
+			detachedHandler.setResizedWhileHidden(false);
 			detachedHandler.restore(false);
 		}
 		else if (manager.isLoggedIn() && manager.isLoggingIn)
 		{
 			manager.isLoggingIn = false;
 			manager.createCustomChildren();
+			detachedHandler.setResizedWhileHidden(false);
 		}
 	}
 
@@ -277,6 +280,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				break;
 
 			case Script.TOPLEVEL_REDRAW:
+				manager.rebuildDetachedContainer();
 			case Script.TOPLEVEL_RESIZE_CUSTOMIZE:
 			case Script.PROC_TOPLEVEL_SUBCHANGE:
 			case Script.TOPLEVEL_SIDE_CUSTOMIZE:
@@ -386,15 +390,10 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				editManager.toggleEditMode(false);
 			}
 
-			if (manager.isSidePanelHiddenOnInit && !manager.isSidePanelHidden())
-			{
-				manager.isSidePanelHiddenOnInit = false;
-
-				if (config.detachUtilityOrbs() && !manager.hideMinimapOverlay())
-				{
-					detachedHandler.restore(false);
-				}
-			}
+			//login & start unhidden -> hide config -> open side panel -> hide side panel -> unhide config -> open side panel (would flicker)
+			//should probably test more when i can, works atm tho todo
+			manager.refreshSidePanelSnapshot();
+			detachedHandler.onSidePanelChanged();
 		}
 	}
 
@@ -407,8 +406,6 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			case Orb.UNIVERSE >> 16:
 				manager.update(Script.FORCE_UPDATE);
 				manager.hideAllOrbsByConfig();
-
-				detachedHandler.invalidate();
 				break;
 
 			case Widgets.MinimapOverlay.UNIVERSE >> 16:
@@ -496,6 +493,16 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 
 		switch (key)
 		{
+
+			case ConfigKeys.DETACH_UTILITY_ORBS:
+				clientThread.invokeLater(() ->
+				{
+					manager.isGraphicsReset = false;
+					detachedHandler.setLastProvider(null);
+					detachedHandler.restore(false);
+				});
+				break;
+
 			case ConfigKeys.COMPASS:
 				clientThread.invokeLater(() ->
 				{
@@ -565,7 +572,12 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				break;
 
 			case ConfigKeys.HIDE_MINIMAP_WITH_SIDE_PANEL:
-				clientThread.invokeLater(() -> manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel()));
+				clientThread.invokeLater(() ->
+				{
+					manager.refreshSidePanelSnapshot();
+					detachedHandler.setResizedWhileHidden(false);
+					manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
+				});
 				break;
 
 			case ConfigKeys.VERTICAL_Y_ADJUSTMENT:
@@ -587,11 +599,9 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				{
 					if (!manager.isFixedMode())
 					{
-						if (config.detachUtilityOrbs() && !manager.hideMinimapOverlay()
-							&& manager.isLoggedIn())
+						if (manager.applyDetachedOffset() && manager.isLoggedIn())
 						{
 							detachedHandler.restore(false);
-							detachedHandler.invalidate();
 							return;
 						}
 
@@ -722,7 +732,6 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		if (manager.getNativeDragHotkey().matches(e))
 		{
 			manager.isNativeDragActive = false;
-			detachedHandler.invalidate();
 		}
 	}
 }

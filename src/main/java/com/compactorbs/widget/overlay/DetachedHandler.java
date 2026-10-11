@@ -36,7 +36,9 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.BufferProvider;
 import net.runelite.api.Client;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
@@ -72,8 +74,6 @@ public class DetachedHandler
 	private static final String CORE_CLASSIC_OVERLAY = "RESIZABLE_MINIMAP_STONES_WIDGET";
 	private static final String CORE_MODERN_OVERLAY = "RESIZABLE_MINIMAP_WIDGET";
 
-	private static final long DELAY_RESIZE = 150_000_000L;
-
 	private final Map<String, Overlay> overlayRef = new HashMap<>();
 
 	private final Rectangle union = new Rectangle();
@@ -83,6 +83,8 @@ public class DetachedHandler
 	private boolean cached;
 	private boolean redraw;
 	private boolean hasPreferred;
+	@Setter
+	private boolean resizedWhileHidden;
 
 	@Getter
 	private int snapshotRelX;
@@ -99,45 +101,45 @@ public class DetachedHandler
 
 	private int lastContainerId = -1;
 
-	private int canvasWidth;
-	private int canvasHeight;
-	private long changed;
-
 	private int cacheAttempt;
+	@Getter
 	private boolean pendingCache;
 
-	public void invalidate()
-	{
-		cancelSnapshot();
-	}
+	private int resizeAttempt;
+	private boolean pendingResize;
 
-	private void cancelSnapshot()
-	{
-		if (pendingCache)
-		{
-			cacheAttempt++;
-			pendingCache = false;
-		}
-	}
+	private int snapshotCanvasW;
+	private int snapshotCanvasH;
+
+	@Setter
+	private BufferProvider lastProvider;
 
 	public void update(Rectangle bounds)
 	{
-		manager.isResizingCanvas = isResizingCanvas();
-
 		if (!manager.isLoggedIn() || slotManager.getCurrentLayoutMode() == null)
 		{
 			return;
 		}
 
 		if (manager.isUpdatingProfile ||
-			manager.isResizingCanvas ||
 			manager.isEditingLayout ||
 			manager.hideMinimapOverlay() ||
-			!config.detachUtilityOrbs() ||
-			manager.isNativeDragActive ||
-			(manager.isSidePanelHidden() && config.hideMinimapWithSidePanel()))
+			manager.isNativeDragActive)
 		{
 			restore(false);
+			return;
+		}
+
+		if (cached &&
+			(client.getCanvasWidth() != snapshotCanvasW ||
+				client.getCanvasHeight() != snapshotCanvasH))
+		{
+			restore(false);
+			return;
+		}
+
+		if (manager.isSidePanelHidden() && config.hideMinimapWithSidePanel() && cached)
+		{
 			return;
 		}
 
@@ -193,6 +195,15 @@ public class DetachedHandler
 		redraw = false;
 	}
 
+	public void invalidateSnapshot()
+	{
+		if (pendingCache)
+		{
+			cacheAttempt++;
+			pendingCache = false;
+		}
+	}
+
 	private void queueSnapshot()
 	{
 		pendingCache = true;
@@ -232,12 +243,26 @@ public class DetachedHandler
 
 			snapshot.setBounds(bounds);
 
+			snapshotCanvasW = client.getCanvasWidth();
+			snapshotCanvasH = client.getCanvasHeight();
+
 			clientThread.invokeLater(() ->
 			{
 				if (id != cacheAttempt)
 				{
 					return;
 				}
+
+				if (container.isHidden()
+					|| container.getRelativeX() != snapshot.x
+					|| container.getRelativeY() != snapshot.y
+					|| container.getWidth() != snapshot.width
+					|| container.getHeight() != snapshot.height)
+				{
+					pendingCache = false;
+					return;
+				}
+
 				pendingCache = false;
 				cached = true;
 				redraw = true;
@@ -246,9 +271,57 @@ public class DetachedHandler
 		});
 	}
 
+	public void invalidateResize()
+	{
+		if (pendingResize)
+		{
+			resizeAttempt++;
+			pendingResize = false;
+			manager.isGraphicsReset = false;
+		}
+	}
+
+	public void queueResize()
+	{
+		final int id = ++resizeAttempt;
+
+		if (!pendingResize)
+		{
+			pendingResize = true;
+			manager.isGraphicsReset = true;
+
+			if (manager.isSidePanelHidden() && cached)
+			{
+				resizedWhileHidden = true;
+			}
+			restore(false);
+		}
+
+		clientThread.invokeLater(() ->
+		{
+			if (id != resizeAttempt)
+			{
+				return true;
+			}
+
+			clientThread.invokeLater(() ->
+			{
+				if (id != resizeAttempt)
+				{
+					return;
+				}
+
+				pendingResize = false;
+				manager.isGraphicsReset = false;
+				restore(false);
+			});
+			return true;
+		});
+	}
+
 	public void restore(boolean clear)
 	{
-		cancelSnapshot();
+		invalidateSnapshot();
 
 		if (cached)
 		{
@@ -280,6 +353,10 @@ public class DetachedHandler
 
 		if (clear)
 		{
+			invalidateResize();
+			lastProvider = null;
+			resizedWhileHidden = false;
+			manager.isGraphicsReset = false;
 			redraw = false;
 			hasPreferred = false;
 			lastContainerId = -1;
@@ -294,19 +371,39 @@ public class DetachedHandler
 		}
 	}
 
-	private boolean isResizingCanvas()
+	public boolean detectGraphicsReset()
 	{
-		int w = client.getCanvasWidth();
-		int h = client.getCanvasHeight();
-
-		if (w != canvasWidth || h != canvasHeight)
+		final BufferProvider provider = client.getBufferProvider();
+		if (provider == lastProvider)
 		{
-			canvasWidth = w;
-			canvasHeight = h;
-			changed = System.nanoTime();
+			return false;
 		}
 
-		return System.nanoTime() - changed < DELAY_RESIZE;
+		final boolean reset = lastProvider != null;
+		lastProvider = provider;
+		if (!reset)
+		{
+			return false;
+		}
+
+		queueResize();
+		return true;
+	}
+
+	public void onSidePanelChanged()
+	{
+		if (resizedWhileHidden)
+		{
+			resizedWhileHidden = false;
+			//might actually be wrong, but works - todo
+			clientThread.invokeLater(() ->
+			{
+				clientThread.invokeLater(() ->
+				{
+					restore(false);
+				});
+			});
+		}
 	}
 
 	public void addCoreOverlay()

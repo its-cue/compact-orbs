@@ -70,6 +70,12 @@ public class DetachedMinimap extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
+		if (manager.detachUtilityOrbs() &&
+			handler.detectGraphicsReset())
+		{
+			revalidate = true;
+		}
+
 		final Widget widget = client.getWidget(componentId);
 		final Rectangle parent = getParentBounds(widget);
 
@@ -113,7 +119,11 @@ public class DetachedMinimap extends Overlay
 			bounds.setBounds(widgetBounds.x, widgetBounds.y, widgetBounds.width, widgetBounds.height);
 		}
 
-		handler.update(bounds);
+		if (manager.detachUtilityOrbs() && !manager.isGraphicsReset)
+		{
+			handler.update(bounds);
+		}
+
 		return new Dimension(widget.getWidth(), widget.getHeight());
 	}
 

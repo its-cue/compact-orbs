@@ -126,7 +126,7 @@ public class CompactOrbsManager
 	private BindingManager bindingManager;
 
 	public boolean isNativeDragActive;
-	public boolean isResizingCanvas;
+	public boolean isGraphicsReset;
 	//TODO - test profile swapping
 	public boolean isSidePanelHiddenOnInit;
 
@@ -170,16 +170,7 @@ public class CompactOrbsManager
 		widgetManager.remapTargetsByScriptId(scriptId, Orbs.values());
 
 		//should prevent flickering when utility orbs are detached (ex: tab switching)
-		if (applyDetachedOffset())
-		{
-			Widget container = widgetManager.getMapParent();
-			if (container != null)
-			{
-				container.revalidate();
-				container.setWidth(detachedUnionWidth());
-				container.setHeight(detachedUnionHeight());
-			}
-		}
+		rebuildDetachedContainer();
 
 		updateNoClickThrough();
 	}
@@ -232,7 +223,7 @@ public class CompactOrbsManager
 
 		clearCustomChildren();
 
-		isResizingCanvas = false;
+		isGraphicsReset = false;
 		isNativeDragActive = false;
 		detachedHandler.restore(true);
 
@@ -272,6 +263,24 @@ public class CompactOrbsManager
 		rebuildLayout();
 	}
 
+	public void rebuildDetachedContainer()
+	{
+		if (applyDetachedOffset())
+		{
+			Widget container = widgetManager.getMapParent();
+			if (container != null)
+			{
+				if (container.getWidth() != detachedUnionWidth() ||
+					container.getHeight() != detachedUnionHeight())
+				{
+					container.revalidate();
+					container.setWidth(detachedUnionWidth());
+					container.setHeight(detachedUnionHeight());
+				}
+			}
+		}
+	}
+
 	private void resetVisibility()
 	{
 		widgetManager.setTargetsHidden(false, Orbs.values());
@@ -308,7 +317,6 @@ public class CompactOrbsManager
 	public void onMinimapToggle()
 	{
 		saveConfig(ConfigKeys.MINIMAP, !isMinimapHidden());
-		detachedHandler.invalidate();
 		rebuildLayout();
 		hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
 	}
@@ -376,6 +384,21 @@ public class CompactOrbsManager
 	public boolean hideMinimapWithSidePanel()
 	{
 		return config.hideMinimapWithSidePanel();
+	}
+
+	public void refreshSidePanelSnapshot()
+	{
+		if (isSidePanelHiddenOnInit && !isSidePanelHidden())
+		{
+			isSidePanelHiddenOnInit = false;
+			if (applyDetachedOffset() || detachedHandler.isPendingCache())
+			{
+				clientThread.invokeLater(() ->
+				{
+					detachedHandler.restore(false);
+				});
+			}
+		}
 	}
 
 	public void updateNoClickThrough()
@@ -956,7 +979,7 @@ public class CompactOrbsManager
 
 	public boolean applyDetachedOffset()
 	{
-		return !isResizingCanvas &&
+		return !isGraphicsReset &&
 			!isNativeDragActive &&
 			detachedHandler.isCached() &&
 			(!hideMinimapOverlay() && detachUtilityOrbs()) &&
@@ -1503,13 +1526,22 @@ public class CompactOrbsManager
 		else if (widget.getId() == Orbs.LOGOUT_X_ICON.getComponentId() ||
 			widget.getId() == Orbs.LOGOUT_X_STONE.getComponentId())
 		{
-			if (hideLogoutX)
+			if (hideLogoutX || isSidePanelHidden() && hideMinimapWithSidePanel())
 			{
 				return -1;
 			}
 		}
 
-		String configKey = buildSavedKey(getCurrentPrefix(), widget.getId(), index, key);
+		int id = widget.getId();
+		int idx = index;
+		//TODO - saved position only passes true for the icon (EDIT_TARGETS)
+		if (widget.getId() == Orbs.LOGOUT_X_STONE.getComponentId())
+		{
+			id = Orbs.LOGOUT_X_ICON.getComponentId();
+			idx = Orbs.LOGOUT_X_ICON.getArrayId();
+		}
+
+		String configKey = buildSavedKey(getCurrentPrefix(), id, idx, key);
 		Integer value = configManager.getConfiguration(ConfigGroup.GROUP_NAME, configKey, Integer.class);
 
 		if (value != null)

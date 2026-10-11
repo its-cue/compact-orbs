@@ -191,9 +191,9 @@ public class WidgetManager
 			if (Orbs.isSwappableOrb(widget.getId()) ||
 				widget.getId() == Minimap.CLASSIC_MAP_MINIMAP.getComponentId() ||
 				widget.getId() == Minimap.MODERN_MAP_MINIMAP.getComponentId() ||
-				(
-					!manager.hideLogoutX && (widget.getId() == Orbs.LOGOUT_X_ICON.getComponentId() || widget.getId() == Orbs.LOGOUT_X_STONE.getComponentId())
-				))
+				(!manager.hideLogoutX &&
+					(widget.getId() == Orbs.LOGOUT_X_ICON.getComponentId()
+						|| widget.getId() == Orbs.LOGOUT_X_STONE.getComponentId())))
 			{
 				return saved;
 			}
