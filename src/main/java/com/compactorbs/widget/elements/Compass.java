@@ -38,7 +38,7 @@ import com.compactorbs.widget.TargetWidget;
 import java.util.Map;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import net.runelite.api.widgets.WidgetSizeMode;
+import net.runelite.api.widgets.WidgetPositionMode;
 
 @Getter
 @RequiredArgsConstructor
@@ -56,12 +56,12 @@ public enum Compass implements TargetWidget
 				0
 			),
 			X_POSITION_MODE, new SetValue(
-				WidgetSizeMode.ABSOLUTE,
-				WidgetSizeMode.MINUS
+				WidgetPositionMode.ABSOLUTE_LEFT,
+				WidgetPositionMode.ABSOLUTE_CENTER
 			),
 			Y_POSITION_MODE, new SetValue(
-				WidgetSizeMode.ABSOLUTE,
-				WidgetSizeMode.MINUS
+				WidgetPositionMode.ABSOLUTE_TOP,
+				WidgetPositionMode.ABSOLUTE_CENTER
 			)
 		)
 	),
@@ -77,12 +77,12 @@ public enum Compass implements TargetWidget
 				0
 			),
 			X_POSITION_MODE, new SetValue(
-				WidgetSizeMode.ABSOLUTE,
-				WidgetSizeMode.MINUS
+				WidgetPositionMode.ABSOLUTE_LEFT,
+				WidgetPositionMode.ABSOLUTE_CENTER
 			),
 			Y_POSITION_MODE, new SetValue(
-				WidgetSizeMode.ABSOLUTE,
-				WidgetSizeMode.MINUS
+				WidgetPositionMode.ABSOLUTE_TOP,
+				WidgetPositionMode.ABSOLUTE_CENTER
 			)
 		)
 	),
@@ -99,12 +99,12 @@ public enum Compass implements TargetWidget
 				0
 			),
 			X_POSITION_MODE, new SetValue(
-				WidgetSizeMode.ABSOLUTE,
-				WidgetSizeMode.MINUS
+				WidgetPositionMode.ABSOLUTE_LEFT,
+				WidgetPositionMode.ABSOLUTE_CENTER
 			),
 			Y_POSITION_MODE, new SetValue(
-				WidgetSizeMode.ABSOLUTE,
-				WidgetSizeMode.MINUS
+				WidgetPositionMode.ABSOLUTE_TOP,
+				WidgetPositionMode.ABSOLUTE_CENTER
 			)
 		)
 	),
@@ -120,12 +120,12 @@ public enum Compass implements TargetWidget
 				0
 			),
 			X_POSITION_MODE, new SetValue(
-				WidgetSizeMode.ABSOLUTE,
-				WidgetSizeMode.MINUS
+				WidgetPositionMode.ABSOLUTE_LEFT,
+				WidgetPositionMode.ABSOLUTE_CENTER
 			),
 			Y_POSITION_MODE, new SetValue(
-				WidgetSizeMode.ABSOLUTE,
-				WidgetSizeMode.MINUS
+				WidgetPositionMode.ABSOLUTE_TOP,
+				WidgetPositionMode.ABSOLUTE_CENTER
 			)
 		)
 	);
