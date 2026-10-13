@@ -41,7 +41,7 @@ public class MapContainerOffset implements OffsetTarget
 			return w;
 		}
 
-		if (manager.isAnchorRight() && !manager.getCurrentLayout().isCustom())
+		if (manager.isAnchorRight() && !manager.getCurrentLayout().isCustomLayout())
 		{
 			w += manager.getCurrentLayout().getRightOffset();
 		}
@@ -63,7 +63,7 @@ public class MapContainerOffset implements OffsetTarget
 			return h;
 		}
 
-		if (manager.isAnchorBottom() && !manager.getCurrentLayout().isCustom())
+		if (manager.isAnchorBottom() && !manager.getCurrentLayout().isCustomLayout())
 		{
 			h += manager.getCurrentLayout().getBottomOffset();
 		}

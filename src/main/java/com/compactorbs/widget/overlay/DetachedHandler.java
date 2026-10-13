@@ -71,8 +71,8 @@ public class DetachedHandler
 	@Inject
 	private SlotManager slotManager;
 
-	private static final String CORE_CLASSIC_OVERLAY = "RESIZABLE_MINIMAP_STONES_WIDGET";
-	private static final String CORE_MODERN_OVERLAY = "RESIZABLE_MINIMAP_WIDGET";
+	public static final String CORE_CLASSIC_OVERLAY = "RESIZABLE_MINIMAP_STONES_WIDGET";
+	public static final String CORE_MODERN_OVERLAY = "RESIZABLE_MINIMAP_WIDGET";
 
 	private final Map<String, Overlay> overlayRef = new HashMap<>();
 
@@ -321,6 +321,12 @@ public class DetachedHandler
 
 	public void restore(boolean clear)
 	{
+		//prevent core overlays from being re-added unless they have been cached and on shutdown
+		if (manager.isFloating() && !cached && !clear)
+		{
+			return;
+		}
+
 		invalidateSnapshot();
 
 		if (cached)
@@ -392,6 +398,11 @@ public class DetachedHandler
 
 	public void onSidePanelChanged()
 	{
+		if (manager.isFloating())
+		{
+			return;
+		}
+
 		if (resizedWhileHidden)
 		{
 			resizedWhileHidden = false;
@@ -424,7 +435,8 @@ public class DetachedHandler
 			if (CORE_CLASSIC_OVERLAY.equals(overlay.getName()) ||
 				CORE_MODERN_OVERLAY.equals(overlay.getName()))
 			{
-				overlayRef.put(overlay.getName(), overlay);
+				overlayRef.putIfAbsent(overlay.getName(), overlay);
+
 				log.debug("removing core overlay : {}", overlay.getName());
 				return true;
 			}
@@ -432,7 +444,7 @@ public class DetachedHandler
 		});
 	}
 
-	private boolean repositioned(String name)
+	public boolean repositioned(String name)
 	{
 		Overlay overlay = overlayRef.get(name);
 		return overlay != null &&

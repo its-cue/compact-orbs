@@ -112,7 +112,7 @@ public class EditManager
 	public boolean blockEditing(TargetWidget target)
 	{
 		return (target.isLogoutX() && (manager.isClassicResizable() || manager.isFixedMode())) ||
-			(target.isCompass() && !manager.isCompactLayout()) ||
+			(target.isCompass() && (!manager.isCompactLayout() || (!manager.isFloating() && !manager.isMinimapHidden()))) ||
 			(target == Orbs.STORE_ORB_CONTAINER && manager.isStoreOrbDisabled()) ||
 			(target == Orbs.ACTIVITY_ORB_CONTAINER && manager.isActivityOrbDisabled()) ||
 			(target.isWiki() && manager.isWikiBannerDisabled() && !manager.isWikiPluginConfigEnabled());
@@ -189,7 +189,7 @@ public class EditManager
 
 					boolean swapping = manager.enableOrbSwapping;
 
-					if (manager.isCustomLayout()
+					if (manager.isCustomLayout() || manager.getCurrentLayout().isFloating()
 						|| (swapping && Orbs.isSwappableOrb(bound.getId()))
 						|| (!swapping && !manager.isCompactLayout() && !target.isLogoutX()))
 					{
@@ -240,7 +240,10 @@ public class EditManager
 			MenuOp.HANDLER_TOGGLE_OP_INDEX,
 			manager.buildToggleOp(isHidden, toggle.getMenuName()));
 
-		if (!manager.enableOrbSwapping && !manager.isCompactLayout() || manager.isCustomLayout())
+		final boolean floating = manager.isFloating();
+
+		if (!floating &&
+			((!manager.enableOrbSwapping && !manager.isCompactLayout()) || manager.isCustomLayout()))
 		{
 			handler.setAction(
 				MenuOp.RESET_POSITION_OP_INDEX,
@@ -253,7 +256,8 @@ public class EditManager
 				MenuOp.EDIT_MODE_OP_INDEX,
 				manager.buildEditOp(manager.isEditingLayout));
 
-			if (!manager.enableOrbSwapping || manager.isCustomLayout())
+			if (!floating &&
+				(!manager.enableOrbSwapping || manager.isCustomLayout()))
 			{
 				handler.setAction(
 					RESET_ALL_OP_INDEX,
@@ -310,7 +314,7 @@ public class EditManager
 			{
 				if (binding.isHidden() != toggle.getGetter().get())
 				{
-					if (!manager.isUpdatingProfile)
+					if (!manager.isUpdatingProfile || !manager.getCurrentLayout().isFloating())
 					{
 						manager.saveConfig(toggle.getConfigKey(), binding.isHidden());
 					}
@@ -404,7 +408,7 @@ public class EditManager
 
 	private int getBackgroundParentId()
 	{
-		return manager.isCompactLayout() || manager.isFixedMode()
+		return manager.isFloating() || manager.isCompactLayout() || manager.isFixedMode()
 			? Minimap.ORBS_UNIVERSE.getComponentId()
 			: widgetManager.getMapParent().getId();
 	}
@@ -429,7 +433,7 @@ public class EditManager
 				.setOpacity(EDIT_MODE_BACKGROUND_OPACITY);
 		}
 
-		if (!manager.isCompactLayout())
+		if (!manager.isCompactLayout() || !manager.isFloating())
 		{
 			editBackground
 				.setOriginalX(parent.getOriginalX())
@@ -443,7 +447,7 @@ public class EditManager
 
 	public int setHandlerX(Widget bound, Widget parent)
 	{
-		int x = bound.getOriginalX();
+		int x = (manager.isFloating() ? bound.getRelativeX() : bound.getOriginalX());
 		if (bound.getParent() != parent)
 		{
 			if (bound.getXPositionMode() == WidgetPositionMode.ABSOLUTE_RIGHT)
@@ -459,7 +463,7 @@ public class EditManager
 
 	public int setHandlerY(Widget bound, Widget parent)
 	{
-		int y = bound.getOriginalY();
+		int y = (manager.isFloating() ? bound.getRelativeY() : bound.getOriginalY());
 		if (bound.getParent() != parent)
 		{
 			if (!manager.isCompactLayout() && !manager.isFixedMode())

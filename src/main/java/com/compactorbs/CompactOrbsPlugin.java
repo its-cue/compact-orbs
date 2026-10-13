@@ -36,10 +36,12 @@ import com.compactorbs.CompactOrbsConstants.VarClient;
 import com.compactorbs.CompactOrbsConstants.Varbit;
 import com.compactorbs.CompactOrbsConstants.Widgets;
 import com.compactorbs.CompactOrbsConstants.Widgets.Orb;
+import com.compactorbs.widget.TargetWidget;
 import com.compactorbs.widget.WidgetManager;
 import com.compactorbs.widget.elements.Compass;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.layout.HideOrbRegistry;
+import com.compactorbs.widget.layout.edit.BindingManager;
 import com.compactorbs.widget.layout.edit.DragListener;
 import com.compactorbs.widget.layout.edit.DragState;
 import com.compactorbs.widget.layout.edit.EditManager;
@@ -47,6 +49,7 @@ import com.compactorbs.widget.layout.slot.SlotManager;
 import com.compactorbs.widget.layout.slot.SlotRegistry;
 import com.compactorbs.widget.overlay.DetachedHandler;
 import com.compactorbs.widget.overlay.DetachedMinimap;
+import com.compactorbs.widget.overlay.DetachedOrb;
 import com.google.inject.Provides;
 import java.awt.event.KeyEvent;
 import java.util.Locale;
@@ -125,6 +128,9 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	private EditManager editManager;
 
 	@Inject
+	private BindingManager bindingManager;
+
+	@Inject
 	private DragListener dragListener;
 
 	@Inject
@@ -141,6 +147,14 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	{
 		manager.migrateConfigs();
 		overlayManager.add(detachedMinimap);
+
+		for (TargetWidget orb : manager.FLOATING_TARGETS)
+		{
+			var overlay = new DetachedOrb(client, manager, bindingManager, "COMPACT_ORBS_" + orb.toString(), orb.getComponentId(), orb.getArrayId());
+			manager.floatingOverlay.putIfAbsent(overlay.getName(), overlay);
+			overlayManager.add(overlay);
+		}
+
 		keyManager.registerKeyListener(this);
 		mouseManager.registerMouseListener(dragListener);
 		orbRegistry.registerAll();
@@ -164,7 +178,14 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 
 			if (manager.isLoggedIn())
 			{
+				if (manager.isFloating())
+				{
+					detachedHandler.removeCoreOverlay();
+					manager.setupMinimapForFloating();
+				}
+
 				manager.update(Script.FORCE_UPDATE);
+
 				manager.hideAllOrbsByConfig();
 				manager.setupMinimapOverlay();
 				manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
@@ -177,6 +198,12 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	protected void shutDown() throws Exception
 	{
 		overlayManager.remove(detachedMinimap);
+
+		manager.floatingOverlay.values().forEach(overlay ->
+			overlayManager.remove(overlay)
+		);
+		manager.floatingOverlay.clear();
+
 		keyManager.unregisterKeyListener(this);
 		mouseManager.unregisterMouseListener(dragListener);
 		clientThread.invoke(manager::reset);
@@ -192,7 +219,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	public void onClientTick(ClientTick event)
 	{
 		//don't check for drag events unless layout editing is enabled
-		if (!manager.isEditingLayout)
+		if (!manager.isEditingLayout || manager.isFloating())
 		{
 			return;
 		}
@@ -230,6 +257,8 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			manager.isLoggingIn = false;
 			manager.createCustomChildren();
 			detachedHandler.setResizedWhileHidden(false);
+
+			manager.sendUpdateNotice();
 		}
 	}
 
@@ -394,6 +423,8 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			//should probably test more when i can, works atm tho todo
 			manager.refreshSidePanelSnapshot();
 			detachedHandler.onSidePanelChanged();
+
+			manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
 		}
 	}
 
@@ -404,8 +435,15 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		switch (id)
 		{
 			case Orb.UNIVERSE >> 16:
+				if (manager.isFloating())
+				{
+					detachedHandler.removeCoreOverlay();
+					manager.setupMinimapForFloating();
+				}
+
 				manager.update(Script.FORCE_UPDATE);
 				manager.hideAllOrbsByConfig();
+				manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
 				break;
 
 			case Widgets.MinimapOverlay.UNIVERSE >> 16:
@@ -493,7 +531,6 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 
 		switch (key)
 		{
-
 			case ConfigKeys.DETACH_UTILITY_ORBS:
 				clientThread.invokeLater(() ->
 				{
@@ -506,10 +543,18 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			case ConfigKeys.COMPASS:
 				clientThread.invokeLater(() ->
 				{
-					manager.setupMinimapContainer(false);
-					widgetManager.setTargetsHidden(manager.isCompassHidden(), Compass.values());
-					widgetManager.remapTargets(Compass.values());
-					widgetManager.remapTargets(Orbs.values());
+					if (!manager.isFloating())
+					{
+						manager.setupMinimapContainer(false);
+						widgetManager.setTargetsHidden(manager.isCompassHidden(), Compass.values());
+						widgetManager.remapTargets(Compass.values());
+						widgetManager.remapTargets(Orbs.values());
+					}
+					else
+					{
+						widgetManager.setTargetsHidden(manager.isMinimapHidden() &&
+							manager.isCompassHidden(), Compass.values());
+					}
 				});
 				break;
 
@@ -597,6 +642,12 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			case ConfigKeys.LEAVE_EMPTY_SPACE:
 				clientThread.invokeLater(() ->
 				{
+					//any change in fixed mode when switching layouts needs to restore core overlays
+					if (manager.isFixedMode() && key.equals(ConfigKeys.ORB_LAYOUT))
+					{
+						detachedHandler.addCoreOverlay();
+					}
+
 					if (!manager.isFixedMode())
 					{
 						if (manager.applyDetachedOffset() && manager.isLoggedIn())
@@ -605,7 +656,25 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 							return;
 						}
 
+						if (key.equals(ConfigKeys.ORB_LAYOUT))
+						{
+							manager.setupMinimapForFloating();
+
+							if (manager.isFloating())
+							{
+								detachedHandler.removeCoreOverlay();
+								widgetManager.remapTargets(true, Script.FORCE_UPDATE, Orbs.values());
+								manager.updateCustomChildren();
+							}
+							else
+							{
+								detachedHandler.addCoreOverlay();
+								widgetManager.revalidate(Orbs.values());
+							}
+						}
+
 						manager.rebuildLayout();
+						manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
 					}
 				});
 				break;

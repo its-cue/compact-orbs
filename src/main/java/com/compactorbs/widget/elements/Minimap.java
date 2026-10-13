@@ -25,7 +25,7 @@
 
 package com.compactorbs.widget.elements;
 
-import com.compactorbs.CompactOrbsConstants;
+import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsConstants.Layout.Horizontal;
 import com.compactorbs.CompactOrbsConstants.Layout.HorizontalWide;
 import com.compactorbs.CompactOrbsConstants.Layout.Original;
@@ -88,11 +88,20 @@ public enum Minimap implements TargetWidget
 			),
 			WIDTH, new SetValue(
 				0,
-				CompactOrbsConstants.Layout.COMPASS_FRAME_SIZE
+				Layout.COMPASS_FRAME_SIZE,
+				Layout.COMPASS_FRAME_SIZE,
+				Layout.COMPASS_FRAME_SIZE,
+				Layout.COMPASS_FRAME_SIZE,
+				Layout.COMPASS_FRAME_SIZE,
+				Original.MAP_CONTAINER_WIDTH
 			),
 			HEIGHT, new SetValue(
 				Original.MAP_CONTAINER_HEIGHT - 28,
-				CompactOrbsConstants.Layout.COMPASS_FRAME_SIZE
+				Layout.COMPASS_FRAME_SIZE,
+				Layout.COMPASS_FRAME_SIZE,
+				Layout.COMPASS_FRAME_SIZE,
+				Layout.COMPASS_FRAME_SIZE,
+				Original.MAP_CONTAINER_HEIGHT
 			),
 			WIDTH_MODE, new SetValue(
 				WidgetSizeMode.MINUS,
@@ -165,11 +174,19 @@ public enum Minimap implements TargetWidget
 			),
 			WIDTH, new SetValue(
 				0,
-				CompactOrbsConstants.Layout.COMPASS_FRAME_SIZE
+				Layout.COMPASS_FRAME_SIZE,
+				Layout.COMPASS_FRAME_SIZE,
+				Layout.COMPASS_FRAME_SIZE,
+				Layout.COMPASS_FRAME_SIZE,
+				Original.MAP_CONTAINER_WIDTH
 			),
 			HEIGHT, new SetValue(
 				Original.MAP_CONTAINER_HEIGHT - 28,
-				CompactOrbsConstants.Layout.COMPASS_FRAME_SIZE
+				Layout.COMPASS_FRAME_SIZE,
+				Layout.COMPASS_FRAME_SIZE,
+				Layout.COMPASS_FRAME_SIZE,
+				Layout.COMPASS_FRAME_SIZE,
+				Original.MAP_CONTAINER_HEIGHT
 			),
 			WIDTH_MODE, new SetValue(
 				WidgetSizeMode.MINUS,

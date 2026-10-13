@@ -173,6 +173,7 @@ public class WidgetManager
 	{
 		boolean useSavedPosition =
 			!toDefault
+				&& !manager.getCurrentLayout().isFloating()
 				&& (manager.isCompactLayout()
 				|| (manager.isVanillaCustom() && manager.useSavedPosition(widget, index)));
 
@@ -748,6 +749,62 @@ public class WidgetManager
 			.setOpacity(100);
 		widget.revalidate();
 		return widget;
+	}
+
+	public void setBoundsAbsoluteCenter(Widget container)
+	{
+		container.setOriginalX(0);
+		container.setOriginalY(0);
+		container.setOriginalWidth(0);
+		container.setOriginalHeight(0);
+		container.setXPositionMode(0);
+		container.setYPositionMode(0);
+		container.setWidthMode(WidgetPositionMode.ABSOLUTE_CENTER);
+		container.setHeightMode(WidgetPositionMode.ABSOLUTE_CENTER);
+		container.revalidate();
+	}
+
+	public void restoreMinimapContainers()
+	{
+		final Widget container = getMapParent();
+		if (container != null)
+		{
+			container.setForcedPosition(-1, -1);
+			container.revalidate();
+
+			container.setXPositionMode(2);
+			container.setWidthMode(0);
+			container.setHeightMode(0);
+			container.setSize(Layout.Original.MAP_CONTAINER_WIDTH, Layout.Original.MAP_CONTAINER_HEIGHT);
+			container.revalidate();
+
+			container.setWidth(Layout.Original.MAP_CONTAINER_WIDTH);
+			container.setHeight(Layout.Original.MAP_CONTAINER_HEIGHT);
+		}
+
+		final Widget orbs = getOrbsParent();
+		if (orbs != null)
+		{
+
+			orbs.setWidthMode(0);
+			orbs.setHeightMode(0);
+			orbs.setOriginalY(10);
+			orbs.setSize(Layout.Original.MAP_CONTAINER_WIDTH, Layout.Original.MAP_CONTAINER_HEIGHT);
+			orbs.revalidate();
+
+			orbs.setRelativeY(10);
+		}
+
+		final Widget uni = getTargetWidget(Minimap.ORBS_UNIVERSE);
+		if (uni != null)
+		{
+			uni.setWidthMode(1);
+			uni.setHeightMode(1);
+			uni.revalidate();
+
+			uni.setWidth(Layout.Original.ORBS_CONTAINER_WIDTH);
+			uni.setHeight(Layout.Original.ORBS_CONTAINER_HEIGHT);
+		}
 	}
 
 	public int getSpriteId(boolean hidden)

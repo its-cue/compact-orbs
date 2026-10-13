@@ -47,7 +47,7 @@ public class WorldMapOffset implements OffsetTarget
 	{
 		if (manager.hideWorldMap)
 		{
-			return getHiddenOffset();
+			return getHiddenOffset() - (manager.isFloating() ? Layout.ORBS_CONTAINER_OFFSET_Y : 0);
 		}
 
 		if (!compactLayout)
@@ -116,9 +116,9 @@ public class WorldMapOffset implements OffsetTarget
 	{
 		if (manager.hideWorldMap)
 		{
-			y = getHiddenOffset();
+			y = getHiddenOffset() - (manager.isFloating() ? Layout.ORBS_CONTAINER_OFFSET_Y : 0);
 
-			if (manager.isCompactLayout() && !manager.getCurrentLayout().isCustom() &&
+			if (manager.isCompactLayout() && !manager.getCurrentLayout().isCustomLayout() &&
 				manager.clampVerticalY() > manager.getCurrentLayout().getBottomOffset())
 			{
 				y -= manager.getCurrentLayout().getBottomOffset() - manager.clampVerticalY();

@@ -60,7 +60,8 @@ public enum CompactOrbsLayout
 		List.of(),
 		List.of(Slot.HP_SLOT, Slot.PRAYER_SLOT, Slot.RUN_SLOT, Slot.SPEC_SLOT)
 	),
-	CUSTOM("Custom", Layout.Custom.LAYOUT_ID, 0, 0, List.of(), List.of());
+	CUSTOM_LAYOUT("Custom", Layout.Custom.LAYOUT_ID, 0, 0, List.of(), List.of()),
+	FLOATING("Floating", 4, 0, 0, List.of(), List.of());
 
 	//config drop down name
 	private final String name;
@@ -135,8 +136,13 @@ public enum CompactOrbsLayout
 		return this == HORIZONTAL_WIDE;
 	}
 
-	public boolean isCustom()
+	public boolean isCustomLayout()
 	{
-		return this == CUSTOM;
+		return this == CUSTOM_LAYOUT;
+	}
+
+	public boolean isFloating()
+	{
+		return this == FLOATING;
 	}
 }

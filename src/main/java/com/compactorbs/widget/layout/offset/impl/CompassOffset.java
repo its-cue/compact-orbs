@@ -51,7 +51,7 @@ public class CompassOffset implements OffsetTarget
 			x += manager.detachedSnapshotX(false);
 		}
 
-		if (manager.isAnchorRight() && !manager.getCurrentLayout().isCustom())
+		if (manager.isAnchorRight() && !manager.getCurrentLayout().isCustomLayout())
 		{
 			x += manager.getCurrentLayout().getRightOffset();
 		}
@@ -117,7 +117,7 @@ public class CompassOffset implements OffsetTarget
 			y += manager.detachedSnapshotY(false);
 		}
 
-		if (manager.isAnchorBottom() && !manager.getCurrentLayout().isCustom())
+		if (manager.isAnchorBottom() && !manager.getCurrentLayout().isCustomLayout())
 		{
 			y += manager.getCurrentLayout().getBottomOffset() - manager.clampVerticalY();
 		}

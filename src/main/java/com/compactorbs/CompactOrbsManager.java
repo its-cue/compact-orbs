@@ -57,7 +57,9 @@ import com.compactorbs.widget.layout.edit.EditManager;
 import com.compactorbs.widget.layout.slot.SlotManager;
 import com.compactorbs.widget.overlay.DetachedHandler;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.inject.Inject;
@@ -82,6 +84,7 @@ import net.runelite.client.chat.ChatMessageManager;
 import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.config.Keybind;
+import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.util.ColorUtil;
 
@@ -156,6 +159,155 @@ public class CompactOrbsManager
 	private Widget overlayLogoutXIcon;
 	private final Map<TargetWidget, Widget> noClickThroughChildren = new HashMap<>();
 
+	private final Set<Integer> tabHiddenOrbs = new HashSet<>();
+	public boolean hideOrbOnTabClose;
+
+	public final Map<String, Overlay> floatingOverlay = new HashMap<>();
+	public final TargetWidget[] FLOATING_TARGETS =
+		{
+			Orbs.WIKI_ICON_CONTAINER,
+			Orbs.WORLD_MAP_CONTAINER,
+			Orbs.HP_ORB_CONTAINER,
+			Orbs.PRAYER_ORB_CONTAINER,
+			Orbs.RUN_ORB_CONTAINER,
+			Orbs.SPEC_ORB_CONTAINER,
+			Orbs.STORE_ORB_CONTAINER,
+			Orbs.ACTIVITY_ORB_CONTAINER,
+			Orbs.LOGOUT_X_ICON,
+			Orbs.XP_DROPS_CONTAINER,
+
+			Button.MINIMAP_BUTTON_CLASSIC,
+			Button.MINIMAP_BUTTON_MODERN,
+
+			Minimap.CLASSIC_MAP_MINIMAP,
+			Minimap.MODERN_MAP_MINIMAP
+		};
+
+	public boolean isFloating()
+	{
+		return getCurrentLayout().isFloating() && !isFixedMode();
+	}
+
+	//todo - cleanup
+	public void setupMinimapForFloating()
+	{
+		if (isFloating())
+		{
+			final Widget container = widgetManager.getMapParent();
+			if (container != null)
+			{
+				container.setForcedPosition(-1, -1);
+				widgetManager.setBoundsAbsoluteCenter(container);
+			}
+
+			final Widget orbs = widgetManager.getOrbsParent();
+			if (orbs != null)
+			{
+				widgetManager.setBoundsAbsoluteCenter(orbs);
+			}
+
+			final Widget uni = widgetManager.getTargetWidget(Minimap.ORBS_UNIVERSE);
+			if (uni != null)
+			{
+				widgetManager.setBoundsAbsoluteCenter(uni);
+			}
+		}
+		else
+		{
+			widgetManager.restoreMinimapContainers();
+		}
+
+		Widget minimap = widgetManager.getTargetWidget(isClassicResizable() ?
+			Minimap.CLASSIC_MAP_MINIMAP : Minimap.MODERN_MAP_MINIMAP);
+
+		if (minimap != null)
+		{
+			minimap.setWidthMode(0);
+			minimap.setOriginalX(isMinimapHidden() ? 30 : 0);
+			minimap.setOriginalY(isMinimapHidden() ? 1 : 0);
+			minimap.setOriginalWidth(isMinimapHidden() ? Layout.COMPASS_FRAME_SIZE : 211);
+			minimap.setOriginalHeight(isMinimapHidden() ? Layout.COMPASS_FRAME_SIZE : 179);
+			minimap.revalidate();
+			minimap.setWidth(isMinimapHidden() ? Layout.COMPASS_FRAME_SIZE : 211);
+			minimap.setHeight(isMinimapHidden() ? Layout.COMPASS_FRAME_SIZE : 179);
+		}
+
+		//restore the minimap xPosMode widgets behaviour
+		widgetManager.revalidate(Minimap.COMPONENTS);
+
+		if (isFloating())
+		{
+			widgetManager.setTargetsHidden(
+				isMinimapHidden() && isCompassHidden(),
+				Compass.values());
+		}
+		else
+		{
+			widgetManager.setTargetsHidden(
+				isCompactLayout() && isCompassHidden(),
+				Compass.values());
+		}
+
+		widgetManager.setTargetsHidden(isMinimapHidden(), Minimap.COMPONENTS);
+
+		if (!isMinimapHidden())
+		{
+			//will default to original
+			widgetManager.remapTargets(Compass.values());
+		}
+		else
+		{
+			final Widget compass = widgetManager.getTargetWidget(isClassicResizable() ?
+				Compass.CLASSIC_COMPASS : Compass.MODERN_COMPASS);
+			if (compass != null)
+			{
+				compass.setOriginalX(0);
+				compass.setOriginalY(0);
+				compass.setXPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
+				compass.setYPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
+				compass.revalidate();
+			}
+
+			final Widget op = widgetManager.getTargetWidget(isClassicResizable() ?
+				Compass.CLASSIC_COMPASS_OPTIONS : Compass.MODERN_COMPASS_OPTIONS);
+			if (op != null)
+			{
+				op.setOriginalX(0);
+				op.setOriginalY(0);
+				op.setXPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
+				op.setYPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
+				op.revalidate();
+			}
+		}
+
+		updateCustomChildren();
+	}
+
+	public void cleanupFloating()
+	{
+		widgetManager.restoreMinimapContainers();
+
+		for (TargetWidget target : FLOATING_TARGETS)
+		{
+			final Widget widget = widgetManager.getTargetWidget(target);
+			if (widget != null)
+			{
+				widget.setForcedPosition(-1, -1);
+				widget.revalidate();
+
+				if (target.isLogoutX())
+				{
+					final Widget stone = widgetManager.getTargetWidget(Orbs.LOGOUT_X_STONE);
+					if (stone != null)
+					{
+						stone.setForcedPosition(-1, -1);
+						stone.revalidate();
+					}
+				}
+			}
+		}
+	}
+
 	//update on startup, onWidgetLoaded, and onScriptPostFired
 	public void update(int scriptId)
 	{
@@ -178,6 +330,11 @@ public class CompactOrbsManager
 	//rebuild the layout from state/config
 	public void rebuildLayout()
 	{
+		if (isFloating())
+		{
+			return;
+		}
+
 		updateCustomChildren();
 
 		if (isFixedMode())
@@ -220,12 +377,18 @@ public class CompactOrbsManager
 
 		bindingManager.clear();
 		orbHidden.clear();
-
-		clearCustomChildren();
+		tabHiddenOrbs.clear();
 
 		isGraphicsReset = false;
 		isNativeDragActive = false;
 		detachedHandler.restore(true);
+
+		clearCustomChildren();
+
+		if (isFloating())
+		{
+			cleanupFloating();
+		}
 
 		resetVisibility();
 		resetPositioning();
@@ -254,7 +417,16 @@ public class CompactOrbsManager
 		//update based on config
 		hideAllOrbsByConfig();
 		slotManager.update();
-		detachedHandler.restore(false);
+
+		//seems fine...
+		if (!isFloating())
+		{
+			detachedHandler.restore(false);
+		}
+		else
+		{
+			detachedHandler.removeCoreOverlay();
+		}
 
 		if (reset)
 		{
@@ -317,13 +489,25 @@ public class CompactOrbsManager
 	public void onMinimapToggle()
 	{
 		saveConfig(ConfigKeys.MINIMAP, !isMinimapHidden());
-		rebuildLayout();
+
+		if (getCurrentLayout().isFloating())
+		{
+			setupMinimapForFloating();
+		}
+		else
+		{
+			rebuildLayout();
+		}
+
 		hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
 	}
 
 	public void setupMinimapContainer(boolean toDefault)
 	{
-		widgetManager.setTargetsHidden(!toDefault && isCompactLayout(), Minimap.COMPONENTS);
+		widgetManager.setTargetsHidden(!toDefault &&
+				(isCompactLayout() || getCurrentLayout().isFloating()),
+			Minimap.COMPONENTS);
+
 		widgetManager.remapTargets(toDefault, Script.FORCE_UPDATE, Minimap.CONTAINERS);
 		widgetManager.revalidate(Minimap.COMPONENTS);
 
@@ -331,7 +515,7 @@ public class CompactOrbsManager
 		//Orb.UNIVERSE parent width/height mode seems to cause an issue when setting dimensions
 		//causing the Orbs.UNIVERSE container be set to the dimensions of the tli (GAMEFRAME)
 		//this should alleviate that by setting the size temporarily until restored by a clientscript (clicking a side panel tab, etc)
-		if (!isFixedMode() && !isMinimapMinimized())
+		if (!isFixedMode() && !isMinimapMinimized() && !getCurrentLayout().isFloating())
 		{
 			Widget orbsContainer = client.getWidget(Minimap.ORBS_UNIVERSE.getComponentId());
 			Widget parent = client.getWidget((isClassicResizable() ? Minimap.CLASSIC_ORBS_CONTAINER : Minimap.MODERN_ORBS_CONTAINER).getComponentId());
@@ -373,7 +557,16 @@ public class CompactOrbsManager
 				return;
 			}
 
-			boolean hidden = hide && isCompactLayout() && isSidePanelHidden();
+			if (getCurrentLayout().isFloating())
+			{
+				widgetManager.setHidden(Minimap.MODERN_MAP_MINIMAP.getComponentId(), false);
+				widgetManager.setHidden(Minimap.MODERN_ORBS_CONTAINER.getComponentId(), false);
+
+				hideOrbOnTabClose = hide && isSidePanelHidden() && !isSidePanelHiddenOnInit;
+				return;
+			}
+
+			final boolean hidden = hide && isCompactLayout() && isSidePanelHidden();
 
 			//only hide the parent not the children (do not use setTargetsHidden/setHidden(target...))
 			widgetManager.setHidden(Minimap.MODERN_MAP_MINIMAP.getComponentId(), hidden);
@@ -388,6 +581,15 @@ public class CompactOrbsManager
 
 	public void refreshSidePanelSnapshot()
 	{
+		if (isFloating())
+		{
+			if (isSidePanelHiddenOnInit && !isSidePanelHidden())
+			{
+				isSidePanelHiddenOnInit = false;
+			}
+			return;
+		}
+
 		if (isSidePanelHiddenOnInit && !isSidePanelHidden())
 		{
 			isSidePanelHiddenOnInit = false;
@@ -409,7 +611,7 @@ public class CompactOrbsManager
 		}
 
 		boolean noClick = enableNoClickThrough ||
-			(enableOrbSwapping && isCompactLayout() && !getCurrentLayout().isCustom());
+			(enableOrbSwapping && isCompactLayout() && !getCurrentLayout().isCustomLayout());
 
 		for (TargetWidget orb : Orbs.SWAPPABLE_ORBS)
 		{
@@ -612,7 +814,11 @@ public class CompactOrbsManager
 			return;
 		}
 
-		minimapButton.setHidden(config.hideMinimapToggle() || isMinimapMinimized());
+		if (!isFloating())
+		{
+			minimapButton.setHidden(config.hideMinimapToggle() || isMinimapMinimized());
+		}
+
 		if (!config.rightClickToggleButtons() || isFixedMode())
 		{
 			int index = MenuOp.OP_INDEX_0;
@@ -762,8 +968,13 @@ public class CompactOrbsManager
 			return;
 		}
 
+		if (isFloating() && config.hideMinimapWithSidePanel() && isSidePanelHidden())
+		{
+			return;
+		}
+
 		//vanilla banner should be hidden if the in-game setting is disabled
-		if (isWikiBannerDisabled() && !widgetManager.hasChildren(container) && !isEditingLayout)
+		else if (isWikiBannerDisabled() && !widgetManager.hasChildren(container) && !isEditingLayout)
 		{
 			hidden = true;
 		}
@@ -884,12 +1095,12 @@ public class CompactOrbsManager
 
 	public boolean isCompactLayout()
 	{
-		return !isFixedMode() && isMinimapHidden() && !isMinimapMinimized();
+		return !isFixedMode() && (isMinimapHidden() && !getCurrentLayout().isFloating()) && !isMinimapMinimized();
 	}
 
 	public boolean isCustomLayout()
 	{
-		return getCurrentLayout().isCustom() && isCompactLayout();
+		return getCurrentLayout().isCustomLayout() && isCompactLayout();
 	}
 
 	public boolean isVanillaCustom()
@@ -969,6 +1180,11 @@ public class CompactOrbsManager
 
 	public boolean hideMinimapOverlay()
 	{
+		if (isFloating())
+		{
+			return true;
+		}
+
 		return !(isMinimapOverlayEnabled() && isMinimapHidden() && !isMinimapMinimized()) || isFixedMode();
 	}
 
@@ -1218,6 +1434,52 @@ public class CompactOrbsManager
 		return y;
 	}
 
+	private void applyOrbHidden(HideOrbConfig orbConfig)
+	{
+		boolean hidden = orbConfig.getGetter().get();
+
+		for (TargetWidget target : orbConfig.getTargets())
+		{
+			if (tabHiddenOrbs.contains(target.getComponentId()))
+			{
+				hidden = true;
+				break;
+			}
+		}
+
+		widgetManager.setTargetsHidden(hidden, orbConfig.getTargets());
+	}
+
+	public void setOrbTabHidden(int componentId, boolean tabHidden)
+	{
+		final boolean changed = tabHidden
+			? tabHiddenOrbs.add(componentId)
+			: tabHiddenOrbs.remove(componentId);
+
+		if (!changed && !tabHidden)
+		{
+			return;
+		}
+
+		for (String key : orbHidden.configKeys())
+		{
+			final HideOrbConfig orbConfig = orbHidden.getByConfig(key);
+			if (orbConfig == null)
+			{
+				continue;
+			}
+
+			for (TargetWidget target : orbConfig.getTargets())
+			{
+				if (target.getComponentId() == componentId)
+				{
+					applyOrbHidden(orbConfig);
+					return;
+				}
+			}
+		}
+	}
+
 	public void hideAllOrbsByConfig()
 	{
 		orbHidden.configKeys().forEach(this::hideOrbByConfig);
@@ -1261,10 +1523,7 @@ public class CompactOrbsManager
 				HideOrbConfig orbConfig = orbHidden.getByConfig(key);
 				if (orbConfig != null)
 				{
-					widgetManager.setTargetsHidden(
-						orbConfig.getGetter().get(),
-						orbConfig.getTargets()
-					);
+					applyOrbHidden(orbConfig);
 				}
 
 				if (key.equals(ConfigKeys.HIDE_STORE)
@@ -1316,6 +1575,31 @@ public class CompactOrbsManager
 			configManager.getConfiguration(configGroup, configKey, Boolean.class));
 
 		return isPluginEnabled && isConfigEnabled;
+	}
+
+	public void sendUpdateNotice()
+	{
+		Integer version = configManager.getConfiguration(
+			ConfigGroup.GROUP_NAME,
+			ConfigKeys.NOTICE_VERSION,
+			Integer.class);
+
+		if (version == null || version < 1)
+		{
+			sendMessage(msg ->
+				msg
+					.append("A new layout is available: `")
+					.append(ChatColorType.HIGHLIGHT)
+					.append("Floating")
+					.append(ChatColorType.NORMAL)
+					.append("`, which utilizes RuneLite 's native drag for each widget, allowing unrestricted placement!")
+			);
+			sendMessage(msg ->
+				msg.append(ChatColorType.HIGHLIGHT)
+					.append("Please share any feedback or issues on the github repo!"));
+
+			saveConfig(ConfigKeys.NOTICE_VERSION, 1);
+		}
 	}
 
 	public void warnWikiPluginConflict()
@@ -1512,7 +1796,7 @@ public class CompactOrbsManager
 
 	public int getSavedPosition(Widget widget, int index, ValueKey key)
 	{
-		if ((isCompactLayout() && !getCurrentLayout().isCustom()))
+		if ((isCompactLayout() && !getCurrentLayout().isCustomLayout()))
 		{
 			return -1;
 		}
@@ -1596,8 +1880,8 @@ public class CompactOrbsManager
 	{
 		if (target != null)
 		{
-			saveConfig(getSavedKey(target, com.compactorbs.util.ValueKey.X), x);
-			saveConfig(getSavedKey(target, com.compactorbs.util.ValueKey.Y), y);
+			saveConfig(getSavedKey(target, ValueKey.X), x);
+			saveConfig(getSavedKey(target, ValueKey.Y), y);
 		}
 	}
 
@@ -1610,7 +1894,7 @@ public class CompactOrbsManager
 
 	private String buildSavedKey(String prefix, int componentId, int index, ValueKey key)
 	{
-		String suffix = key == com.compactorbs.util.ValueKey.X ? "_x" : "_y";
+		String suffix = key == ValueKey.X ? "_x" : "_y";
 		String id = componentId + "_" + index;
 		return prefix + id + suffix;
 	}

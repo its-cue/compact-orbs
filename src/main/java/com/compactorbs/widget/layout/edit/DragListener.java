@@ -84,7 +84,7 @@ public class DragListener implements MouseListener
 						dragState.offset.y = dragState.origin.y - (container.getBounds().y + dragged.getRelativeY());
 					}
 
-					if (manager.isCustomLayout() || !manager.enableOrbSwapping)
+					if (manager.isCustomLayout() || manager.isFloating() || !manager.enableOrbSwapping)
 					{
 						if (!manager.isCompactLayout() || manager.isFixedMode())
 						{

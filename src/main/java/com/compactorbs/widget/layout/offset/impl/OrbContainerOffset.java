@@ -49,7 +49,7 @@ public class OrbContainerOffset implements OffsetTarget
 		}
 
 		if (!manager.applyDetachedOffset() &&
-			manager.isAnchorRight() && !manager.getCurrentLayout().isCustom())
+			manager.isAnchorRight() && !manager.getCurrentLayout().isCustomLayout())
 		{
 			offsetX += manager.getCurrentLayout().getRightOffset();
 		}
@@ -68,7 +68,7 @@ public class OrbContainerOffset implements OffsetTarget
 		}
 
 		if (!manager.applyDetachedOffset() &&
-			manager.isAnchorBottom() && !manager.getCurrentLayout().isCustom())
+			manager.isAnchorBottom() && !manager.getCurrentLayout().isCustomLayout())
 		{
 			offsetY += manager.getCurrentLayout().getBottomOffset() - manager.clampVerticalY();
 		}

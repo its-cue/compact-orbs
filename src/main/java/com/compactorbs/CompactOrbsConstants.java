@@ -52,6 +52,7 @@ public class CompactOrbsConstants
 	public static final class ConfigKeys
 	{
 		public static final String CONFIG_VERSION = "configVersion";
+		public static final String NOTICE_VERSION = "noticeVersion";
 		public static final String MINIMAP = "hideMinimap";
 		public static final String COMPASS = "hideCompass";
 		public static final String HOTKEY_KEYBIND = "hotkeyKeybind";
