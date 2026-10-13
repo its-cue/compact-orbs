@@ -12,6 +12,12 @@
 
 <br/>
 
+# Floating
+- Use RuneLite's native dragging (`Alt`) to reposition the minimap widgets without restriction
+
+https://github.com/user-attachments/assets/2d34e6a2-fa6e-4258-9f7c-44eefca30f33
+
+
 # Layout
 ### Types
 - Choose a compact layout that will be visible when the minimap is hidden: 
