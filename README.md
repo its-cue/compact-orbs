@@ -15,7 +15,7 @@
 # Floating
 - Use RuneLite's native dragging (`Alt`) to reposition the minimap widgets without restriction
  - default arrangement will be kept for any widget that is inside its original snapcorner while the minimap is visible
-   - original snapcorner is defined as the one it would reset back to when you `alt`-`left-click` it
+   - original snapcorner is defined as the one it would reset back to when you `alt`-`right-click` it
  - only orbs that are not in the snapcorner will be hidden while `Hide orbs with inventory tab` is enabled
 
 https://github.com/user-attachments/assets/2d34e6a2-fa6e-4258-9f7c-44eefca30f33
