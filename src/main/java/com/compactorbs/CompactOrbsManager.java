@@ -56,15 +56,19 @@ import com.compactorbs.widget.layout.edit.DragState;
 import com.compactorbs.widget.layout.edit.EditManager;
 import com.compactorbs.widget.layout.slot.SlotManager;
 import com.compactorbs.widget.overlay.DetachedHandler;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.BufferProvider;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
@@ -85,7 +89,6 @@ import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.config.Keybind;
 import net.runelite.client.ui.overlay.Overlay;
-import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.util.ColorUtil;
 
 @Slf4j
@@ -128,14 +131,16 @@ public class CompactOrbsManager
 	@Inject
 	private BindingManager bindingManager;
 
+	@Setter
+	public BufferProvider lastProvider;
+
 	public boolean isNativeDragActive;
 	public boolean isGraphicsReset;
 	//TODO - test profile swapping
 	public boolean isSidePanelHiddenOnInit;
-
+	public boolean isMinimapMinimzed;
 	public boolean wikiPluginBannerExists;
 
-	public boolean snapCornerRepositioned;
 	public boolean isUpdatingProfile;
 	public boolean isEditingLayout;
 	public boolean hideWorldMap;
@@ -159,8 +164,9 @@ public class CompactOrbsManager
 	private Widget overlayLogoutXIcon;
 	private final Map<TargetWidget, Widget> noClickThroughChildren = new HashMap<>();
 
-	private final Set<Integer> tabHiddenOrbs = new HashSet<>();
+	public final Set<Integer> tabHiddenOrbs = new HashSet<>();
 	public boolean hideOrbOnTabClose;
+	public int tabHiddenState;
 
 	public final Map<String, Overlay> floatingOverlay = new HashMap<>();
 	public final TargetWidget[] FLOATING_TARGETS =
@@ -182,11 +188,6 @@ public class CompactOrbsManager
 			Minimap.CLASSIC_MAP_MINIMAP,
 			Minimap.MODERN_MAP_MINIMAP
 		};
-
-	public boolean isFloating()
-	{
-		return getCurrentLayout().isFloating() && !isFixedMode();
-	}
 
 	//todo - cleanup
 	public void setupMinimapForFloating()
@@ -327,7 +328,28 @@ public class CompactOrbsManager
 		updateNoClickThrough();
 	}
 
-	//rebuild the layout from state/config
+	//when a layout changes (ex: minimap is minimized, or config changed)
+	public void setupLayout()
+	{
+		clearOrbTabHiding();
+		setupMinimapForFloating();
+
+		if (isFloating())
+		{
+			detachedHandler.removeCoreOverlay();
+			widgetManager.remapTargets(true, Script.FORCE_UPDATE, Orbs.values());
+			updateCustomChildren();
+		}
+		else
+		{
+			detachedHandler.addCoreOverlay();
+			widgetManager.revalidate(Orbs.values());
+		}
+
+		rebuildLayout();
+	}
+
+	//rebuild compact layout from state/config
 	public void rebuildLayout()
 	{
 		if (isFloating())
@@ -367,6 +389,7 @@ public class CompactOrbsManager
 			editManager.toggleEditMode(false);
 		}
 
+		warnDragHotkeyAttempts = 0;
 		hasSeenWikiWarning = false;
 		hideWorldMap = false;
 		hideLogoutX = false;
@@ -407,6 +430,7 @@ public class CompactOrbsManager
 			editManager.toggleEditMode(false);
 		}
 
+		warnDragHotkeyAttempts = 0;
 		hasSeenWikiWarning = false;
 		hideWorldMap = config.hideWorld();
 		hideLogoutX = config.hideLogout();
@@ -493,6 +517,11 @@ public class CompactOrbsManager
 		if (getCurrentLayout().isFloating())
 		{
 			setupMinimapForFloating();
+			if (isSidePanelHidden() && config.hideMinimapWithSidePanel())
+			{
+				tabHiddenOrbs.remove(Minimap.MODERN_MAP_MINIMAP.getComponentId());
+			}
+			widgetManager.remapTargets(Orbs.WORLD_MAP_CONTAINER, Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
 		}
 		else
 		{
@@ -554,10 +583,11 @@ public class CompactOrbsManager
 
 			if (isCutsceneActive || isMinimapMinimized() || isMinimapPluginConfigEnabled())
 			{
+				hideOrbOnTabClose = false;
 				return;
 			}
 
-			if (getCurrentLayout().isFloating())
+			if (isFloating())
 			{
 				widgetManager.setHidden(Minimap.MODERN_MAP_MINIMAP.getComponentId(), false);
 				widgetManager.setHidden(Minimap.MODERN_ORBS_CONTAINER.getComponentId(), false);
@@ -566,6 +596,7 @@ public class CompactOrbsManager
 				return;
 			}
 
+			hideOrbOnTabClose = false;
 			final boolean hidden = hide && isCompactLayout() && isSidePanelHidden();
 
 			//only hide the parent not the children (do not use setTargetsHidden/setHidden(target...))
@@ -804,7 +835,16 @@ public class CompactOrbsManager
 			return;
 		}
 
-		compassFrame.setHidden(!isMinimapHidden() || isCompassHidden() || isMinimapMinimized());
+		boolean hidden = !isMinimapHidden() || isCompassHidden() || isMinimapMinimized();
+		if (isEditingLayout)
+		{
+			boolean visible = !isFloating() || isMinimapHidden();
+			if (visible)
+			{
+				hidden = false;
+			}
+		}
+		compassFrame.setHidden(hidden);
 	}
 
 	public void updateMinimapToggleButton()
@@ -1098,6 +1138,11 @@ public class CompactOrbsManager
 		return !isFixedMode() && (isMinimapHidden() && !getCurrentLayout().isFloating()) && !isMinimapMinimized();
 	}
 
+	public boolean isFloating()
+	{
+		return getCurrentLayout().isFloating() && !isFixedMode() && !isMinimapMinimized();
+	}
+
 	public boolean isCustomLayout()
 	{
 		return getCurrentLayout().isCustomLayout() && isCompactLayout();
@@ -1355,14 +1400,18 @@ public class CompactOrbsManager
 
 	public boolean isMinimapMinimized()
 	{
-		//login screen NPE when 'loading interfaces %' occurs post update for the MINIMAP_TOGGLE varbit?
+		return isMinimapMinimzed;
+	}
+
+	public void setIsMinimapMinimized()
+	{
 		if (!isLoggedIn())
 		{
-			return false;
+			isMinimapMinimzed = false;
 		}
 
 		final int minimapMinimized = 1;
-		return client.getVarbitValue(Varbit.MINIMAP_TOGGLE) == minimapMinimized;
+		isMinimapMinimzed = client.getVarbitValue(Varbit.MINIMAP_TOGGLE) == minimapMinimized;
 	}
 
 	public boolean isCutsceneActive()
@@ -1434,6 +1483,81 @@ public class CompactOrbsManager
 		return y;
 	}
 
+
+	//works, but i might need to refactor todo
+	public void setOrbTabHidden(int componentId, boolean tabHidden)
+	{
+		final boolean changed = tabHidden
+			? tabHiddenOrbs.add(componentId)
+			: tabHiddenOrbs.remove(componentId);
+
+		if (changed)
+		{
+			applyTabHiddenState(componentId);
+		}
+	}
+
+	private void applyTabHiddenState(int componentId)
+	{
+		final boolean tabHidden = tabHiddenOrbs.contains(componentId);
+
+		if (componentId == Orbs.WORLD_MAP_CONTAINER.getComponentId())
+		{
+			hideWorldMap = config.hideWorld() || tabHidden;
+			widgetManager.remapTargets(Orbs.WORLD_MAP_CONTAINER);
+			return;
+		}
+
+		if (componentId == Orbs.LOGOUT_X_ICON.getComponentId())
+		{
+			hideLogoutX = config.hideLogout() || tabHidden;
+			if (!isClassicResizable())
+			{
+				hideLogout();
+				updateLogoutXPosition();
+			}
+			return;
+		}
+
+		for (String key : orbHidden.configKeys())
+		{
+			final HideOrbConfig orbConfig = orbHidden.getByConfig(key);
+			if (orbConfig == null)
+			{
+				continue;
+			}
+
+			//don't hide on tab closed if the minimap is visible (awkward)
+			if (key.equals(ConfigKeys.COMPASS) && !isMinimapHidden() && !isEditingLayout)
+			{
+				continue;
+			}
+
+			for (TargetWidget target : orbConfig.getTargets())
+			{
+				if (target.getComponentId() == componentId)
+				{
+					applyOrbHidden(orbConfig);
+					return;
+				}
+			}
+		}
+	}
+
+	public void clearOrbTabHiding()
+	{
+		tabHiddenState++;
+		hideOrbOnTabClose = false;
+
+		final List<Integer> cleared = new ArrayList<>(tabHiddenOrbs);
+		tabHiddenOrbs.clear();
+
+		for (int id : cleared)
+		{
+			applyTabHiddenState(id);
+		}
+	}
+
 	private void applyOrbHidden(HideOrbConfig orbConfig)
 	{
 		boolean hidden = orbConfig.getGetter().get();
@@ -1448,36 +1572,6 @@ public class CompactOrbsManager
 		}
 
 		widgetManager.setTargetsHidden(hidden, orbConfig.getTargets());
-	}
-
-	public void setOrbTabHidden(int componentId, boolean tabHidden)
-	{
-		final boolean changed = tabHidden
-			? tabHiddenOrbs.add(componentId)
-			: tabHiddenOrbs.remove(componentId);
-
-		if (!changed && !tabHidden)
-		{
-			return;
-		}
-
-		for (String key : orbHidden.configKeys())
-		{
-			final HideOrbConfig orbConfig = orbHidden.getByConfig(key);
-			if (orbConfig == null)
-			{
-				continue;
-			}
-
-			for (TargetWidget target : orbConfig.getTargets())
-			{
-				if (target.getComponentId() == componentId)
-				{
-					applyOrbHidden(orbConfig);
-					return;
-				}
-			}
-		}
 	}
 
 	public void hideAllOrbsByConfig()
@@ -1537,19 +1631,29 @@ public class CompactOrbsManager
 		}
 	}
 
+	//only apply snapcorner following when the minimap is visible
+	public boolean followWhileDragging()
+	{
+		return isMinimapHidden() && isFloating();
+	}
+
 	public Keybind getNativeDragHotkey()
 	{
 		return configManager.getConfiguration(ConfigGroup.Core.RUNELITE, ConfigKeys.Core.DRAG_HOTKEY, Keybind.class);
 	}
 
-	public boolean isSnapCornerRepositioned()
+	public boolean hasGraphicsReset()
 	{
-		final java.awt.Point p = configManager.getConfiguration(
-			ConfigGroup.Core.RUNELITE,
-			ConfigKeys.Core.SNAPCORNER_PREFIX + OverlayPosition.CANVAS_TOP_RIGHT + ConfigKeys.Core.SNAPCORNER_CONFIG_LOCATION,
-			java.awt.Point.class);
+		final BufferProvider provider = client.getBufferProvider();
+		if (provider == lastProvider)
+		{
+			return false;
+		}
 
-		return p != null;
+		final boolean reset = lastProvider != null;
+		lastProvider = provider;
+
+		return reset;
 	}
 
 	public boolean isWikiPluginConfigEnabled()
@@ -1599,6 +1703,17 @@ public class CompactOrbsManager
 					.append("Please share any feedback or issues on the github repo!"));
 
 			saveConfig(ConfigKeys.NOTICE_VERSION, 1);
+		}
+	}
+
+	public int warnDragHotkeyAttempts;
+	public void warnNativeDragHotkey()
+	{
+		//5 warnings should be fine, might gate to a config as well to reduce potential spam
+		if (warnDragHotkeyAttempts < 5)
+		{
+			sendMessage(msg -> msg.append("could not detect if the assigned `Drag` hotkey was pressed."));
+			warnDragHotkeyAttempts++;
 		}
 	}
 
@@ -1837,7 +1952,7 @@ public class CompactOrbsManager
 					value += detachedSnapshotX();
 				}
 
-				if (key == ValueKey.Y)
+				if (key == com.compactorbs.util.ValueKey.Y)
 				{
 					value += detachedSnapshotY();
 				}

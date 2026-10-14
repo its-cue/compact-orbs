@@ -108,7 +108,7 @@ public class CompactOrbsConstants
 
 			public static final String SNAPCORNER_PREFIX = "snapcorner_";
 			public static final String SNAPCORNER_CONFIG_LOCATION = "_location";
-
+			public static final String CORNER_OVERLAY_PREFIX = "CornerOverlay_";
 			public static final String DRAG_HOTKEY = "dragHotkey";
 		}
 	}

@@ -26,6 +26,7 @@
 package com.compactorbs.widget.layout.edit;
 
 import com.compactorbs.CompactOrbsConfig;
+import com.compactorbs.CompactOrbsConstants;
 import static com.compactorbs.CompactOrbsConstants.Layout.EDIT_MODE_BACKGROUND_OPACITY;
 import static com.compactorbs.CompactOrbsConstants.Layout.EDIT_MODE_HIDDEN_OPACITY;
 import static com.compactorbs.CompactOrbsConstants.Layout.LOGOUT_X_ICON_OPACITY;
@@ -112,7 +113,8 @@ public class EditManager
 	public boolean blockEditing(TargetWidget target)
 	{
 		return (target.isLogoutX() && (manager.isClassicResizable() || manager.isFixedMode())) ||
-			(target.isCompass() && (!manager.isCompactLayout() || (!manager.isFloating() && !manager.isMinimapHidden()))) ||
+			(target.isCompass() && !manager.isFloating() &&
+				(!manager.isCompactLayout() || !manager.isMinimapHidden())) ||
 			(target == Orbs.STORE_ORB_CONTAINER && manager.isStoreOrbDisabled()) ||
 			(target == Orbs.ACTIVITY_ORB_CONTAINER && manager.isActivityOrbDisabled()) ||
 			(target.isWiki() && manager.isWikiBannerDisabled() && !manager.isWikiPluginConfigEnabled());
@@ -151,6 +153,7 @@ public class EditManager
 
 			if (blockEditing(target))
 			{
+				log.debug("blocking edit: {}", target);
 				continue;
 			}
 
@@ -163,7 +166,8 @@ public class EditManager
 			final Widget handler = widgetManager.createHandler(parent,
 				setHandlerX(bound, parent),
 				setHandlerY(bound, parent),
-				bound.getOriginalWidth(), bound.getOriginalHeight(),
+				(target.isCompass() ? CompactOrbsConstants.Layout.COMPASS_FRAME_SIZE : bound.getOriginalWidth()),
+				(target.isCompass() ? CompactOrbsConstants.Layout.COMPASS_FRAME_SIZE : bound.getOriginalHeight()),
 				bound.getXPositionMode(), bound.getYPositionMode(),
 				true);
 
@@ -219,7 +223,7 @@ public class EditManager
 				Minimap.MODERN_MAP_CONTAINER,
 				Minimap.CLASSIC_MAP_CONTAINER);
 
-			if (manager.isCompactLayout())
+			if (manager.isCompactLayout() || (manager.isFloating() && manager.isMinimapHidden()))
 			{
 				manager.compassFrame.setHidden(false);
 			}
@@ -333,7 +337,14 @@ public class EditManager
 	private void cleanupEditMode()
 	{
 		widgetManager.restoreMinimapRendering();
-		manager.rebuildLayout();
+		if (manager.isFloating())
+		{
+			manager.setupMinimapForFloating();
+		}
+		else
+		{
+			manager.rebuildLayout();
+		}
 		clearEditChildren();
 
 		Widget parent = widgetManager.getMapParent();

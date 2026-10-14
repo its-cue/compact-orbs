@@ -30,6 +30,7 @@ package com.compactorbs.widget.overlay;
 import com.compactorbs.CompactOrbsConstants;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.TargetWidget;
+import com.compactorbs.widget.elements.Minimap;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.layout.edit.Binding;
 import com.compactorbs.widget.layout.edit.BindingManager;
@@ -38,6 +39,7 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.Point;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetPositionMode;
 import net.runelite.client.ui.overlay.Overlay;
@@ -49,6 +51,7 @@ public class DetachedOrb extends Overlay
 {
 	private final Client client;
 	private final CompactOrbsManager manager;
+	private final SnapCorner snapcorner;
 	private final BindingManager bindingManager;
 	private final String name;
 	private final int componentId;
@@ -60,12 +63,15 @@ public class DetachedOrb extends Overlay
 	private boolean hasPreferred = true;
 	private boolean hiddenByTab;
 	private boolean tabWasVisible;
-	private boolean insideDefaultSnapcorner;
+	private boolean isInsideTopRight;
 
-	public DetachedOrb(Client client, CompactOrbsManager manager, BindingManager bindingManager, String name, int componentId, int index)
+	private int seenTabHide;
+
+	public DetachedOrb(Client client, CompactOrbsManager manager, SnapCorner snapcorner, BindingManager bindingManager, String name, int componentId, int index)
 	{
 		this.client = client;
 		this.manager = manager;
+		this.snapcorner = snapcorner;
 		this.bindingManager = bindingManager;
 		this.name = name;
 		this.componentId = componentId;
@@ -88,10 +94,19 @@ public class DetachedOrb extends Overlay
 	{
 		updateOnTabHidden();
 
+		snapcorner.getPosition(manager.isNativeDragActive, manager.followWhileDragging());
+
+		if (manager.hasGraphicsReset())
+		{
+			snapcorner.hasUpdated();
+		}
+		snapcorner.update(manager.followWhileDragging());
+
 		if (!manager.getCurrentLayout().isFloating() ||
 			manager.isMinimapMinimized() ||
 			manager.isFixedMode())
 		{
+			snapcorner.hasUpdated();
 			clearForcedPosition();
 			return null;
 		}
@@ -101,12 +116,24 @@ public class DetachedOrb extends Overlay
 
 		if (parent.isEmpty())
 		{
+			clear();
 			return null;
 		}
 
 		if (widget == null)
 		{
 			return null;
+		}
+
+		//todo - remove positioning if the minimap isn't in the TOP_RIGHT snapcorner (config option?)
+
+		//keep the compass hidden when the side panel is closed
+		if (widget.getId() == Minimap.MODERN_MAP_MINIMAP.getComponentId() &&
+			manager.tabHiddenOrbs.contains(Minimap.MODERN_MAP_MINIMAP.getComponentId()) &&
+			manager.isMinimapHidden() &&
+			!widget.isSelfHidden())
+		{
+			widget.setHidden(true);
 		}
 
 		//when the world map is hidden, don't put it in the snapcorner when its moved
@@ -119,22 +146,21 @@ public class DetachedOrb extends Overlay
 		}
 
 		final Rectangle bounds = getBounds();
-		if (getPreferredLocation() != null || getPreferredPosition() != null || (getPosition() != OverlayPosition.DYNAMIC && manager.snapCornerRepositioned))
+		if (getPreferredLocation() != null || getPreferredPosition() != null || manager.isMinimapHidden())
 		{
-			// If the widget is manually moved or the snapcorner it is in is moved, force the widget to be in the snapcorner bounds
 			widget.setForcedPosition(bounds.x - parent.x, bounds.y - parent.y);
 			hasPreferred = false;
 		}
 		else if (widget.getXPositionMode() == WidgetPositionMode.ABSOLUTE_LEFT ||
 			widget.getXPositionMode() == WidgetPositionMode.ABSOLUTE_RIGHT)
 		{
-			final int snapX = getSnapcornerX(widget, parent);
-			final int snapY = getSnapCornerY(widget) + getParentY(widget);
+			final int x = getSnapcornerX(widget, parent) + snapcorner.deltaX;
+			final int y = getSnapCornerY(widget) + getParentY(widget) + snapcorner.deltaY;
 
-			widget.setForcedPosition(snapX, snapY);
+			widget.setForcedPosition(x, y);
 			hasPreferred = false;
 
-			bounds.setBounds(parent.x + snapX, parent.y + snapY, widget.getWidth(), widget.getHeight());
+			bounds.setBounds(parent.x + x, parent.y + y, widget.getWidth(), widget.getHeight());
 		}
 		else
 		{
@@ -152,6 +178,7 @@ public class DetachedOrb extends Overlay
 			bounds.setBounds(widgetBounds.x, widgetBounds.y, widgetBounds.width, widgetBounds.height);
 		}
 
+		//make sure the logout x stone follows the icon
 		if (widget.getId() == Orbs.LOGOUT_X_ICON.getComponentId())
 		{
 			final Widget stone = client.getWidget(Orbs.LOGOUT_X_STONE.getComponentId());
@@ -161,6 +188,7 @@ public class DetachedOrb extends Overlay
 			}
 		}
 
+		//when editing the layout, put the handlers on the bound orb
 		if (manager.isEditingLayout)
 		{
 			for (Binding binding : bindingManager.all())
@@ -173,9 +201,45 @@ public class DetachedOrb extends Overlay
 				}
 
 				Widget handler = binding.getHandler();
-				handler.setForcedPosition(widget.getRelativeX(), widget.getRelativeY());
-				handler.setSize(widget.getWidth(), widget.getHeight());
+				int x = widget.getRelativeX();
+				int y = widget.getRelativeY();
+
+				//offset the handler so it sits ontop of the compass
+				if (manager.isFloating() && !manager.isMinimapHidden() &&
+					(widget.getId() == Minimap.MODERN_MAP_MINIMAP.getComponentId() ||
+						widget.getId() == Minimap.CLASSIC_MAP_MINIMAP.getComponentId()))
+				{
+					x += 30;
+					y += 1;
+				}
+
+				handler.setForcedPosition(x, y);
+				//handler.setSize(widget.getWidth(), widget.getHeight());
 				break;
+			}
+		}
+
+		if (!manager.isMinimapHidden())
+		{
+			//prevent the default snapcorner from being larger than it should be
+			//when all the widgets are positioned inside it
+			final Point mouse = client.getMouseCanvasPosition();
+			final boolean hovered = bounds.contains(mouse.getX(), mouse.getY());
+			if (getPreferredLocation() == null && getPreferredPosition() == null)
+			{
+				if ((widget.getId() == Minimap.MODERN_MAP_MINIMAP.getComponentId() ||
+					widget.getId() == Minimap.CLASSIC_MAP_MINIMAP.getComponentId()))
+				{
+					return new Dimension(CompactOrbsConstants.Layout.Original.MAP_CONTAINER_WIDTH,
+						CompactOrbsConstants.Layout.Original.MAP_CONTAINER_HEIGHT);
+				}
+				else
+				{
+					if (!hovered)
+					{
+						return new Dimension(0, 0);
+					}
+				}
 			}
 		}
 
@@ -204,9 +268,17 @@ public class DetachedOrb extends Overlay
 
 	private int getSnapCornerY(Widget widget)
 	{
-		if (manager.isEditingLayout && widget.getId() == Orbs.WORLD_MAP_CONTAINER.getComponentId())
+		if (widget.getId() == Orbs.WORLD_MAP_CONTAINER.getComponentId())
 		{
-			return CompactOrbsConstants.Layout.Original.WORLD_MAP_Y;
+			if (manager.isEditingLayout)
+			{
+				return CompactOrbsConstants.Layout.Original.WORLD_MAP_Y;
+			}
+
+			if (manager.hideWorldMap)
+			{
+				return -39;//account for +10 from getParentY
+			}
 		}
 
 		return widget.getOriginalY();
@@ -224,23 +296,42 @@ public class DetachedOrb extends Overlay
 
 	private void updateOnTabHidden()
 	{
+		if (seenTabHide != manager.tabHiddenState)
+		{
+			seenTabHide = manager.tabHiddenState;
+			hiddenByTab = false;
+			tabWasVisible = false;
+			isInsideTopRight = false;
+		}
+
 		final boolean active = manager.hideOrbOnTabClose && !manager.isEditingLayout;
 
 		if (active && !tabWasVisible)
 		{
-			insideDefaultSnapcorner = getPreferredLocation() == null &&
+			isInsideTopRight = getPreferredLocation() == null &&
 				(getPreferredPosition() == null || getPreferredPosition() == getPosition());
 		}
 
 		tabWasVisible = active;
 
-		//hide an orb outside their default snapcorner
-		final boolean hide = active && !insideDefaultSnapcorner;
+		final boolean hide = active && (!isInsideTopRight || manager.isMinimapHidden());
 
 		if (hide != hiddenByTab)
 		{
 			hiddenByTab = hide;
+
+			/*if (componentId == Orbs.WORLD_MAP_CONTAINER.getComponentId())
+			{
+				manager.hideWorldMap = manager.isHideWorldMap() || hiddenByTab;
+			}
+			else if (componentId == Orbs.LOGOUT_X_ICON.getComponentId())
+			{
+				manager.hideLogoutX = manager.isHideLogoutX() || hiddenByTab;
+			}
+			else
+			{*/
 			manager.setOrbTabHidden(componentId, hide);
+			//}
 		}
 	}
 
@@ -253,6 +344,13 @@ public class DetachedOrb extends Overlay
 		}
 
 		return widget;
+	}
+
+	private void clear()
+	{
+		hiddenByTab = false;
+		tabWasVisible = false;
+		isInsideTopRight = false;
 	}
 
 	private void clearForcedPosition()
@@ -268,7 +366,7 @@ public class DetachedOrb extends Overlay
 		final Widget widget = getWidget();
 		if (widget != null)
 		{
-			log.debug("reset forced position: {}}", widget.getId());
+			log.debug("reset forced position: {}", widget.getId());
 
 			widget.setForcedPosition(-1, -1);
 			widget.revalidate();
@@ -287,7 +385,8 @@ public class DetachedOrb extends Overlay
 
 	private Rectangle getParentBounds(final Widget widget)
 	{
-		if (widget == null || widget.isHidden())
+		if (widget == null ||
+			widget.isHidden() && widget.getId() != Minimap.MODERN_MAP_MINIMAP.getComponentId())
 		{
 			parentBounds.setBounds(0, 0, 0, 0);
 			return parentBounds;

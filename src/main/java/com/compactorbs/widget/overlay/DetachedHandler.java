@@ -38,7 +38,6 @@ import javax.inject.Singleton;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.BufferProvider;
 import net.runelite.api.Client;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
@@ -70,6 +69,9 @@ public class DetachedHandler
 
 	@Inject
 	private SlotManager slotManager;
+
+	@Inject
+	private SnapCorner snapcorner;
 
 	public static final String CORE_CLASSIC_OVERLAY = "RESIZABLE_MINIMAP_STONES_WIDGET";
 	public static final String CORE_MODERN_OVERLAY = "RESIZABLE_MINIMAP_WIDGET";
@@ -110,9 +112,6 @@ public class DetachedHandler
 
 	private int snapshotCanvasW;
 	private int snapshotCanvasH;
-
-	@Setter
-	private BufferProvider lastProvider;
 
 	public void update(Rectangle bounds)
 	{
@@ -360,7 +359,7 @@ public class DetachedHandler
 		if (clear)
 		{
 			invalidateResize();
-			lastProvider = null;
+			manager.lastProvider = null;
 			resizedWhileHidden = false;
 			manager.isGraphicsReset = false;
 			redraw = false;
@@ -379,21 +378,13 @@ public class DetachedHandler
 
 	public boolean detectGraphicsReset()
 	{
-		final BufferProvider provider = client.getBufferProvider();
-		if (provider == lastProvider)
+		if (manager.hasGraphicsReset())
 		{
-			return false;
+			queueResize();
+			return true;
 		}
 
-		final boolean reset = lastProvider != null;
-		lastProvider = provider;
-		if (!reset)
-		{
-			return false;
-		}
-
-		queueResize();
-		return true;
+		return false;
 	}
 
 	public void onSidePanelChanged()
@@ -450,6 +441,6 @@ public class DetachedHandler
 		return overlay != null &&
 			(overlay.getPreferredLocation() != null ||
 				overlay.getPreferredPosition() != null ||
-				(overlay.getPosition() != OverlayPosition.DYNAMIC && manager.snapCornerRepositioned));
+				(overlay.getPosition() != OverlayPosition.DYNAMIC && snapcorner.isSnapCornerRepositioned()));
 	}
 }

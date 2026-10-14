@@ -103,7 +103,8 @@ public interface CompactOrbsConfig extends Config
 	)
 	default CompactOrbsLayout layout()
 	{
-		return CompactOrbsLayout.VERTICAL;
+		//let predefined layouts be opt-in now
+		return CompactOrbsLayout.FLOATING;
 	}
 
 	@ConfigSection(

@@ -50,6 +50,7 @@ import com.compactorbs.widget.layout.slot.SlotRegistry;
 import com.compactorbs.widget.overlay.DetachedHandler;
 import com.compactorbs.widget.overlay.DetachedMinimap;
 import com.compactorbs.widget.overlay.DetachedOrb;
+import com.compactorbs.widget.overlay.SnapCorner;
 import com.google.inject.Provides;
 import java.awt.event.KeyEvent;
 import java.util.Locale;
@@ -83,7 +84,7 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 @PluginDescriptor(
 	name = "Compact Orbs",
 	description = "Minimize the minimap and reposition the orbs into a compact view.",
-	tags = {"compact", "orbs", "layout", "hide", "minimap", "resizable", "classic", "modern", "world", "map", "wiki", "swap", "overlay", "orb", "fixed", "interface", "floating"},
+	tags = {"compact", "orbs", "layout", "hide", "minimap", "resizable", "classic", "modern", "world", "map", "wiki", "swap", "overlay", "orb", "fixed", "interface", "floating", "drag"},
 	conflicts = {"Fixed Resizable Hybrid", "Orb Hider", "Minimap Hider", "Movable Orbs", "Interface Layout"}
 )
 public class CompactOrbsPlugin extends Plugin implements KeyListener
@@ -140,6 +141,9 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	private DetachedHandler detachedHandler;
 
 	@Inject
+	private SnapCorner snapcorner;
+
+	@Inject
 	private MouseManager mouseManager;
 
 	@Override
@@ -150,7 +154,9 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 
 		for (TargetWidget orb : manager.FLOATING_TARGETS)
 		{
-			var overlay = new DetachedOrb(client, manager, bindingManager, "COMPACT_ORBS_" + orb.toString(), orb.getComponentId(), orb.getArrayId());
+			var overlay = new DetachedOrb(client, manager, snapcorner, bindingManager,
+				"COMPACT_ORBS_" + orb.toString(), orb.getComponentId(), orb.getArrayId());
+
 			manager.floatingOverlay.putIfAbsent(overlay.getName(), overlay);
 			overlayManager.add(overlay);
 		}
@@ -170,7 +176,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		manager.hideLogoutX = config.hideLogout();
 		manager.enableNoClickThrough = config.enableNoClickthrough();
 		manager.enableOrbSwapping = config.enableOrbSwapping();
-		manager.snapCornerRepositioned = manager.isSnapCornerRepositioned();
+		snapcorner.hasUpdated();
 
 		clientThread.invoke(() ->
 		{
@@ -203,6 +209,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			overlayManager.remove(overlay)
 		);
 		manager.floatingOverlay.clear();
+		snapcorner.clear();
 
 		keyManager.unregisterKeyListener(this);
 		mouseManager.unregisterMouseListener(dragListener);
@@ -254,6 +261,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		}
 		else if (manager.isLoggedIn() && manager.isLoggingIn)
 		{
+			manager.setIsMinimapMinimized();
 			manager.isLoggingIn = false;
 			manager.createCustomChildren();
 			detachedHandler.setResizedWhileHidden(false);
@@ -382,9 +390,8 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				break;
 
 			case Varbit.MINIMAP_TOGGLE:
-				widgetManager.remapTargets(Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
-				manager.updateCustomChildren();
-				manager.setupMinimapContainer(false);
+				manager.setIsMinimapMinimized();
+				manager.setupLayout();
 				break;
 
 			case Varbit.STORE_ORB_TOGGLE:
@@ -424,6 +431,10 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			manager.refreshSidePanelSnapshot();
 			detachedHandler.onSidePanelChanged();
 
+			if (!manager.isSidePanelHidden())
+			{
+				manager.clearOrbTabHiding();
+			}
 			manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
 		}
 	}
@@ -435,6 +446,8 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		switch (id)
 		{
 			case Orb.UNIVERSE >> 16:
+				snapcorner.hasUpdated();
+
 				if (manager.isFloating())
 				{
 					detachedHandler.removeCoreOverlay();
@@ -466,7 +479,13 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		{
 			if (key.equals(ConfigKeys.Core.SNAPCORNER_PREFIX + OverlayPosition.CANVAS_TOP_RIGHT + ConfigKeys.Core.SNAPCORNER_CONFIG_LOCATION))
 			{
-				manager.snapCornerRepositioned = event.getNewValue() != null;
+				if (!snapcorner.nativeDragWasDetected)
+				{
+					manager.warnNativeDragHotkey();
+				}
+
+				snapcorner.nativeDragWasDetected = false;
+				snapcorner.hasUpdated();
 			}
 		}
 
@@ -535,7 +554,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				clientThread.invokeLater(() ->
 				{
 					manager.isGraphicsReset = false;
-					detachedHandler.setLastProvider(null);
+					manager.setLastProvider(null);
 					detachedHandler.restore(false);
 				});
 				break;
@@ -619,6 +638,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			case ConfigKeys.HIDE_MINIMAP_WITH_SIDE_PANEL:
 				clientThread.invokeLater(() ->
 				{
+					manager.clearOrbTabHiding();
 					manager.refreshSidePanelSnapshot();
 					detachedHandler.setResizedWhileHidden(false);
 					manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
@@ -658,23 +678,14 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 
 						if (key.equals(ConfigKeys.ORB_LAYOUT))
 						{
-							manager.setupMinimapForFloating();
-
-							if (manager.isFloating())
-							{
-								detachedHandler.removeCoreOverlay();
-								widgetManager.remapTargets(true, Script.FORCE_UPDATE, Orbs.values());
-								manager.updateCustomChildren();
-							}
-							else
-							{
-								detachedHandler.addCoreOverlay();
-								widgetManager.revalidate(Orbs.values());
-							}
+							manager.setupLayout();
+						}
+						else
+						{
+							manager.rebuildLayout();
 						}
 
-						manager.rebuildLayout();
-						manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
+						manager.hideMinimapOnTabClose(false);
 					}
 				});
 				break;
@@ -739,9 +750,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	@Override
 	public void keyPressed(KeyEvent e)
 	{
-		//holding shift allows the interface origin menu to be visible,
-		//but it's a bit jarring when shift-dropping or other actions with shift-bound,
-		//likely a non-issue, just hide the detached minimap to set the origin
+		//will only get set if the native hotkey is a special character (non-special get consumed)
 		if (manager.getNativeDragHotkey().matches(e))
 		{
 			manager.isNativeDragActive = true;
@@ -801,6 +810,10 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		if (manager.getNativeDragHotkey().matches(e))
 		{
 			manager.isNativeDragActive = false;
+			if (manager.isFloating())
+			{
+				snapcorner.cornerOverlay = null;
+			}
 		}
 	}
 }
