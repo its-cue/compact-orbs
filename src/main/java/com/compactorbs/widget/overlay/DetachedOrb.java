@@ -319,19 +319,7 @@ public class DetachedOrb extends Overlay
 		if (hide != hiddenByTab)
 		{
 			hiddenByTab = hide;
-
-			/*if (componentId == Orbs.WORLD_MAP_CONTAINER.getComponentId())
-			{
-				manager.hideWorldMap = manager.isHideWorldMap() || hiddenByTab;
-			}
-			else if (componentId == Orbs.LOGOUT_X_ICON.getComponentId())
-			{
-				manager.hideLogoutX = manager.isHideLogoutX() || hiddenByTab;
-			}
-			else
-			{*/
 			manager.setOrbTabHidden(componentId, hide);
-			//}
 		}
 	}
 
