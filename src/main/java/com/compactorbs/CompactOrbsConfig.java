@@ -98,7 +98,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.ORB_LAYOUT,
 		name = "Layout type",
-		description = "Select the desired layout when the minimap is minimized",
+		description = "Select a preferred layout type",
 		position = 0
 	)
 	default CompactOrbsLayout layout()
@@ -130,7 +130,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.VERTICAL_Y_ADJUSTMENT,
 		name = "Vertical offset",
-		description = "Reduce the vertical position of the current layout by the set value (min: 0, max:200)",
+		description = "Reduce the vertical position of the current compact-layout by the set value (min: 0, max:200)",
 		section = layout,
 		position = 1
 	)
@@ -202,11 +202,14 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.HIDE_MINIMAP_WITH_SIDE_PANEL,
 		name = "Hide orbs with inventory tab",
-		description = "Hide the compact layout when the side panel tab is hidden (only works in resizable-modern).",
+		description = "Hide the layout when the side panel tab is hidden (only works in resizable-modern).",
 		section = layout,
 		position = 7
 	)
-	default boolean hideMinimapWithSidePanel() { return false; }
+	default boolean hideMinimapWithSidePanel()
+	{
+		return false;
+	}
 
 	@ConfigSection(
 		name = "Toggle Button",
@@ -343,22 +346,22 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigSection(
-		name = "Orb Visibility / Swapping",
-		description = "",
+		name = "Troubleshoot",
+		description = "Useful if you're having issues or questions",
 		closedByDefault = true,
 		position = 100
 	)
-	String hideAndSwapUpdate = "hideAndSwapUpdate";
+	String readme = "hideAndSwapUpdate";
+
 	@ConfigItem(
 		keyName = "hideAndSwapUpdate",
-		name = "<html>Orb hiding/swapping has been moved to the in-game Edit-mode. <br/> <br/>" +
-			"To enable Edit-mode (either works): <br/>" +
-			"- Right-click the toggle-button (eye) <br/>" +
-			"- Configure the Hotkey for Edit-mode </html>",
+		name = "<html>If you're having issues, please read the plugin page for more information. <br/> <br/> " +
+			"If you experience bugs or have feedback, feel free to open an issue on GitHub. <br/> <br/>" +
+			" - You can access the plugin page by right-clicking the plugin name above and selecting `Support`</html>",
 		description = "",
-		section = hideAndSwapUpdate
+		section = readme
 	)
-	void hideAndSwapUpdate();
+	void readme();
 
 	//hidden from the config panel
 	@ConfigItem(
