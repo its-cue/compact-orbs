@@ -36,14 +36,19 @@ import com.compactorbs.CompactOrbsConstants.Widgets.Orb;
 import com.compactorbs.util.SetValue;
 import com.compactorbs.util.ValueKey;
 import static com.compactorbs.util.ValueKey.HEIGHT;
+import static com.compactorbs.util.ValueKey.HEIGHT_MODE;
+import static com.compactorbs.util.ValueKey.TEMP_HEIGHT;
+import static com.compactorbs.util.ValueKey.TEMP_WIDTH;
 import static com.compactorbs.util.ValueKey.WIDTH;
 import static com.compactorbs.util.ValueKey.WIDTH_MODE;
 import static com.compactorbs.util.ValueKey.X;
+import static com.compactorbs.util.ValueKey.X_POSITION_MODE;
 import static com.compactorbs.util.ValueKey.Y;
 import com.compactorbs.widget.TargetWidget;
 import java.util.Map;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import net.runelite.api.widgets.WidgetPositionMode;
 import net.runelite.api.widgets.WidgetSizeMode;
 
 @Getter
@@ -59,14 +64,56 @@ public enum Minimap implements TargetWidget
 				Vertical.MAP_CONTAINER_WIDTH,
 				Horizontal.MAP_CONTAINER_WIDTH,
 				HorizontalWide.MAP_CONTAINER_WIDTH,
-				HorizontalWide.MAP_CONTAINER_WIDTH //custom
+				HorizontalWide.MAP_CONTAINER_WIDTH,
+				0
 			),
 			HEIGHT, new SetValue(
 				Original.MAP_CONTAINER_HEIGHT,
 				Vertical.MAP_CONTAINER_HEIGHT,
 				Horizontal.MAP_CONTAINER_HEIGHT,
 				HorizontalWide.MAP_CONTAINER_HEIGHT,
-				Original.MAP_CONTAINER_HEIGHT//custom
+				Original.MAP_CONTAINER_HEIGHT,
+				0
+			),
+			X_POSITION_MODE, new SetValue(
+				WidgetPositionMode.ABSOLUTE_RIGHT,
+				WidgetPositionMode.ABSOLUTE_RIGHT,
+				WidgetPositionMode.ABSOLUTE_RIGHT,
+				WidgetPositionMode.ABSOLUTE_RIGHT,
+				WidgetPositionMode.ABSOLUTE_RIGHT,
+				WidgetPositionMode.ABSOLUTE_LEFT
+			),
+			WIDTH_MODE, new SetValue(
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.MINUS 
+			),
+			HEIGHT_MODE, new SetValue(
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.MINUS 
+			),
+			TEMP_WIDTH, new SetValue(
+				Original.MAP_CONTAINER_WIDTH,
+				Vertical.MAP_CONTAINER_WIDTH,
+				Horizontal.MAP_CONTAINER_WIDTH,
+				HorizontalWide.MAP_CONTAINER_WIDTH,
+				HorizontalWide.MAP_CONTAINER_WIDTH,
+				HorizontalWide.MAP_CONTAINER_WIDTH
+			),
+			TEMP_HEIGHT, new SetValue(
+				Original.MAP_CONTAINER_HEIGHT,
+				Vertical.MAP_CONTAINER_HEIGHT,
+				Horizontal.MAP_CONTAINER_HEIGHT,
+				HorizontalWide.MAP_CONTAINER_HEIGHT,
+				Original.MAP_CONTAINER_HEIGHT,
+				Layout.Original.MAP_CONTAINER_HEIGHT
 			)
 		)
 	),
@@ -92,19 +139,22 @@ public enum Minimap implements TargetWidget
 				Layout.COMPASS_FRAME_SIZE,
 				Layout.COMPASS_FRAME_SIZE,
 				Layout.COMPASS_FRAME_SIZE,
-				Layout.COMPASS_FRAME_SIZE,
 				Original.MAP_CONTAINER_WIDTH
 			),
 			HEIGHT, new SetValue(
-				Original.MAP_CONTAINER_HEIGHT - 28,
+				Layout.Original.MAP_MINIMAP_HEIGHT,
 				Layout.COMPASS_FRAME_SIZE,
 				Layout.COMPASS_FRAME_SIZE,
 				Layout.COMPASS_FRAME_SIZE,
 				Layout.COMPASS_FRAME_SIZE,
-				Original.MAP_CONTAINER_HEIGHT
+				Layout.Original.MAP_MINIMAP_HEIGHT
 			),
 			WIDTH_MODE, new SetValue(
 				WidgetSizeMode.MINUS,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
 				WidgetSizeMode.ABSOLUTE
 			)
 		)
@@ -116,22 +166,45 @@ public enum Minimap implements TargetWidget
 				0
 			),
 			Y, new SetValue(
-				10,
+				Layout.ORBS_CONTAINER_OFFSET_Y,
+				0,
+				0,
+				0,
+				0,
 				0
+
 			),
 			WIDTH, new SetValue(
 				Original.ORBS_CONTAINER_WIDTH,
 				Vertical.MAP_CONTAINER_WIDTH,
 				Horizontal.MAP_CONTAINER_WIDTH,
 				HorizontalWide.MAP_CONTAINER_WIDTH,
-				HorizontalWide.MAP_CONTAINER_WIDTH//custom
+				HorizontalWide.MAP_CONTAINER_WIDTH,
+				0
 			),
 			HEIGHT, new SetValue(
 				Original.ORBS_CONTAINER_HEIGHT,
 				Vertical.MAP_CONTAINER_HEIGHT,
 				Horizontal.MAP_CONTAINER_HEIGHT,
 				HorizontalWide.MAP_CONTAINER_HEIGHT,
-				Original.MAP_CONTAINER_HEIGHT//custom
+				Original.MAP_CONTAINER_HEIGHT,
+				0
+			),
+			WIDTH_MODE, new SetValue(
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.MINUS
+			),
+			HEIGHT_MODE, new SetValue(
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.MINUS
 			)
 		)
 	),
@@ -145,14 +218,56 @@ public enum Minimap implements TargetWidget
 				Vertical.MAP_CONTAINER_WIDTH,
 				Horizontal.MAP_CONTAINER_WIDTH,
 				HorizontalWide.MAP_CONTAINER_WIDTH,
-				HorizontalWide.MAP_CONTAINER_WIDTH//custom
+				HorizontalWide.MAP_CONTAINER_WIDTH,
+				0
 			),
 			HEIGHT, new SetValue(
 				Original.MAP_CONTAINER_HEIGHT,
 				Vertical.MAP_CONTAINER_HEIGHT,
 				Horizontal.MAP_CONTAINER_HEIGHT,
 				HorizontalWide.MAP_CONTAINER_HEIGHT,
-				Original.MAP_CONTAINER_HEIGHT//custom
+				Original.MAP_CONTAINER_HEIGHT,
+				0
+			),
+			X_POSITION_MODE, new SetValue(
+				WidgetPositionMode.ABSOLUTE_RIGHT,
+				WidgetPositionMode.ABSOLUTE_RIGHT,
+				WidgetPositionMode.ABSOLUTE_RIGHT,
+				WidgetPositionMode.ABSOLUTE_RIGHT,
+				WidgetPositionMode.ABSOLUTE_RIGHT,
+				WidgetPositionMode.ABSOLUTE_LEFT
+			),
+			WIDTH_MODE, new SetValue(
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.MINUS
+			),
+			HEIGHT_MODE, new SetValue(
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.MINUS
+			),
+			TEMP_WIDTH, new SetValue(
+				Original.MAP_CONTAINER_WIDTH,
+				Vertical.MAP_CONTAINER_WIDTH,
+				Horizontal.MAP_CONTAINER_WIDTH,
+				HorizontalWide.MAP_CONTAINER_WIDTH,
+				HorizontalWide.MAP_CONTAINER_WIDTH,
+				HorizontalWide.MAP_CONTAINER_WIDTH 
+			),
+			TEMP_HEIGHT, new SetValue(
+				Original.MAP_CONTAINER_HEIGHT,
+				Vertical.MAP_CONTAINER_HEIGHT,
+				Horizontal.MAP_CONTAINER_HEIGHT,
+				HorizontalWide.MAP_CONTAINER_HEIGHT,
+				Original.MAP_CONTAINER_HEIGHT,
+				Layout.Original.MAP_CONTAINER_HEIGHT
 			)
 		)
 	),
@@ -181,19 +296,24 @@ public enum Minimap implements TargetWidget
 				Original.MAP_CONTAINER_WIDTH
 			),
 			HEIGHT, new SetValue(
-				Original.MAP_CONTAINER_HEIGHT - 28,
+				Layout.Original.MAP_MINIMAP_HEIGHT,
 				Layout.COMPASS_FRAME_SIZE,
 				Layout.COMPASS_FRAME_SIZE,
 				Layout.COMPASS_FRAME_SIZE,
 				Layout.COMPASS_FRAME_SIZE,
-				Original.MAP_CONTAINER_HEIGHT
+				Layout.Original.MAP_MINIMAP_HEIGHT
 			),
 			WIDTH_MODE, new SetValue(
 				WidgetSizeMode.MINUS,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
 				WidgetSizeMode.ABSOLUTE
 			)
 		)
 	),
+
 	MODERN_ORBS_CONTAINER(
 		Modern.ORBS,
 		Map.of(
@@ -201,27 +321,68 @@ public enum Minimap implements TargetWidget
 				0
 			),
 			Y, new SetValue(
-				10,
-				0
+				Layout.ORBS_CONTAINER_OFFSET_Y,
+				0,
+				0,
+				0,
+				0,
+				0 
 			),
 			WIDTH, new SetValue(
 				Original.ORBS_CONTAINER_WIDTH,
 				Vertical.MAP_CONTAINER_WIDTH,
 				Horizontal.MAP_CONTAINER_WIDTH,
 				HorizontalWide.MAP_CONTAINER_WIDTH,
-				HorizontalWide.MAP_CONTAINER_WIDTH //custom
+				HorizontalWide.MAP_CONTAINER_WIDTH,
+				0
 			),
 			HEIGHT, new SetValue(
 				Original.ORBS_CONTAINER_HEIGHT,
 				Vertical.MAP_CONTAINER_HEIGHT,
 				Horizontal.MAP_CONTAINER_HEIGHT,
 				HorizontalWide.MAP_CONTAINER_HEIGHT,
-				Original.MAP_CONTAINER_HEIGHT //custom
+				Original.MAP_CONTAINER_HEIGHT,
+				0 
+			),
+			WIDTH_MODE, new SetValue(
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.MINUS
+			),
+			HEIGHT_MODE, new SetValue(
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.ABSOLUTE,
+				WidgetSizeMode.MINUS
 			)
 		)
 	),
 
-	ORBS_UNIVERSE(Orb.UNIVERSE),
+	ORBS_UNIVERSE(Orb.UNIVERSE,
+		Map.of(
+			TEMP_WIDTH, new SetValue(
+				Original.ORBS_CONTAINER_WIDTH,
+				Vertical.MAP_CONTAINER_WIDTH,
+				Horizontal.MAP_CONTAINER_WIDTH,
+				HorizontalWide.MAP_CONTAINER_WIDTH,
+				HorizontalWide.MAP_CONTAINER_WIDTH
+			),
+
+			TEMP_HEIGHT, new SetValue(
+				Original.ORBS_CONTAINER_HEIGHT,
+				Vertical.MAP_CONTAINER_HEIGHT,
+				Horizontal.MAP_CONTAINER_HEIGHT,
+				HorizontalWide.MAP_CONTAINER_HEIGHT,
+				Original.MAP_CONTAINER_HEIGHT
+			)
+		)
+	),
+
 
 	CLASSIC_NO_CLICK_0(Classic.MAP_NOCLICK_0),
 	CLASSIC_NO_CLICK_1(Classic.MAP_NOCLICK_1),

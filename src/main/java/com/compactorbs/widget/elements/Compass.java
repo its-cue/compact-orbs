@@ -49,18 +49,36 @@ public enum Compass implements TargetWidget
 		Map.of(
 			X, new SetValue(
 				Original.COMPASS_X,
+				0,
+				0,
+				0,
+				0,
+				0,
 				0
 			),
 			Y, new SetValue(
 				Original.COMPASS_Y,
+				0,
+				0,
+				0,
+				0,
+				0,
 				0
 			),
 			X_POSITION_MODE, new SetValue(
 				WidgetPositionMode.ABSOLUTE_LEFT,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
 				WidgetPositionMode.ABSOLUTE_CENTER
 			),
 			Y_POSITION_MODE, new SetValue(
 				WidgetPositionMode.ABSOLUTE_TOP,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
 				WidgetPositionMode.ABSOLUTE_CENTER
 			)
 		)
@@ -70,18 +88,37 @@ public enum Compass implements TargetWidget
 		Map.of(
 			X, new SetValue(
 				Original.COMPASS_OP_X,
+				0,
+				0,
+				0,
+				0,
+				0,
 				0
+
 			),
 			Y, new SetValue(
 				Original.COMPASS_OP_Y,
+				0,
+				0,
+				0,
+				0,
+				0,
 				0
 			),
 			X_POSITION_MODE, new SetValue(
 				WidgetPositionMode.ABSOLUTE_LEFT,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
 				WidgetPositionMode.ABSOLUTE_CENTER
 			),
 			Y_POSITION_MODE, new SetValue(
 				WidgetPositionMode.ABSOLUTE_TOP,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
 				WidgetPositionMode.ABSOLUTE_CENTER
 			)
 		)
@@ -92,18 +129,36 @@ public enum Compass implements TargetWidget
 		Map.of(
 			X, new SetValue(
 				Original.COMPASS_X,
+				0,
+				0,
+				0,
+				0,
+				0,
 				0
 			),
 			Y, new SetValue(
 				Original.COMPASS_Y,
+				0,
+				0,
+				0,
+				0,
+				0,
 				0
 			),
 			X_POSITION_MODE, new SetValue(
 				WidgetPositionMode.ABSOLUTE_LEFT,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
 				WidgetPositionMode.ABSOLUTE_CENTER
 			),
 			Y_POSITION_MODE, new SetValue(
 				WidgetPositionMode.ABSOLUTE_TOP,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
 				WidgetPositionMode.ABSOLUTE_CENTER
 			)
 		)
@@ -113,18 +168,36 @@ public enum Compass implements TargetWidget
 		Map.of(
 			X, new SetValue(
 				Original.COMPASS_OP_X,
+				0,
+				0,
+				0,
+				0,
+				0,
 				0
 			),
 			Y, new SetValue(
 				Original.COMPASS_OP_Y,
+				0,
+				0,
+				0,
+				0,
+				0,
 				0
 			),
 			X_POSITION_MODE, new SetValue(
 				WidgetPositionMode.ABSOLUTE_LEFT,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
 				WidgetPositionMode.ABSOLUTE_CENTER
 			),
 			Y_POSITION_MODE, new SetValue(
 				WidgetPositionMode.ABSOLUTE_TOP,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
+				WidgetPositionMode.ABSOLUTE_CENTER,
 				WidgetPositionMode.ABSOLUTE_CENTER
 			)
 		)

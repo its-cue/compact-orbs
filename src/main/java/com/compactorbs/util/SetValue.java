@@ -55,8 +55,9 @@ public class SetValue
 
 		int index = layout.getIndex();
 
+		//floating uses original positions if not set in the enum, unlike custom
 		return index < modified.length
 			? modified[index]
-			: modified[0];
+			: (layout.isFloating() ? original : modified[0]);
 	}
 }
