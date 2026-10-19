@@ -60,13 +60,6 @@ public class DetachedOrb extends Overlay
 	private final Rectangle parentBounds = new Rectangle();
 	private boolean revalidate;
 
-	private boolean hasPreferred = true;
-	private boolean hiddenByTab;
-	private boolean tabWasVisible;
-	private boolean isInsideTopRight;
-
-	private int seenTabHide;
-
 	public DetachedOrb(Client client, CompactOrbsManager manager, SnapCorner snapcorner, BindingManager bindingManager, String name, int componentId, int index)
 	{
 		this.client = client;
@@ -92,31 +85,11 @@ public class DetachedOrb extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		updateOnTabHidden();
-
-		snapcorner.getPosition(manager.isNativeDragActive, manager.followWhileDragging());
-
-		if (manager.hasGraphicsReset())
-		{
-			snapcorner.hasUpdated();
-		}
-		snapcorner.update(manager.followWhileDragging());
-
-		if (!manager.getCurrentLayout().isFloating() ||
-			manager.isMinimapMinimized() ||
-			manager.isFixedMode())
-		{
-			snapcorner.hasUpdated();
-			clearForcedPosition();
-			return null;
-		}
-
 		final Widget widget = getWidget();
 		final Rectangle parent = getParentBounds(widget);
 
 		if (parent.isEmpty())
 		{
-			clear();
 			return null;
 		}
 
@@ -125,12 +98,40 @@ public class DetachedOrb extends Overlay
 			return null;
 		}
 
-		//todo - remove positioning if the minimap isn't in the TOP_RIGHT snapcorner (config option?)
+		if (!manager.getCurrentLayout().isFloating() ||
+			manager.isMinimapMinimized() ||
+			manager.isFixedMode())
+		{
+			snapcorner.hasUpdated();
+			return null;
+		}
+
+		//check whether the minimap is in the top_right snapcorner
+		if (widget.getId() == Minimap.MODERN_MAP_MINIMAP.getComponentId() ||
+			widget.getId() == Minimap.CLASSIC_MAP_MINIMAP.getComponentId())
+		{
+			snapcorner.minimapInCorner = getPreferredLocation() == null &&
+				(getPreferredPosition() == null || getPreferredPosition() == getPosition());
+		}
+
+		//reposition the orbs while the minimap is inside the top_right snapcorner
+		if (snapcorner.minimapInCorner)
+		{
+			snapcorner.getPosition(manager.isNativeDragActive, manager.followWhileDragging());
+
+			if (manager.hasGraphicsReset())
+			{
+				snapcorner.hasUpdated();
+			}
+
+			snapcorner.update(manager.followWhileDragging());
+		}
 
 		//keep the compass hidden when the side panel is closed
 		if (widget.getId() == Minimap.MODERN_MAP_MINIMAP.getComponentId() &&
-			manager.tabHiddenOrbs.contains(Minimap.MODERN_MAP_MINIMAP.getComponentId()) &&
 			manager.isMinimapHidden() &&
+			manager.hideOrbOnTabClose &&
+			!manager.isEditingLayout &&
 			!widget.isSelfHidden())
 		{
 			widget.setHidden(true);
@@ -141,15 +142,15 @@ public class DetachedOrb extends Overlay
 			manager.hideWorldMap && !manager.isEditingLayout)
 		{
 			widget.setForcedPosition(getSnapcornerX(widget, parent), getSnapCornerY(widget) + getParentY(widget));
-			hasPreferred = false;
 			return null;
 		}
 
 		final Rectangle bounds = getBounds();
-		if (getPreferredLocation() != null || getPreferredPosition() != null || manager.isMinimapHidden())
+		if (getPreferredLocation() != null || getPreferredPosition() != null ||
+			(manager.isMinimapHidden() || !snapcorner.minimapInCorner))
 		{
-			widget.setForcedPosition(bounds.x - parent.x, bounds.y - parent.y);
-			hasPreferred = false;
+			// If the widget is manually moved or the snapcorner it is in is moved, force the widget to be in the snapcorner bounds
+			widget.setForcedPosition(bounds.x - parent.x, bounds.y - parent.y); // the widget relative pos is relative to its parent
 		}
 		else if (widget.getXPositionMode() == WidgetPositionMode.ABSOLUTE_LEFT ||
 			widget.getXPositionMode() == WidgetPositionMode.ABSOLUTE_RIGHT)
@@ -158,15 +159,12 @@ public class DetachedOrb extends Overlay
 			final int y = getSnapCornerY(widget) + getParentY(widget) + snapcorner.deltaY;
 
 			widget.setForcedPosition(x, y);
-			hasPreferred = false;
-
 			bounds.setBounds(parent.x + x, parent.y + y, widget.getWidth(), widget.getHeight());
 		}
 		else
 		{
-			if (revalidate || !hasPreferred)
+			if (revalidate)
 			{
-				hasPreferred = true;
 				revalidate = false;
 				widget.setForcedPosition(-1, -1);
 				// Revalidate the widget to reposition it back to its normal location after an overlay reset
@@ -188,38 +186,9 @@ public class DetachedOrb extends Overlay
 			}
 		}
 
-		//when editing the layout, put the handlers on the bound orb
-		if (manager.isEditingLayout)
-		{
-			for (Binding binding : bindingManager.all())
-			{
-				TargetWidget target = binding.get(manager);
+		updateEditModeHandlerPos(widget);
 
-				if (target == null || target.getComponentId() != widget.getId())
-				{
-					continue;
-				}
-
-				Widget handler = binding.getHandler();
-				int x = widget.getRelativeX();
-				int y = widget.getRelativeY();
-
-				//offset the handler so it sits ontop of the compass
-				if (manager.isFloating() && !manager.isMinimapHidden() &&
-					(widget.getId() == Minimap.MODERN_MAP_MINIMAP.getComponentId() ||
-						widget.getId() == Minimap.CLASSIC_MAP_MINIMAP.getComponentId()))
-				{
-					x += 30;
-					y += 1;
-				}
-
-				handler.setForcedPosition(x, y);
-				//handler.setSize(widget.getWidth(), widget.getHeight());
-				break;
-			}
-		}
-
-		if (!manager.isMinimapHidden())
+		if (!manager.isMinimapHidden() && snapcorner.minimapInCorner)
 		{
 			//prevent the default snapcorner from being larger than it should be
 			//when all the widgets are positioned inside it
@@ -294,33 +263,10 @@ public class DetachedOrb extends Overlay
 		return 0;
 	}
 
-	private void updateOnTabHidden()
+	public boolean isDetached()
 	{
-		if (seenTabHide != manager.tabHiddenState)
-		{
-			seenTabHide = manager.tabHiddenState;
-			hiddenByTab = false;
-			tabWasVisible = false;
-			isInsideTopRight = false;
-		}
-
-		final boolean active = manager.hideOrbOnTabClose && !manager.isEditingLayout;
-
-		if (active && !tabWasVisible)
-		{
-			isInsideTopRight = getPreferredLocation() == null &&
-				(getPreferredPosition() == null || getPreferredPosition() == getPosition());
-		}
-
-		tabWasVisible = active;
-
-		final boolean hide = active && (!isInsideTopRight || manager.isMinimapHidden());
-
-		if (hide != hiddenByTab)
-		{
-			hiddenByTab = hide;
-			manager.setOrbTabHidden(componentId, hide);
-		}
+		return getPreferredLocation() != null ||
+			(getPreferredPosition() != null && getPreferredPosition() != getPosition());
 	}
 
 	private Widget getWidget()
@@ -332,43 +278,6 @@ public class DetachedOrb extends Overlay
 		}
 
 		return widget;
-	}
-
-	private void clear()
-	{
-		hiddenByTab = false;
-		tabWasVisible = false;
-		isInsideTopRight = false;
-	}
-
-	private void clearForcedPosition()
-	{
-		if (hasPreferred)
-		{
-			return;
-		}
-
-		hasPreferred = true;
-		revalidate = false;
-
-		final Widget widget = getWidget();
-		if (widget != null)
-		{
-			log.debug("reset forced position: {}", widget.getId());
-
-			widget.setForcedPosition(-1, -1);
-			widget.revalidate();
-
-			if (widget.getId() == Orbs.LOGOUT_X_ICON.getComponentId())
-			{
-				final Widget stone = client.getWidget(Orbs.LOGOUT_X_STONE.getComponentId());
-				if (stone != null)
-				{
-					stone.setForcedPosition(-1, -1);
-					stone.revalidate();
-				}
-			}
-		}
 	}
 
 	private Rectangle getParentBounds(final Widget widget)
@@ -393,6 +302,40 @@ public class DetachedOrb extends Overlay
 		}
 
 		return parentBounds;
+	}
+
+	public void updateEditModeHandlerPos(Widget widget)
+	{
+		if (widget != null)
+		{
+			if (manager.isEditingLayout)
+			{
+				for (Binding binding : bindingManager.all())
+				{
+					TargetWidget target = binding.get(manager);
+					if (target == null || target.getComponentId() != widget.getId())
+					{
+						continue;
+					}
+
+					Widget handler = binding.getHandler();
+					int x = widget.getRelativeX();
+					int y = widget.getRelativeY();
+
+					//offset the handler so it sits ontop of the compass
+					if (manager.isFloating() && !manager.isMinimapHidden() &&
+						(widget.getId() == Minimap.MODERN_MAP_MINIMAP.getComponentId() ||
+							widget.getId() == Minimap.CLASSIC_MAP_MINIMAP.getComponentId()))
+					{
+						x += 30;
+						y += 1;
+					}
+
+					handler.setForcedPosition(x, y);
+					break;
+				}
+			}
+		}
 	}
 
 	@Override

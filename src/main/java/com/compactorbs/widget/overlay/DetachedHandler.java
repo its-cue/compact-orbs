@@ -26,9 +26,12 @@
 package com.compactorbs.widget.overlay;
 
 import com.compactorbs.CompactOrbsConfig;
+import com.compactorbs.CompactOrbsConstants;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.WidgetManager;
+import com.compactorbs.widget.elements.Compass;
 import com.compactorbs.widget.elements.Minimap;
+import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.layout.slot.SlotManager;
 import java.awt.Rectangle;
 import java.util.HashMap;
@@ -173,15 +176,6 @@ public class DetachedHandler
 
 		union.setBounds(snapshot.union(bounds));
 
-		container.setForcedPosition(
-			union.x - container.getParent().getBounds().x,
-			union.y - container.getParent().getBounds().y
-		);
-		container.revalidate();
-
-		container.setWidth(union.width);
-		container.setHeight(union.height);
-
 		snapshotRelX = snapshot.x - union.x;
 		snapshotRelY = snapshot.y - union.y;
 		detachedRelX = bounds.x - union.x;
@@ -189,7 +183,30 @@ public class DetachedHandler
 		unionWidth = union.width;
 		unionHeight = union.height;
 
-		manager.rebuildLayout();
+		manager.createCustomChildren();
+
+		container.setForcedPosition(
+			union.x - container.getParent().getBounds().x,
+			union.y - container.getParent().getBounds().y
+		);
+
+		widgetManager.remapTargets(Minimap.CONTAINERS);
+		widgetManager.revalidate(Minimap.COMPONENTS);
+
+		container.setWidth(union.width);
+		container.setHeight(union.height);
+
+		orbs.setWidth(unionWidth);
+		orbs.setHeight(unionHeight);
+
+		Widget uni = client.getWidget(Minimap.ORBS_UNIVERSE.getComponentId());
+		if (uni != null)
+		{
+			uni.setWidth(unionWidth);
+			uni.setHeight(unionHeight);
+		}
+
+		widgetManager.remapTargets(Orbs.values());
 
 		redraw = false;
 	}
@@ -323,6 +340,7 @@ public class DetachedHandler
 		//prevent core overlays from being re-added unless they have been cached and on shutdown
 		if (manager.isFloating() && !cached && !clear)
 		{
+			removeCoreOverlay();
 			return;
 		}
 
@@ -344,7 +362,10 @@ public class DetachedHandler
 
 			addCoreOverlay();
 
-			manager.rebuildLayout();
+			if (!clear)
+			{
+				manager.rebuildLayout();
+			}
 
 			clientThread.invokeLater(() ->
 			{
@@ -389,11 +410,6 @@ public class DetachedHandler
 
 	public void onSidePanelChanged()
 	{
-		if (manager.isFloating())
-		{
-			return;
-		}
-
 		if (resizedWhileHidden)
 		{
 			resizedWhileHidden = false;

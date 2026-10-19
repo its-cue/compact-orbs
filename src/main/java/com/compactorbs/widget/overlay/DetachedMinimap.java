@@ -24,6 +24,7 @@
  */
 package com.compactorbs.widget.overlay;
 
+import com.compactorbs.CompactOrbsConstants.ConfigKeys;
 import com.compactorbs.CompactOrbsConstants.Widgets;
 import com.compactorbs.CompactOrbsManager;
 import java.awt.Dimension;
@@ -66,7 +67,7 @@ public class DetachedMinimap extends Overlay
 	@Override
 	public String getName()
 	{
-		return "COMPACT_ORBS_MINIMAP_OVERLAY";
+		return ConfigKeys.OVERLAY_PREFIX + "MINIMAP_OVERLAY";
 	}
 
 	@Override
@@ -91,10 +92,11 @@ public class DetachedMinimap extends Overlay
 			return null;
 		}
 
-		if (manager.isFixedMode()
-			|| !manager.isMinimapOverlayEnabled()
-			|| !manager.isMinimapHidden()
-			|| manager.isMinimapMinimized())
+		if (manager.isFixedMode() ||
+			manager.isFloating() ||
+			!manager.isMinimapOverlayEnabled() ||
+			!manager.isMinimapHidden() ||
+			manager.isMinimapMinimized())
 		{
 			return null;
 		}

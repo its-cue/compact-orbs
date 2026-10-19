@@ -43,6 +43,14 @@ public class CompassOffset implements OffsetTarget
 	{
 		if (!compactLayout)
 		{
+			if (manager.getCurrentLayout().isFloating())
+			{
+				if (manager.isMinimapHidden())
+				{
+					x = 30;
+				}
+			}
+
 			return x;
 		}
 
@@ -109,6 +117,14 @@ public class CompassOffset implements OffsetTarget
 	{
 		if (!compactLayout)
 		{
+			if (manager.getCurrentLayout().isFloating())
+			{
+				if (manager.isMinimapHidden())
+				{
+					y = 1;
+				}
+			}
+
 			return y;
 		}
 
@@ -143,4 +159,33 @@ public class CompassOffset implements OffsetTarget
 		offsetY = y;
 		return offsetY;
 	}
+
+	@Override
+	public int widthOffset(int width, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	{
+		if (manager.getCurrentLayout().isFloating())
+		{
+			if (manager.isMinimapHidden())
+			{
+				return Layout.COMPASS_FRAME_SIZE;
+			}
+		}
+
+		return width;
+	}
+
+	@Override
+	public int heightOffset(int height, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	{
+		if (manager.getCurrentLayout().isFloating())
+		{
+			if (manager.isMinimapHidden())
+			{
+				return Layout.COMPASS_FRAME_SIZE;
+			}
+		}
+
+		return height;
+	}
+
 }

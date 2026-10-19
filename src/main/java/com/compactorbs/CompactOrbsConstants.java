@@ -39,7 +39,9 @@ public class CompactOrbsConstants
 	public static final class ConfigGroup
 	{
 		public static final String GROUP_NAME = "compactorbs";
+		public static final String CURRENT_VERSION = "2.0.2";
 		public static final int CONFIG_VERSION = 2;
+		public static final int NOTICE_VERSION = 2;
 
 		public static final class Core
 		{
@@ -97,6 +99,9 @@ public class CompactOrbsConstants
 		public static final String CUSTOM_LAYOUT_PREFIX = "custom_layout_";
 		public static final String VANILLA_LAYOUT_PREFIX = "vanilla_layout_";
 		public static final String FIXED_LAYOUT_PREFIX = "fixed_layout_";
+
+		//overlay name prefix
+		public static final String OVERLAY_PREFIX = "COMPACT_ORBS_";
 
 		public static final class Core
 		{
@@ -202,6 +207,8 @@ public class CompactOrbsConstants
 		{
 			public static final int MAP_CONTAINER_WIDTH = 211;
 			public static final int MAP_CONTAINER_HEIGHT = 207;
+
+			public static final int MAP_MINIMAP_HEIGHT = 179;
 
 			public static final int ORBS_CONTAINER_WIDTH = 207;
 			public static final int ORBS_CONTAINER_HEIGHT = 197;

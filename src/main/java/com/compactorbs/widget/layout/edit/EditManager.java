@@ -139,7 +139,9 @@ public class EditManager
 		disableMinimap();
 		manager.hideWorldMap = false;
 		manager.hideLogoutX = false;
-		manager.rebuildLayout();
+
+		manager.setupCurrentLayout();
+
 		updateBackground();
 		parent.setNoClickThrough(true);
 
@@ -230,7 +232,7 @@ public class EditManager
 		}
 		else if (target.isWiki())
 		{
-			manager.updateWikiBannerVisibility(false);
+			manager.updateWikiBannerVisibility(true);
 		}
 		else
 		{
@@ -337,14 +339,9 @@ public class EditManager
 	private void cleanupEditMode()
 	{
 		widgetManager.restoreMinimapRendering();
-		if (manager.isFloating())
-		{
-			manager.setupMinimapForFloating();
-		}
-		else
-		{
-			manager.rebuildLayout();
-		}
+
+		manager.setupCurrentLayout();
+
 		clearEditChildren();
 
 		Widget parent = widgetManager.getMapParent();

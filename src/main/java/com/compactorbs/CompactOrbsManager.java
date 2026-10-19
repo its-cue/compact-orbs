@@ -40,6 +40,7 @@ import com.compactorbs.CompactOrbsConstants.Varbit;
 import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
 import com.compactorbs.CompactOrbsConstants.Widgets.MinimapOverlay;
 import com.compactorbs.CompactOrbsConstants.Widgets.Modern;
+import com.compactorbs.util.ChatMessage;
 import com.compactorbs.util.MigrateConfig;
 import com.compactorbs.util.ValueKey;
 import com.compactorbs.widget.TargetWidget;
@@ -56,20 +57,18 @@ import com.compactorbs.widget.layout.edit.DragState;
 import com.compactorbs.widget.layout.edit.EditManager;
 import com.compactorbs.widget.layout.slot.SlotManager;
 import com.compactorbs.widget.overlay.DetachedHandler;
-import java.util.ArrayList;
+import com.compactorbs.widget.overlay.DetachedOrb;
+import com.compactorbs.widget.overlay.SnapCorner;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.BufferProvider;
-import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.Menu;
@@ -82,13 +81,10 @@ import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetPositionMode;
 import net.runelite.api.widgets.WidgetSizeMode;
 import net.runelite.client.callback.ClientThread;
-import net.runelite.client.chat.ChatColorType;
-import net.runelite.client.chat.ChatMessageBuilder;
-import net.runelite.client.chat.ChatMessageManager;
-import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.config.Keybind;
 import net.runelite.client.ui.overlay.Overlay;
+import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.util.ColorUtil;
 
 @Slf4j
@@ -96,7 +92,7 @@ import net.runelite.client.util.ColorUtil;
 public class CompactOrbsManager
 {
 	@Inject
-	private ChatMessageManager chatMessageManager;
+	private ChatMessage chatMessage;
 
 	@Inject
 	private Client client;
@@ -126,32 +122,36 @@ public class CompactOrbsManager
 	private EditManager editManager;
 
 	@Inject
-	private DragState dragState;
+	private BindingManager bindingManager;
 
 	@Inject
-	private BindingManager bindingManager;
+	private SnapCorner snapcorner;
 
 	@Setter
 	public BufferProvider lastProvider;
 
-	public boolean isNativeDragActive;
-	public boolean isGraphicsReset;
-	//TODO - test profile swapping
-	public boolean isSidePanelHiddenOnInit;
-	public boolean isMinimapMinimzed;
-	public boolean wikiPluginBannerExists;
-
-	public boolean isUpdatingProfile;
-	public boolean isEditingLayout;
+	//tied to related configs
 	public boolean hideWorldMap;
 	public boolean hideLogoutX;
 	public boolean enableNoClickThrough;
 	public boolean enableOrbSwapping;
-	public boolean hasSeenWikiWarning;
-	public boolean isLoggingIn;
+
+	public boolean isNativeDragActive;
+	public boolean isGraphicsReset;
+	public boolean isMinimapMinimized;
 	public boolean isCutsceneActive;
+	public boolean isEditingLayout;
+
+	public boolean wikiPluginBannerExists;
+
+	public boolean isUpdatingProfile;
+	public boolean isLoggingIn;
 	public boolean detachedMinimapParentIsReady;
 
+	public boolean hasSeenWikiWarning;
+	public int warnDragHotkeyAttempts;
+
+	//custom widgets that are owned by compact-orbs
 	public Widget compassFrame;
 	public Widget minimapButton;
 	private Widget overlayCompass;
@@ -166,10 +166,9 @@ public class CompactOrbsManager
 
 	public final Set<Integer> tabHiddenOrbs = new HashSet<>();
 	public boolean hideOrbOnTabClose;
-	public int tabHiddenState;
 
 	public final Map<String, Overlay> floatingOverlay = new HashMap<>();
-	public final TargetWidget[] FLOATING_TARGETS =
+	public static final TargetWidget[] FLOATING_TARGETS =
 		{
 			Orbs.WIKI_ICON_CONTAINER,
 			Orbs.WORLD_MAP_CONTAINER,
@@ -189,198 +188,33 @@ public class CompactOrbsManager
 			Minimap.MODERN_MAP_MINIMAP
 		};
 
-	//todo - cleanup
-	public void setupMinimapForFloating()
+	//on plugin startup
+	public void startup()
 	{
-		if (isFloating())
+		if (!isLoggedIn())
 		{
-			final Widget container = widgetManager.getMapParent();
-			if (container != null)
-			{
-				container.setForcedPosition(-1, -1);
-				widgetManager.setBoundsAbsoluteCenter(container);
-			}
-
-			final Widget orbs = widgetManager.getOrbsParent();
-			if (orbs != null)
-			{
-				widgetManager.setBoundsAbsoluteCenter(orbs);
-			}
-
-			final Widget uni = widgetManager.getTargetWidget(Minimap.ORBS_UNIVERSE);
-			if (uni != null)
-			{
-				widgetManager.setBoundsAbsoluteCenter(uni);
-			}
-		}
-		else
-		{
-			widgetManager.restoreMinimapContainers();
+			isLoggingIn = true;
 		}
 
-		Widget minimap = widgetManager.getTargetWidget(isClassicResizable() ?
-			Minimap.CLASSIC_MAP_MINIMAP : Minimap.MODERN_MAP_MINIMAP);
+		isUpdatingProfile = false;
+		isEditingLayout = false;
 
-		if (minimap != null)
-		{
-			minimap.setWidthMode(0);
-			minimap.setOriginalX(isMinimapHidden() ? 30 : 0);
-			minimap.setOriginalY(isMinimapHidden() ? 1 : 0);
-			minimap.setOriginalWidth(isMinimapHidden() ? Layout.COMPASS_FRAME_SIZE : 211);
-			minimap.setOriginalHeight(isMinimapHidden() ? Layout.COMPASS_FRAME_SIZE : 179);
-			minimap.revalidate();
-			minimap.setWidth(isMinimapHidden() ? Layout.COMPASS_FRAME_SIZE : 211);
-			minimap.setHeight(isMinimapHidden() ? Layout.COMPASS_FRAME_SIZE : 179);
-		}
+		hideWorldMap = config.hideWorld();
+		hideLogoutX = config.hideLogout();
+		enableNoClickThrough = config.enableNoClickthrough();
+		enableOrbSwapping = config.enableOrbSwapping();
+		slotManager.init();
 
-		//restore the minimap xPosMode widgets behaviour
-		widgetManager.revalidate(Minimap.COMPONENTS);
-
-		if (isFloating())
-		{
-			widgetManager.setTargetsHidden(
-				isMinimapHidden() && isCompassHidden(),
-				Compass.values());
-		}
-		else
-		{
-			widgetManager.setTargetsHidden(
-				isCompactLayout() && isCompassHidden(),
-				Compass.values());
-		}
-
-		widgetManager.setTargetsHidden(isMinimapHidden(), Minimap.COMPONENTS);
-
-		if (!isMinimapHidden())
-		{
-			//will default to original
-			widgetManager.remapTargets(Compass.values());
-		}
-		else
-		{
-			final Widget compass = widgetManager.getTargetWidget(isClassicResizable() ?
-				Compass.CLASSIC_COMPASS : Compass.MODERN_COMPASS);
-			if (compass != null)
-			{
-				compass.setOriginalX(0);
-				compass.setOriginalY(0);
-				compass.setXPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
-				compass.setYPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
-				compass.revalidate();
-			}
-
-			final Widget op = widgetManager.getTargetWidget(isClassicResizable() ?
-				Compass.CLASSIC_COMPASS_OPTIONS : Compass.MODERN_COMPASS_OPTIONS);
-			if (op != null)
-			{
-				op.setOriginalX(0);
-				op.setOriginalY(0);
-				op.setXPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
-				op.setYPositionMode(WidgetPositionMode.ABSOLUTE_CENTER);
-				op.revalidate();
-			}
-		}
-
-		updateCustomChildren();
-	}
-
-	public void cleanupFloating()
-	{
-		widgetManager.restoreMinimapContainers();
-
-		for (TargetWidget target : FLOATING_TARGETS)
-		{
-			final Widget widget = widgetManager.getTargetWidget(target);
-			if (widget != null)
-			{
-				widget.setForcedPosition(-1, -1);
-				widget.revalidate();
-
-				if (target.isLogoutX())
-				{
-					final Widget stone = widgetManager.getTargetWidget(Orbs.LOGOUT_X_STONE);
-					if (stone != null)
-					{
-						stone.setForcedPosition(-1, -1);
-						stone.revalidate();
-					}
-				}
-			}
-		}
-	}
-
-	//update on startup, onWidgetLoaded, and onScriptPostFired
-	public void update(int scriptId)
-	{
+		setIsMinimapMinimized();
 		createCustomChildren();
-
-		if (scriptId == Script.FORCE_UPDATE)
-		{
-			rebuildLayout();
-			return;
-		}
-
-		widgetManager.remapTargetsByScriptId(scriptId, Orbs.values());
-
-		//should prevent flickering when utility orbs are detached (ex: tab switching)
-		rebuildDetachedContainer();
-
-		updateNoClickThrough();
+		setupCurrentLayout();
+		hideAllOrbsByConfig();
+		setupMinimapOverlay();
+		hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
 	}
 
-	//when a layout changes (ex: minimap is minimized, or config changed)
-	public void setupLayout()
-	{
-		clearOrbTabHiding();
-		setupMinimapForFloating();
-
-		if (isFloating())
-		{
-			detachedHandler.removeCoreOverlay();
-			widgetManager.remapTargets(true, Script.FORCE_UPDATE, Orbs.values());
-			updateCustomChildren();
-		}
-		else
-		{
-			detachedHandler.addCoreOverlay();
-			widgetManager.revalidate(Orbs.values());
-		}
-
-		rebuildLayout();
-	}
-
-	//rebuild compact layout from state/config
-	public void rebuildLayout()
-	{
-		if (isFloating())
-		{
-			return;
-		}
-
-		updateCustomChildren();
-
-		if (isFixedMode())
-		{
-			widgetManager.setHidden(MinimapOverlay.UNIVERSE, true);
-			widgetManager.remapTargets(Orbs.values());
-			updateNoClickThrough();
-			return;
-		}
-
-		setupMinimapContainer(false);
-		widgetManager.setTargetsHidden(isCompactLayout() && isCompassHidden(), Compass.values());
-		widgetManager.remapTargets(Compass.values());
-		widgetManager.remapTargets(Orbs.values());
-		updateNoClickThrough();
-
-		if (!isClassicResizable() && !isFixedMode())
-		{
-			hideLogout();
-		}
-	}
-
-	//only called on plugin shutdown
-	public void reset()
+	//on plugin shutdown
+	public void shutdown()
 	{
 		if (isEditingLayout)
 		{
@@ -396,7 +230,8 @@ public class CompactOrbsManager
 		enableNoClickThrough = false;
 		isUpdatingProfile = false;
 		enableOrbSwapping = false;
-		isSidePanelHiddenOnInit = false;
+		hideOrbOnTabClose = false;
+		wikiPluginBannerExists = false;
 
 		bindingManager.clear();
 		orbHidden.clear();
@@ -405,24 +240,18 @@ public class CompactOrbsManager
 		isGraphicsReset = false;
 		isNativeDragActive = false;
 		detachedHandler.restore(true);
-
-		clearCustomChildren();
-
-		if (isFloating())
-		{
-			cleanupFloating();
-		}
+		detachedHandler.addCoreOverlay();
 
 		resetVisibility();
 		resetPositioning();
 		resetNoClickThrough();
 
-		//save for last to prevent potential NPE with offsets
+		clearCustomChildren();
 		slotManager.clear();
 	}
 
-	//used for profile swap/full config reset
-	public void rebuild(boolean reset)
+	//on config change (profile swap / config reset)
+	public void reload(boolean reset)
 	{
 		if (isEditingLayout)
 		{
@@ -447,18 +276,157 @@ public class CompactOrbsManager
 		{
 			detachedHandler.restore(false);
 		}
-		else
-		{
-			detachedHandler.removeCoreOverlay();
-		}
 
 		if (reset)
 		{
 			resetSavedPositionConfigs();
+			floatingOverlay.values().forEach(overlay ->
+			{
+				overlay.setPreferredLocation(null);
+				overlay.setPosition(OverlayPosition.CANVAS_TOP_RIGHT);
+
+				//clear the config so it sticks
+				configManager.unsetConfiguration(ConfigGroup.Core.RUNELITE, overlay.getName() + "_preferredLocation");
+			});
 		}
+
+		clientThread.invokeLater(this::setupCurrentLayout);
+	}
+
+	public void onLogout()
+	{
+		isLoggingIn = true;
+		wikiPluginBannerExists = false;
+		clearCustomChildren();
+		isGraphicsReset = false;
+		detachedHandler.setResizedWhileHidden(false);
+		detachedHandler.restore(false);
+	}
+
+	public void onLogin()
+	{
+		isLoggingIn = false;
+		setIsMinimapMinimized();
+		createCustomChildren();
+		detachedHandler.setResizedWhileHidden(false);
+		sendUpdateNotice();
+	}
+
+	//for shutdown - reset all hidden widgets to their vanilla state
+	private void resetVisibility()
+	{
+		widgetManager.setTargetsHidden(false, Orbs.values());
+		widgetManager.setTargetsHidden(false, Compass.values());
+		widgetManager.setTargetsHidden(false, Minimap.values());
+
+		if (isMinimapMinimized)
+		{
+			widgetManager.setTargetsHidden(true, Minimap.MODERN_MAP_MINIMAP, Minimap.CLASSIC_MAP_MINIMAP);
+		}
+
+		hideMinimapOnTabClose(false);
+		updateWikiBannerVisibility(true);
+		widgetManager.setTargetsHidden(hideStonesAndIcons(), Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
+	}
+
+	//for shutdown - reset all widgets back to their mapped vanilla positions
+	private void resetPositioning()
+	{
+		widgetManager.clearForcedPosition(FLOATING_TARGETS);
+		widgetManager.clearForcedPosition(Orbs.LOGOUT_X_STONE);
+
+		if (isFixedMode())
+		{
+			widgetManager.remapTargets(true, Script.FORCE_UPDATE, Orbs.values());
+			return;
+		}
+
+		widgetManager.remapTargets(true, Script.FORCE_UPDATE, Minimap.values());
+		//do not revalidate Orbs.UNIVERSE container
+		widgetManager.revalidate(Minimap.CONTAINERS);
+		widgetManager.revalidate(Minimap.COMPONENTS);
+
+		widgetManager.remapTargets(true, Script.FORCE_UPDATE, Orbs.values());
+		widgetManager.revalidate(Orbs.values());
+
+		widgetManager.remapTargets(true, Script.FORCE_UPDATE, Compass.values());
+		widgetManager.revalidate(Compass.values());
+	}
+
+	//for shutdown - clear any noClickThrough flags/widgets that might exist
+	private void resetNoClickThrough()
+	{
+		for (TargetWidget orb : Orbs.SWAPPABLE_ORBS)
+		{
+			widgetManager.setNoClickThrough(orb.getComponentId(), false);
+			handleVanillaNoClickThrough(orb, false);
+			widgetManager.clearChild(noClickThroughChildren.remove(orb));
+		}
+	}
+
+	public void setupCurrentLayout()
+	{
+		createCustomChildren();
+
+		if (!isFloating())
+		{
+			detachedHandler.restore(true);
+		}
+		else
+		{
+			detachedHandler.removeCoreOverlay();
+			widgetManager.clearForcedPosition(Minimap.MODERN_MAP_CONTAINER, Minimap.CLASSIC_MAP_CONTAINER);
+		}
+
 		rebuildLayout();
 	}
 
+	public void rebuildLayout()
+	{
+		updateCustomChildren();
+
+		if (isFixedMode())
+		{
+			widgetManager.setHidden(MinimapOverlay.UNIVERSE, true);
+			widgetManager.clearForcedPosition(FLOATING_TARGETS);
+			widgetManager.remapTargets(Orbs.values());
+			return;
+		}
+
+		widgetManager.setTargetsHidden(isMinimapHidden() && !isMinimapMinimized, Minimap.COMPONENTS);
+		widgetManager.remapTargets(Minimap.values());
+		widgetManager.revalidate(Minimap.CONTAINERS);
+		widgetManager.revalidate(Minimap.COMPONENTS);
+
+		if (isFloating())
+		{
+			widgetManager.revalidate(Minimap.ORBS_UNIVERSE);
+		}
+
+		final boolean hideCompass = (isCompactLayout() || (isFloating() && isMinimapHidden())) && isCompassHidden();
+		widgetManager.setTargetsHidden(hideCompass, Compass.values());
+
+		widgetManager.remapTargets(!isMinimapHidden(), Script.FORCE_UPDATE, Compass.values());
+		widgetManager.remapTargets(Orbs.values());
+		widgetManager.revalidate(Orbs.WORLD_MAP_CONTAINER, Orbs.WIKI_ICON_CONTAINER, Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
+		updateNoClickThrough();
+
+		//logoutX only exists in the modern-resizable display mode
+		if (!isClassicResizable() && !isFixedMode())
+		{
+			hideLogout();
+		}
+	}
+
+	//triggered event when the minimap toggle button is clicked (hide/show the minimap)
+	public void onMinimapToggle()
+	{
+		saveConfig(ConfigKeys.MINIMAP, !isMinimapHidden());
+		rebuildLayout();
+		hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
+	}
+
+	//extends the container size based on the distance from the detached minimap, and the current compact layout
 	public void rebuildDetachedContainer()
 	{
 		if (applyDetachedOffset())
@@ -477,163 +445,19 @@ public class CompactOrbsManager
 		}
 	}
 
-	private void resetVisibility()
+	//for onScriptPreFired
+	public void hideWorldMapTooltip()
 	{
-		widgetManager.setTargetsHidden(false, Orbs.values());
-		widgetManager.setTargetsHidden(false, Compass.values());
-		hideMinimapOnTabClose(false);
-		updateWikiBannerVisibility(false);
-		widgetManager.setTargetsHidden(hideStonesAndIcons(), Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
-	}
-
-	private void resetPositioning()
-	{
-		if (isFixedMode())
+		int id = client.getIntStack()[2];
+		int tooltipId = Orbs.WORLD_MAP_TOOLTIP.getComponentId();
+		if (id == tooltipId)
 		{
-			widgetManager.remapTargets(true, Script.FORCE_UPDATE, Orbs.WORLD_MAP_CONTAINER);
-		}
-
-		setupMinimapContainer(true);
-
-		widgetManager.remapTargets(true, Script.FORCE_UPDATE, Orbs.values());
-		widgetManager.remapTargets(true, Script.FORCE_UPDATE, Compass.values());
-	}
-
-	private void resetNoClickThrough()
-	{
-		for (TargetWidget orb : Orbs.SWAPPABLE_ORBS)
-		{
-			widgetManager.setNoClickThrough(orb.getComponentId(), false);
-			handleVanillaNoClickThrough(orb, false);
-			widgetManager.clearChild(noClickThroughChildren.remove(orb));
+			boolean hidden = isCompactLayout() || hideWorldMap;
+			widgetManager.setHidden(tooltipId, hidden);
 		}
 	}
 
-	//toggle the minimap visibility, and update related widgets when using the custom toggle button
-	public void onMinimapToggle()
-	{
-		saveConfig(ConfigKeys.MINIMAP, !isMinimapHidden());
-
-		if (getCurrentLayout().isFloating())
-		{
-			setupMinimapForFloating();
-			if (isSidePanelHidden() && config.hideMinimapWithSidePanel())
-			{
-				tabHiddenOrbs.remove(Minimap.MODERN_MAP_MINIMAP.getComponentId());
-			}
-			widgetManager.remapTargets(Orbs.WORLD_MAP_CONTAINER, Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
-		}
-		else
-		{
-			rebuildLayout();
-		}
-
-		hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
-	}
-
-	public void setupMinimapContainer(boolean toDefault)
-	{
-		widgetManager.setTargetsHidden(!toDefault &&
-				(isCompactLayout() || getCurrentLayout().isFloating()),
-			Minimap.COMPONENTS);
-
-		widgetManager.remapTargets(toDefault, Script.FORCE_UPDATE, Minimap.CONTAINERS);
-		widgetManager.revalidate(Minimap.COMPONENTS);
-
-		//TODO - seems like revalidation causes the width/height issue (on the orbsContainer)
-		//Orb.UNIVERSE parent width/height mode seems to cause an issue when setting dimensions
-		//causing the Orbs.UNIVERSE container be set to the dimensions of the tli (GAMEFRAME)
-		//this should alleviate that by setting the size temporarily until restored by a clientscript (clicking a side panel tab, etc)
-		if (!isFixedMode() && !isMinimapMinimized() && !getCurrentLayout().isFloating())
-		{
-			Widget orbsContainer = client.getWidget(Minimap.ORBS_UNIVERSE.getComponentId());
-			Widget parent = client.getWidget((isClassicResizable() ? Minimap.CLASSIC_ORBS_CONTAINER : Minimap.MODERN_ORBS_CONTAINER).getComponentId());
-			if (orbsContainer != null && parent != null)
-			{
-				widgetManager.updateValue(orbsContainer::getWidth, orbsContainer::setWidth, parent.getWidth());
-				widgetManager.updateValue(orbsContainer::getHeight, orbsContainer::setHeight, parent.getHeight());
-			}
-		}
-	}
-
-	public void hideMinimapOnTabClose(boolean hide)
-	{
-		if (!isFixedMode() && !isClassicResizable())
-		{
-			//wait for the wiki plugin to create its banner
-			// - side panel appears to be flagged as 'closed' on world-hop(other?), which will hide the minimap container
-			//   and cause the wiki plugin to return early when it tries to create its widget
-			if (isWikiPluginConfigEnabled() && !wikiPluginBannerExists)
-			{
-				Widget container = widgetManager.getTargetWidget(Orbs.WIKI_ICON_CONTAINER);
-				if (container == null)
-				{
-					return;
-				}
-
-				if (!widgetManager.hasChildren(container))
-				{
-					return;
-				}
-
-				wikiPluginBannerExists = true;
-			}
-
-			updateLogoutXPosition();
-
-			if (isCutsceneActive || isMinimapMinimized() || isMinimapPluginConfigEnabled())
-			{
-				hideOrbOnTabClose = false;
-				return;
-			}
-
-			if (isFloating())
-			{
-				widgetManager.setHidden(Minimap.MODERN_MAP_MINIMAP.getComponentId(), false);
-				widgetManager.setHidden(Minimap.MODERN_ORBS_CONTAINER.getComponentId(), false);
-
-				hideOrbOnTabClose = hide && isSidePanelHidden() && !isSidePanelHiddenOnInit;
-				return;
-			}
-
-			hideOrbOnTabClose = false;
-			final boolean hidden = hide && isCompactLayout() && isSidePanelHidden();
-
-			//only hide the parent not the children (do not use setTargetsHidden/setHidden(target...))
-			widgetManager.setHidden(Minimap.MODERN_MAP_MINIMAP.getComponentId(), hidden);
-			widgetManager.setHidden(Minimap.MODERN_ORBS_CONTAINER.getComponentId(), hidden);
-		}
-	}
-
-	public boolean hideMinimapWithSidePanel()
-	{
-		return config.hideMinimapWithSidePanel();
-	}
-
-	public void refreshSidePanelSnapshot()
-	{
-		if (isFloating())
-		{
-			if (isSidePanelHiddenOnInit && !isSidePanelHidden())
-			{
-				isSidePanelHiddenOnInit = false;
-			}
-			return;
-		}
-
-		if (isSidePanelHiddenOnInit && !isSidePanelHidden())
-		{
-			isSidePanelHiddenOnInit = false;
-			if (applyDetachedOffset() || detachedHandler.isPendingCache())
-			{
-				clientThread.invokeLater(() ->
-				{
-					detachedHandler.restore(false);
-				});
-			}
-		}
-	}
-
+	//make sure the children that control the noClickThrough function are cleared or exist when necessary
 	public void updateNoClickThrough()
 	{
 		if (isFixedMode())
@@ -741,6 +565,11 @@ public class CompactOrbsManager
 	//and only creating widgets if missing from the current parent
 	public void createCustomChildren()
 	{
+		if (isMinimapMinimized)
+		{
+			return;
+		}
+
 		Widget parent = widgetManager.getOrbsParent();
 		if (parent == null)
 		{
@@ -778,16 +607,8 @@ public class CompactOrbsManager
 					}
 				}
 			);
-			minimapButton.setOnMouseOverListener(
-				(JavaScriptCallback) e ->
-				{
-					minimapButton.setOpacity(Layout.OPACITY_HOVER);
-				}
-			);
-			minimapButton.setOnMouseLeaveListener(
-				(JavaScriptCallback) e ->
-					minimapButton.setOpacity(Layout.OPACITY)
-			);
+			minimapButton.setOnMouseOverListener((JavaScriptCallback) e -> minimapButton.setOpacity(Layout.OPACITY_HOVER));
+			minimapButton.setOnMouseLeaveListener((JavaScriptCallback) e -> minimapButton.setOpacity(Layout.OPACITY));
 		}
 
 		//compass frame moved to the compass container
@@ -819,12 +640,9 @@ public class CompactOrbsManager
 		updateCompassFrameChild();
 		updateMinimapToggleButton();
 		widgetManager.setHidden(MinimapOverlay.UNIVERSE, hideMinimapOverlay());
-		if (hideMinimapOverlay() && config.detachUtilityOrbs())
+		if (!isCompactLayout() && hideMinimapOverlay() && config.detachUtilityOrbs())
 		{
-			clientThread.invokeLater(() ->
-			{
-				detachedHandler.restore(false);
-			});
+			clientThread.invokeLater(() -> detachedHandler.restore(false));
 		}
 	}
 
@@ -890,10 +708,7 @@ public class CompactOrbsManager
 	{
 		widgetManager.clearChild(minimapButton);
 		widgetManager.clearChild(compassFrame);
-		widgetManager.clearChild(overlayLogoutXIcon);
-		widgetManager.clearChild(overlayLogoutXStone);
 
-		//reset & clear the minimap overlay
 		configureMinimapOverlayContainer(false);
 		final Widget parent = client.getWidget(MinimapOverlay.UNIVERSE);
 		if (parent != null)
@@ -977,19 +792,15 @@ public class CompactOrbsManager
 	public void setupMinimapOverlay()
 	{
 		configureMinimapOverlayContainer(true);
-		clientThread.invokeLater(() ->
+		//removed lambda, seems like it could fire post-shutdown
+		if (detachedMinimapParentIsReady)
 		{
-			if (detachedMinimapParentIsReady)
-			{
-				createMinimapOverlayChildren();
-				detachedMinimapParentIsReady = false;
-				return true;
-			}
-			return false;
-		});
+			createMinimapOverlayChildren();
+			detachedMinimapParentIsReady = false;
+		}
 	}
 
-	public void updateWikiBannerVisibility(boolean hidden)
+	public void updateWikiBannerVisibility(boolean unhide)
 	{
 		Widget container = widgetManager.getTargetWidget(Orbs.WIKI_ICON_CONTAINER);
 		if (container == null)
@@ -1008,15 +819,15 @@ public class CompactOrbsManager
 			return;
 		}
 
-		if (isFloating() && config.hideMinimapWithSidePanel() && isSidePanelHidden())
+		final boolean hidden;
+		if (unhide)
 		{
-			return;
+			hidden = false;
 		}
-
-		//vanilla banner should be hidden if the in-game setting is disabled
-		else if (isWikiBannerDisabled() && !widgetManager.hasChildren(container) && !isEditingLayout)
+		else
 		{
-			hidden = true;
+			hidden = config.hideWiki() || isTabHidden(orbHidden.getByConfig(ConfigKeys.HIDE_WIKI)) ||
+				(isWikiBannerDisabled() && !widgetManager.hasChildren(container));
 		}
 
 		banner.setHidden(hidden);
@@ -1081,7 +892,7 @@ public class CompactOrbsManager
 							.setDeprioritized(true);
 					}
 
-					if (isMinimapHidden() && config.showToggleOnMinimapButton())
+					if (isMinimapHidden() && config.showToggleOnMinimapButton() && !isFloating())
 					{
 						menu.createMenuEntry(-2)
 							.setOption(buildToggleOp(!config.showMinimapInCompactView(), MenuOp.DETACHED_OP))
@@ -1400,18 +1211,18 @@ public class CompactOrbsManager
 
 	public boolean isMinimapMinimized()
 	{
-		return isMinimapMinimzed;
+		return isMinimapMinimized;
 	}
 
 	public void setIsMinimapMinimized()
 	{
 		if (!isLoggedIn())
 		{
-			isMinimapMinimzed = false;
+			isMinimapMinimized = false;
 		}
 
 		final int minimapMinimized = 1;
-		isMinimapMinimzed = client.getVarbitValue(Varbit.MINIMAP_TOGGLE) == minimapMinimized;
+		isMinimapMinimized = client.getVarbitValue(Varbit.MINIMAP_TOGGLE) == minimapMinimized;
 	}
 
 	public boolean isCutsceneActive()
@@ -1483,95 +1294,142 @@ public class CompactOrbsManager
 		return y;
 	}
 
-
-	//works, but i might need to refactor todo
-	public void setOrbTabHidden(int componentId, boolean tabHidden)
+	public void sidePanelToggled()
 	{
-		final boolean changed = tabHidden
-			? tabHiddenOrbs.add(componentId)
-			: tabHiddenOrbs.remove(componentId);
-
-		if (changed)
+		if (isEditingLayout && config.hideMinimapWithSidePanel() && isSidePanelHidden())
 		{
-			applyTabHiddenState(componentId);
+			editManager.toggleEditMode(false);
 		}
+
+		if (isCompactLayout())
+		{
+			detachedHandler.onSidePanelChanged();
+		}
+
+		hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
 	}
 
-	private void applyTabHiddenState(int componentId)
+	public void hideMinimapOnTabClose(boolean hide)
 	{
-		final boolean tabHidden = tabHiddenOrbs.contains(componentId);
-
-		if (componentId == Orbs.WORLD_MAP_CONTAINER.getComponentId())
+		if (isFixedMode() || isClassicResizable())
 		{
-			hideWorldMap = config.hideWorld() || tabHidden;
-			widgetManager.remapTargets(Orbs.WORLD_MAP_CONTAINER);
+			setHideOrbOnTabClose(false);
 			return;
 		}
 
-		if (componentId == Orbs.LOGOUT_X_ICON.getComponentId())
+		//wait for the wiki plugin to create its banner
+		// - side panel appears to be flagged as 'closed' on world-hop(other?), which will hide the minimap container
+		//   and cause the wiki plugin to return early when it tries to create its widget
+		if (isWikiPluginConfigEnabled() && !wikiPluginBannerExists)
 		{
-			hideLogoutX = config.hideLogout() || tabHidden;
-			if (!isClassicResizable())
+			Widget container = widgetManager.getTargetWidget(Orbs.WIKI_ICON_CONTAINER);
+			if (container == null)
 			{
-				hideLogout();
-				updateLogoutXPosition();
+				return;
 			}
+
+			if (!widgetManager.hasChildren(container))
+			{
+				return;
+			}
+
+			wikiPluginBannerExists = true;
+		}
+
+		updateLogoutXPosition();
+
+		if (isCutsceneActive || isMinimapMinimized() || isMinimapPluginConfigEnabled())
+		{
+			setHideOrbOnTabClose(false);
 			return;
 		}
 
-		for (String key : orbHidden.configKeys())
+		if (isFloating())
 		{
-			final HideOrbConfig orbConfig = orbHidden.getByConfig(key);
-			if (orbConfig == null)
-			{
-				continue;
-			}
+			widgetManager.setHidden(Minimap.MODERN_MAP_MINIMAP.getComponentId(), false);
+			widgetManager.setHidden(Minimap.MODERN_ORBS_CONTAINER.getComponentId(), false);
 
-			//don't hide on tab closed if the minimap is visible (awkward)
-			if (key.equals(ConfigKeys.COMPASS) && !isMinimapHidden() && !isEditingLayout)
-			{
-				continue;
-			}
+			setHideOrbOnTabClose(hide && isSidePanelHidden());
+			return;
+		}
 
-			for (TargetWidget target : orbConfig.getTargets())
+		setHideOrbOnTabClose(false);
+		final boolean hidden = hide && isCompactLayout() && isSidePanelHidden();
+
+		//only hide the parent not the children (do not use setTargetsHidden/setHidden(target...))
+		widgetManager.setHidden(Minimap.MODERN_MAP_MINIMAP.getComponentId(), hidden);
+		widgetManager.setHidden(Minimap.MODERN_ORBS_CONTAINER.getComponentId(), hidden);
+	}
+
+	public boolean hideMinimapWithSidePanel()
+	{
+		return config.hideMinimapWithSidePanel();
+	}
+
+	private boolean isTabHidden(HideOrbConfig orb)
+	{
+		if (!hideOrbOnTabClose || isEditingLayout)
+		{
+			return false;
+		}
+
+		for (TargetWidget target : orb.getTargets())
+		{
+			final DetachedOrb overlay = (DetachedOrb) floatingOverlay.get(ConfigKeys.OVERLAY_PREFIX + target);
+			if (overlay != null && (overlay.isDetached() || isMinimapHidden() || !snapcorner.minimapInCorner))
 			{
-				if (target.getComponentId() == componentId)
-				{
-					applyOrbHidden(orbConfig);
-					return;
-				}
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void setHideOrbOnTabClose(boolean value)
+	{
+		if (hideOrbOnTabClose == value)
+		{
+			return;
+		}
+
+		hideOrbOnTabClose = value;
+		refreshTabHiding();
+	}
+
+	private void refreshTabHiding()
+	{
+		for (HideOrbConfig orb : orbHidden.values())
+		{
+			if (!orb.getConfigKey().equals(ConfigKeys.COMPASS))
+			{
+				refreshOrb(orb);
 			}
 		}
 	}
 
-	public void clearOrbTabHiding()
+	private void refreshOrb(HideOrbConfig orb)
 	{
-		tabHiddenState++;
-		hideOrbOnTabClose = false;
+		final boolean hidden = orb.getGetter().get() || isTabHidden(orb);
 
-		final List<Integer> cleared = new ArrayList<>(tabHiddenOrbs);
-		tabHiddenOrbs.clear();
-
-		for (int id : cleared)
+		switch (orb.getConfigKey())
 		{
-			applyTabHiddenState(id);
-		}
-	}
-
-	private void applyOrbHidden(HideOrbConfig orbConfig)
-	{
-		boolean hidden = orbConfig.getGetter().get();
-
-		for (TargetWidget target : orbConfig.getTargets())
-		{
-			if (tabHiddenOrbs.contains(target.getComponentId()))
-			{
-				hidden = true;
+			case ConfigKeys.HIDE_WORLD:
+				hideWorldMap = hidden;
+				widgetManager.remapTargets(Orbs.WORLD_MAP_CONTAINER);
 				break;
-			}
-		}
 
-		widgetManager.setTargetsHidden(hidden, orbConfig.getTargets());
+			case ConfigKeys.HIDE_LOGOUT_X:
+				hideLogoutX = hidden;
+				if (!isClassicResizable())
+				{
+					hideLogout();
+					updateLogoutXPosition();
+				}
+				break;
+
+			default:
+				widgetManager.setTargetsHidden(hidden, orb.getTargets());
+				break;
+		}
 	}
 
 	public void hideAllOrbsByConfig()
@@ -1586,48 +1444,28 @@ public class CompactOrbsManager
 			return;
 		}
 
-		switch (key)
+		final HideOrbConfig orb = orbHidden.getByConfig(key);
+		if (orb == null)
 		{
-			case ConfigKeys.HIDE_WORLD:
-				hideWorldMap = config.hideWorld();
-				widgetManager.remapTargets(Orbs.WORLD_MAP_CONTAINER);
-				break;
+			return;
+		}
 
-			case ConfigKeys.HIDE_WIKI:
-				updateWikiBannerVisibility(config.hideWiki());
-				warnWikiPluginConflict();
+		refreshOrb(orb);
 
-				if (getCurrentLayout().isHorizontal() && isMinimapHidden())
-				{
-					updateMinimapToggleButton();
-				}
-				break;
-
-			case ConfigKeys.HIDE_LOGOUT_X:
-				hideLogoutX = config.hideLogout();
-
-				if (!isClassicResizable())
-				{
-					hideLogout();
-					updateLogoutXPosition();
-				}
-				break;
-
-			default:
-				HideOrbConfig orbConfig = orbHidden.getByConfig(key);
-				if (orbConfig != null)
-				{
-					applyOrbHidden(orbConfig);
-				}
-
-				if (key.equals(ConfigKeys.HIDE_STORE)
-					&& config.minimapTogglePlacement() == TogglePlacement.BELOW_MAP
-					&& !isMinimapHidden()
-					&& isLoggedIn())
-				{
-					updateMinimapToggleButton();
-				}
-				break;
+		if (key.equals(ConfigKeys.HIDE_WIKI))
+		{
+			sendWikiWarning();
+			if (getCurrentLayout().isHorizontal() && isMinimapHidden())
+			{
+				updateMinimapToggleButton();
+			}
+		}
+		else if (key.equals(ConfigKeys.HIDE_STORE)
+			&& config.minimapTogglePlacement() == TogglePlacement.BELOW_MAP
+			&& !isMinimapHidden()
+			&& isLoggedIn())
+		{
+			updateMinimapToggleButton();
 		}
 	}
 
@@ -1688,78 +1526,45 @@ public class CompactOrbsManager
 			ConfigKeys.NOTICE_VERSION,
 			Integer.class);
 
-		if (version == null || version < 1)
+		if (version == null || version < ConfigGroup.NOTICE_VERSION)
 		{
-			sendMessage(msg ->
-				msg
-					.append("A new layout is available: `")
-					.append(ChatColorType.HIGHLIGHT)
-					.append("Floating")
-					.append(ChatColorType.NORMAL)
-					.append("`, which utilizes RuneLite 's native drag for each widget, allowing unrestricted placement!")
-			);
-			sendMessage(msg ->
-				msg.append(ChatColorType.HIGHLIGHT)
-					.append("Please share any feedback or issues on the github repo!"));
+			//should use sparingly after this (no1 likes spam...)
+			final String VERSION_NOTICE =
+				" updated to version: " +
+					ChatMessage.highlight(ConfigGroup.CURRENT_VERSION) + ": new layout support & general bugfixes.";
 
-			saveConfig(ConfigKeys.NOTICE_VERSION, 1);
+			chatMessage.sendMessage(VERSION_NOTICE, true);
+
+			saveConfig(ConfigKeys.NOTICE_VERSION, ConfigGroup.NOTICE_VERSION);
 		}
 	}
 
-	public int warnDragHotkeyAttempts;
-	public void warnNativeDragHotkey()
+	public void sendDragHotkeyWarning()
 	{
 		//5 warnings should be fine, might gate to a config as well to reduce potential spam
 		if (warnDragHotkeyAttempts < 5)
 		{
-			sendMessage(msg -> msg.append("could not detect if the assigned `Drag` hotkey was pressed."));
+			final String DRAG_HOTKEY_WARNING =
+				"couldn't detect if the " + ChatMessage.highlight("Drag") +
+					" hotkey was pressed.";
+
+			chatMessage.sendMessage(DRAG_HOTKEY_WARNING, true);
+
 			warnDragHotkeyAttempts++;
 		}
 	}
 
-	public void warnWikiPluginConflict()
+	public void sendWikiWarning()
 	{
 		if (!hasSeenWikiWarning && isWikiPluginConfigEnabled() && config.hideWiki())
 		{
-			sendMessage(msg ->
-				msg
-					.append("the ")
-					.append(ChatColorType.HIGHLIGHT)
-					.append("`Hide Wiki banner` ")
-					.append(ChatColorType.NORMAL)
-					.append("setting is overriding the Wiki plugin's ")
-					.append(ChatColorType.HIGHLIGHT)
-					.append("`Show wiki button under minimap` ")
-					.append(ChatColorType.NORMAL)
-					.append("setting.")
-			);
+			final String WIKI_WARNING =
+				"the " + ChatMessage.highlight("Wiki plugins") +
+					" banner has been " + ChatMessage.highlight("hidden");
+			chatMessage.sendMessage(WIKI_WARNING, true);
 
 			hasSeenWikiWarning = true;
 		}
-	}
-
-	private void sendMessage(Consumer<ChatMessageBuilder> consumer)
-	{
-		if (!isLoggedIn())
-		{
-			return;
-		}
-
-		ChatMessageBuilder builder = new ChatMessageBuilder()
-			.append("[")
-			.append(ChatColorType.HIGHLIGHT)
-			.append("Compact Orbs")
-			.append(ChatColorType.NORMAL)
-			.append("] ");
-
-		consumer.accept(builder);
-
-		String input = builder.build();
-
-		chatMessageManager.queue(QueuedMessage.builder()
-			.type(ChatMessageType.CONSOLE)
-			.runeLiteFormattedMessage(input)
-			.build());
 	}
 
 	public boolean useSavedPosition(Widget widget, int index)
@@ -1947,12 +1752,12 @@ public class CompactOrbsManager
 		{
 			if (applyDetachedOffset() && value != -1)
 			{
-				if (key == com.compactorbs.util.ValueKey.X)
+				if (key == ValueKey.X)
 				{
 					value += detachedSnapshotX();
 				}
 
-				if (key == com.compactorbs.util.ValueKey.Y)
+				if (key == ValueKey.Y)
 				{
 					value += detachedSnapshotY();
 				}

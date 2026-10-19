@@ -151,69 +151,35 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	{
 		manager.migrateConfigs();
 		overlayManager.add(detachedMinimap);
-
-		for (TargetWidget orb : manager.FLOATING_TARGETS)
+		for (TargetWidget orb : CompactOrbsManager.FLOATING_TARGETS)
 		{
 			var overlay = new DetachedOrb(client, manager, snapcorner, bindingManager,
-				"COMPACT_ORBS_" + orb.toString(), orb.getComponentId(), orb.getArrayId());
+				ConfigKeys.OVERLAY_PREFIX + orb.toString(), orb.getComponentId(), orb.getArrayId());
 
 			manager.floatingOverlay.putIfAbsent(overlay.getName(), overlay);
 			overlayManager.add(overlay);
 		}
-
 		keyManager.registerKeyListener(this);
 		mouseManager.registerMouseListener(dragListener);
 		orbRegistry.registerAll();
-
-		if (!manager.isLoggedIn())
-		{
-			manager.isLoggingIn = true;
-		}
-
-		manager.isUpdatingProfile = false;
-		manager.isEditingLayout = false;
-		manager.hideWorldMap = config.hideWorld();
-		manager.hideLogoutX = config.hideLogout();
-		manager.enableNoClickThrough = config.enableNoClickthrough();
-		manager.enableOrbSwapping = config.enableOrbSwapping();
 		snapcorner.hasUpdated();
 
-		clientThread.invoke(() ->
-		{
-			slotManager.init();
-
-			if (manager.isLoggedIn())
-			{
-				if (manager.isFloating())
-				{
-					detachedHandler.removeCoreOverlay();
-					manager.setupMinimapForFloating();
-				}
-
-				manager.update(Script.FORCE_UPDATE);
-
-				manager.hideAllOrbsByConfig();
-				manager.setupMinimapOverlay();
-				manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
-				manager.isSidePanelHiddenOnInit = manager.isSidePanelHidden();
-			}
-		});
+		clientThread.invoke(manager::startup);
 	}
 
 	@Override
 	protected void shutDown() throws Exception
 	{
 		overlayManager.remove(detachedMinimap);
-
 		manager.floatingOverlay.values().forEach(overlay ->
 			overlayManager.remove(overlay)
 		);
 		manager.floatingOverlay.clear();
 		snapcorner.clear();
-
 		keyManager.unregisterKeyListener(this);
 		mouseManager.unregisterMouseListener(dragListener);
-		clientThread.invoke(manager::reset);
+
+		clientThread.invoke(manager::shutdown);
 	}
 
 	@Provides
@@ -252,21 +218,11 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			event.getGameState() == GameState.LOGIN_SCREEN ||
 			event.getGameState() == GameState.LOGGING_IN)
 		{
-			manager.isLoggingIn = true;
-			manager.wikiPluginBannerExists = false;
-			manager.clearCustomChildren();
-			manager.isGraphicsReset = false;
-			detachedHandler.setResizedWhileHidden(false);
-			detachedHandler.restore(false);
+			manager.onLogout();
 		}
 		else if (manager.isLoggedIn() && manager.isLoggingIn)
 		{
-			manager.setIsMinimapMinimized();
-			manager.isLoggingIn = false;
-			manager.createCustomChildren();
-			detachedHandler.setResizedWhileHidden(false);
-
-			manager.sendUpdateNotice();
+			manager.onLogin();
 		}
 	}
 
@@ -292,6 +248,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				Orbs.ACTIVITY_ORB_CONTAINER);
 
 			widgetManager.setTargetsHidden(false, Compass.values());
+
 			if (manager.isCompactLayout())
 			{
 				if (manager.compassFrame != null)
@@ -340,7 +297,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				break;
 
 			case Script.WORLD_MAP_UPDATE:
-				if (manager.hideWorldMap)
+				if (!manager.isFloating() && manager.hideWorldMap)
 				{
 					widgetManager.remapTargets(Orbs.WORLD_MAP_CONTAINER);
 					return;
@@ -352,11 +309,16 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				//case Script.GRID_MASTER_ORB_UPDATE:
 				if (!manager.isMinimapMinimized())
 				{
-					manager.update(scriptId);
+					if (!manager.isFloating())
+					{
+						widgetManager.remapTargetsByScriptId(scriptId, Orbs.values());
+						manager.rebuildDetachedContainer();
+						manager.updateNoClickThrough();
+					}
 
 					if (scriptId == Script.WIKI_ICON_INIT || scriptId == Script.WIKI_ICON_UPDATE)
 					{
-						manager.updateWikiBannerVisibility(config.hideWiki());
+						manager.updateWikiBannerVisibility(false);
 					}
 				}
 				break;
@@ -366,17 +328,9 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	@Subscribe
 	public void onScriptPreFired(ScriptPreFired event)
 	{
-		int scriptId = event.getScriptId();
-
-		if (scriptId == Orbs.WORLD_MAP_TOOLTIP.getScriptId())
+		if (event.getScriptId() == Orbs.WORLD_MAP_TOOLTIP.getScriptId())
 		{
-			int id = client.getIntStack()[2];
-			int tooltipId = Orbs.WORLD_MAP_TOOLTIP.getComponentId();
-			if (id == tooltipId)
-			{
-				boolean hidden = manager.isCompactLayout() || manager.hideWorldMap;
-				widgetManager.setHidden(tooltipId, hidden);
-			}
+			manager.hideWorldMapTooltip();
 		}
 	}
 
@@ -391,7 +345,8 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 
 			case Varbit.MINIMAP_TOGGLE:
 				manager.setIsMinimapMinimized();
-				manager.setupLayout();
+				widgetManager.clearForcedPosition(Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
+				manager.setupCurrentLayout();
 				break;
 
 			case Varbit.STORE_ORB_TOGGLE:
@@ -420,22 +375,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	{
 		if (event.getIndex() == VarClient.SIDE_PANEL_ID)
 		{
-			if (manager.isEditingLayout &&
-				config.hideMinimapWithSidePanel() && manager.isSidePanelHidden())
-			{
-				editManager.toggleEditMode(false);
-			}
-
-			//login & start unhidden -> hide config -> open side panel -> hide side panel -> unhide config -> open side panel (would flicker)
-			//should probably test more when i can, works atm tho todo
-			manager.refreshSidePanelSnapshot();
-			detachedHandler.onSidePanelChanged();
-
-			if (!manager.isSidePanelHidden())
-			{
-				manager.clearOrbTabHiding();
-			}
-			manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
+			manager.sidePanelToggled();
 		}
 	}
 
@@ -447,24 +387,13 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		{
 			case Orb.UNIVERSE >> 16:
 				snapcorner.hasUpdated();
-
-				if (manager.isFloating())
-				{
-					detachedHandler.removeCoreOverlay();
-					manager.setupMinimapForFloating();
-				}
-
-				manager.update(Script.FORCE_UPDATE);
+				manager.setupCurrentLayout();
 				manager.hideAllOrbsByConfig();
 				manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
 				break;
 
 			case Widgets.MinimapOverlay.UNIVERSE >> 16:
 				manager.setupMinimapOverlay();
-				break;
-
-			case Widgets.SidePanel.SIDE_PANEL_CONTAINER >> 16:
-				manager.isSidePanelHiddenOnInit = manager.isSidePanelHidden();
 				break;
 		}
 	}
@@ -475,13 +404,14 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		String group = event.getGroup();
 		String key = event.getKey();
 
+		//TOP_RIGHT snapcorner config position changed
 		if (group.equals(ConfigGroup.Core.RUNELITE))
 		{
 			if (key.equals(ConfigKeys.Core.SNAPCORNER_PREFIX + OverlayPosition.CANVAS_TOP_RIGHT + ConfigKeys.Core.SNAPCORNER_CONFIG_LOCATION))
 			{
 				if (!snapcorner.nativeDragWasDetected)
 				{
-					manager.warnNativeDragHotkey();
+					manager.sendDragHotkeyWarning();
 				}
 
 				snapcorner.nativeDragWasDetected = false;
@@ -501,7 +431,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		{
 			if (key.equals(ConfigKeys.Core.SHOW_WIKI_MINIMAP_BUTTON))
 			{
-				manager.warnWikiPluginConflict();
+				manager.sendWikiWarning();
 				clientThread.invokeLater(() ->
 				{
 					if (manager.isEditingLayout)
@@ -509,7 +439,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 						editManager.toggleEditMode(false);
 					}
 					widgetManager.remapTargets(Orbs.WIKI_ICON_CONTAINER);
-					manager.updateWikiBannerVisibility(config.hideWiki());
+					manager.updateWikiBannerVisibility(false);
 					manager.updateCustomChildren();
 				});
 			}
@@ -564,7 +494,6 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				{
 					if (!manager.isFloating())
 					{
-						manager.setupMinimapContainer(false);
 						widgetManager.setTargetsHidden(manager.isCompassHidden(), Compass.values());
 						widgetManager.remapTargets(Compass.values());
 						widgetManager.remapTargets(Orbs.values());
@@ -603,6 +532,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 
 					manager.updateNoClickThrough();
 
+					//apply offset to the xp drop when noclickthrough is active
 					if (!manager.isCompactLayout())
 					{
 						widgetManager.remapTargets(Orbs.XP_DROPS_CONTAINER);
@@ -638,8 +568,6 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			case ConfigKeys.HIDE_MINIMAP_WITH_SIDE_PANEL:
 				clientThread.invokeLater(() ->
 				{
-					manager.clearOrbTabHiding();
-					manager.refreshSidePanelSnapshot();
 					detachedHandler.setResizedWhileHidden(false);
 					manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
 				});
@@ -648,7 +576,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			case ConfigKeys.VERTICAL_Y_ADJUSTMENT:
 				clientThread.invokeLater(() ->
 				{
-					if (!manager.isFixedMode())
+					if (manager.isCompactLayout())
 					{
 						manager.rebuildLayout();
 					}
@@ -662,30 +590,14 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			case ConfigKeys.LEAVE_EMPTY_SPACE:
 				clientThread.invokeLater(() ->
 				{
-					//any change in fixed mode when switching layouts needs to restore core overlays
-					if (manager.isFixedMode() && key.equals(ConfigKeys.ORB_LAYOUT))
-					{
-						detachedHandler.addCoreOverlay();
-					}
-
 					if (!manager.isFixedMode())
 					{
-						if (manager.applyDetachedOffset() && manager.isLoggedIn())
-						{
-							detachedHandler.restore(false);
-							return;
-						}
+						widgetManager.clearForcedPosition(CompactOrbsManager.FLOATING_TARGETS);
+						widgetManager.clearForcedPosition(Orbs.LOGOUT_X_STONE);
 
-						if (key.equals(ConfigKeys.ORB_LAYOUT))
-						{
-							manager.setupLayout();
-						}
-						else
-						{
-							manager.rebuildLayout();
-						}
+						manager.setupCurrentLayout();
 
-						manager.hideMinimapOnTabClose(false);
+						manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
 					}
 				});
 				break;
@@ -696,7 +608,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	public void resetConfiguration()
 	{
 		manager.isUpdatingProfile = true;
-		clientThread.invoke(() -> manager.rebuild(true));
+		clientThread.invoke(() -> manager.reload(true));
 	}
 
 	@Subscribe
@@ -705,7 +617,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		manager.migrateConfigs();
 
 		manager.isUpdatingProfile = true;
-		clientThread.invoke(() -> manager.rebuild(false));
+		clientThread.invoke(() -> manager.reload(false));
 	}
 
 	@Subscribe
@@ -725,7 +637,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 					{
 						manager.rebuildLayout();
 					}
-					manager.updateWikiBannerVisibility(config.hideWiki());
+					manager.updateWikiBannerVisibility(false);
 				});
 				break;
 

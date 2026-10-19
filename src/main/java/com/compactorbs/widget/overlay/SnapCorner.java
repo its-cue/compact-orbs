@@ -30,6 +30,7 @@ import com.compactorbs.CompactOrbsConstants.ConfigKeys;
 import com.compactorbs.CompactOrbsConstants.Layout;
 import com.google.common.primitives.Ints;
 import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.Rectangle;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -61,6 +62,7 @@ public class SnapCorner
 	private static final int SNAP_PADDING = 2;
 
 	public boolean updated;
+	public boolean minimapInCorner = true;
 
 	public int deltaX;
 	public int deltaY;
@@ -70,12 +72,12 @@ public class SnapCorner
 
 	public boolean nativeDragWasDetected;
 
-	public java.awt.Point getSnapCornerLocation()
+	public Point getSnapCornerLocation()
 	{
 		return configManager.getConfiguration(
 			ConfigGroup.Core.RUNELITE,
 			ConfigKeys.Core.SNAPCORNER_PREFIX + OverlayPosition.CANVAS_TOP_RIGHT + ConfigKeys.Core.SNAPCORNER_CONFIG_LOCATION,
-			java.awt.Point.class);
+			Point.class);
 	}
 
 	public boolean isSnapCornerRepositioned()
@@ -166,14 +168,24 @@ public class SnapCorner
 				return false;
 			});
 
-			//don't proceed until the overlayy has been set
+			//don't proceed until the overlay has been set
 			if (cornerOverlay == null)
 			{
 				return;
 			}
 		}
 
+		if (!minimapInCorner)
+		{
+			return;
+		}
+
 		final Rectangle box = cornerOverlay.getBounds();
+		if (cornerOverlay == null || box.isEmpty())
+		{
+			return;
+		}
+
 		final Dimension d = client.getRealDimensions();
 
 		deltaX = box.x + box.width - d.width;
