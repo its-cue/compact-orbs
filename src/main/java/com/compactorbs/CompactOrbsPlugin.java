@@ -289,11 +289,6 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 					//prevent the script from setting the opacity back to 25
 					widgetManager.setTargetOpacity(Orbs.SPEC_ORB_CONTAINER, EDIT_MODE_HIDDEN_OPACITY);
 				}
-			case Script.ORBS_UPDATE_HEALTH:
-				if (!manager.isCompactLayout())
-				{
-					manager.updateNoClickThrough();
-				}
 				break;
 
 			case Script.WORLD_MAP_UPDATE:

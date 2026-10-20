@@ -53,7 +53,6 @@ import com.compactorbs.widget.layout.HideOrbConfig;
 import com.compactorbs.widget.layout.HideOrbRegistry;
 import com.compactorbs.widget.layout.edit.Binding;
 import com.compactorbs.widget.layout.edit.BindingManager;
-import com.compactorbs.widget.layout.edit.DragState;
 import com.compactorbs.widget.layout.edit.EditManager;
 import com.compactorbs.widget.layout.slot.SlotManager;
 import com.compactorbs.widget.overlay.DetachedHandler;
@@ -457,6 +456,12 @@ public class CompactOrbsManager
 		}
 	}
 
+	private boolean isOverlayOrbDetached(TargetWidget target)
+	{
+		final DetachedOrb overlay = (DetachedOrb) floatingOverlay.get(ConfigKeys.OVERLAY_PREFIX + target);
+		return overlay != null && overlay.isDetached();
+	}
+
 	//make sure the children that control the noClickThrough function are cleared or exist when necessary
 	public void updateNoClickThrough()
 	{
@@ -465,19 +470,21 @@ public class CompactOrbsManager
 			return;
 		}
 
-		boolean noClick = enableNoClickThrough ||
-			(enableOrbSwapping && isCompactLayout() && !getCurrentLayout().isCustomLayout());
+		boolean enabled = enableNoClickThrough ||
+			(enableOrbSwapping && (isCompactLayout() && !getCurrentLayout().isCustomLayout()));
 
 		for (TargetWidget orb : Orbs.SWAPPABLE_ORBS)
 		{
-			widgetManager.setNoClickThrough(orb.getComponentId(), noClick && isCompactLayout());
+			boolean vanilla = isFloating() ? !isOverlayOrbDetached(orb) : !isMinimapHidden();
 
-			if (!isCompactLayout())
+			if (vanilla)
 			{
-				handleVanillaNoClickThrough(orb, noClick);
+				widgetManager.setNoClickThrough(orb.getComponentId(), false);
+				handleVanillaNoClickThrough(orb, enabled);
 			}
 			else
 			{
+				widgetManager.setNoClickThrough(orb.getComponentId(), enabled);
 				widgetManager.clearChild(noClickThroughChildren.remove(orb));
 			}
 		}
@@ -500,19 +507,18 @@ public class CompactOrbsManager
 		widgetManager.setNoClickThrough(backing.getId(), !noClickThrough);
 		widgetManager.setNoClickThrough(button.getId(), noClickThrough);
 
-		if (!config.enableNoClickthrough() || !button.isHidden())
-		{
-			widgetManager.clearChild(noClickThroughChildren.remove(target));
-			return;
-		}
+		boolean addChild = noClickThrough && button.isHidden();
 
-		Widget noClick = noClickThroughChildren.get(target);
-		if (noClick == null)
+		Widget noClick = noClickThroughChildren.remove(target);
+		if (!addChild)
+		{
+			widgetManager.clearChild(noClick);
+		}
+		else
 		{
 			noClick = widgetManager.createNoClick(layer, button);
 			noClick.setNoClickThrough(true);
 			noClick.revalidate();
-
 			noClickThroughChildren.put(target, noClick);
 		}
 	}
@@ -656,7 +662,7 @@ public class CompactOrbsManager
 		boolean hidden = !isMinimapHidden() || isCompassHidden() || isMinimapMinimized();
 		if (isEditingLayout)
 		{
-			boolean visible = !isFloating() || isMinimapHidden();
+			boolean visible = isMinimapHidden();
 			if (visible)
 			{
 				hidden = false;
@@ -1375,8 +1381,7 @@ public class CompactOrbsManager
 
 		for (TargetWidget target : orb.getTargets())
 		{
-			final DetachedOrb overlay = (DetachedOrb) floatingOverlay.get(ConfigKeys.OVERLAY_PREFIX + target);
-			if (overlay != null && (overlay.isDetached() || isMinimapHidden() || !snapcorner.minimapInCorner))
+			if (isOverlayOrbDetached(target) || isMinimapHidden() || !snapcorner.minimapInCorner)
 			{
 				return true;
 			}
