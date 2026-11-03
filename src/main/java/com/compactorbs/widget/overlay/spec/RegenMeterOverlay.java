@@ -63,7 +63,6 @@ public class RegenMeterOverlay extends Overlay
 	@Inject
 	private SpriteCache spriteCache;
 
-
 	@Inject
 	public RegenMeterOverlay()
 	{

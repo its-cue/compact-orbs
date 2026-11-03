@@ -194,7 +194,6 @@ public class CompactOrbsManager
 	public final Set<Integer> tabHiddenOrbs = new HashSet<>();
 	public boolean hideOrbOnTabClose;
 
-	public final Map<String, Overlay> displayOrb = new HashMap<>();
 	public final Map<String, Overlay> floatingOverlay = new HashMap<>();
 	public static final TargetWidget[] FLOATING_TARGETS =
 		{
@@ -1688,7 +1687,7 @@ public class CompactOrbsManager
 			//should use sparingly after this (no1 likes spam...)
 			final String VERSION_NOTICE =
 				" updated to version: " +
-					ChatMessage.highlight(ConfigGroup.CURRENT_VERSION) + ": new layout support & general bugfixes.";
+					ChatMessage.highlight(ConfigGroup.CURRENT_VERSION) + ": adds a new feature for tracking Spec stacks/energy (customizable).";
 
 			chatMessage.sendMessage(VERSION_NOTICE, true);
 

@@ -25,10 +25,11 @@
 
 | Table:                                    | Description:                                                                          |
 |-------------------------------------------|---------------------------------------------------------------------------------------|
-| **[Layout](#layout)**                     | Choose from a few presets or create a custom compact-layout.<br/>                     |
+| **[Layout](#layout)**                     | Choose from a few presets or create a custom compact-layout.                          |
+| **[Spec QoL Options](#spec-qol-options)** | Spec orb related QoL options.                                                         |
 | **[Toggle Button](#toggle-button)**       | Switches between `vanilla` or `compact` view.<br/>Also used to enter/exit `edit-mode` |
 | **Hotkey**                                | A configurable keybind, by default: `shift + insert`.                                 |
-| **[Detached Minimap](#detached-minimap)** | Enable a detached minimap while in `compact-view`.<br/>                               |
+| **[Detached Minimap](#detached-minimap)** | Enable a detached minimap while in `compact-view`.                                    |
 
 <br/>
 
@@ -91,6 +92,13 @@
 - `anchor` determines where preset-layouts are positioned within the container and the direction used by `reordering`.
 
 - `vertical-offset` adjusts the layout by the specified value if its `anchor` is set to `bottom`.
+
+<br/>
+
+---
+
+# Spec QoL Options
+- inspired by the `Soulreaper Axe QoL` plugin by `seacelery`
 
 <br/>
 

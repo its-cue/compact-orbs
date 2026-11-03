@@ -42,9 +42,9 @@ public class CompactOrbsConstants
 	public static final class ConfigGroup
 	{
 		public static final String GROUP_NAME = "compactorbs";
-		public static final String CURRENT_VERSION = "2.0.4";
+		public static final String CURRENT_VERSION = "2.0.5";
 		public static final int CONFIG_VERSION = 2;
-		public static final int NOTICE_VERSION = 2;
+		public static final int NOTICE_VERSION = 3;
 
 		public static final class Core
 		{
@@ -79,7 +79,6 @@ public class CompactOrbsConstants
 		public static final String ENABLE_NO_CLICKTHROUGH = "enableNoClickthrough";
 		public static final String ENABLE_ORB_SWAPPING = "enableOrbSwapping";
 		public static final String HIDE_MINIMAP_WITH_SIDE_PANEL = "hideMinimapWithSidePanel";
-
 		public static final String HIDE_SPEC_ENERGY_METER = "hideSpecEnergyBars";
 		public static final String SHOW_SPEC_REGEN_METER = "showSpecRegenMeter";
 		public static final String SHOW_SPEC_TRACKER_ORB = "showSpecTrackerOrb";
@@ -88,19 +87,15 @@ public class CompactOrbsConstants
 		public static final String SPEC_TRACKER_ORB_TEXT_COLOR = "specTrackerOrbTextColor";
 		public static final String SPEC_TRACKER_ORB_TEXT_SHADOW_COLOR = "specTrackerOrbTextShadowColor";
 		public static final String SPEC_TRACKER_ORB_TEXT_SHADOW_STYLE = "specTrackerOrbTextShadowStyle";
-
 		public static final String SPEC_QOL_ORB_COLOR = "specQoLOrbColor";
 		public static final String SPEC_QOL_ORB_EMPTY_COLOR = "specQoLOrbEmptyColor";
 		public static final String SPEC_QOL_ORB_REGEN_COLOR = "specQoLOrbRegenColor";
-
 		public static final String SPEC_QOL_SRA_ORB_COLOR = "specQoLSraOrbColor";
 		public static final String SPEC_QOL_SRA_ORB_EMPTY_COLOR = "specQoLSraOrbEmptyColor";
 		public static final String SPEC_QOL_SRA_ORB_REGEN_COLOR = "specQoLSraOrbRegenColor";
-
 		public static final String SPEC_QOL_RONDACHE_ORB_COLOR = "specQoLRondacheOrbColor";
 		public static final String SPEC_QOL_RONDACHE_ORB_EMPTY_COLOR = "specQoLRondacheOrbEmptyColor";
 		public static final String SPEC_QOL_RONDACHE_ORB_REGEN_COLOR = "specQoLRondacheOrbRegenColor";
-
 		public static final String HP_ORB_SLOT = "hpOrbSlot";
 		public static final String PRAYER_ORB_SLOT = "prayerOrbSlot";
 		public static final String RUN_ORB_SLOT = "runOrbSlot";
@@ -197,10 +192,9 @@ public class CompactOrbsConstants
 		//var trigger for the compass menu options
 		public static final int MAP_FLAGS_CACHED = VarPlayerID.MAP_FLAGS_CACHED;
 
-		public static final int USE_SPECIAL_ATTACK = VarPlayerID.SA_ATTACK;
 		public static final int CURRENT_SPEC_ENERGY = VarPlayerID.SA_ENERGY;
 		public static final int SOULREAPER_STACKS = VarPlayerID.SOULREAPER_STACKS;
-		public static final int WEAPON_OF_SOL_STACKS = VarPlayerID.WEAPON_OF_SOL_STACKS;
+		//public static final int WEAPON_OF_SOL_STACKS = VarPlayerID.WEAPON_OF_SOL_STACKS;
 	}
 
 	public static final class Script
@@ -212,9 +206,9 @@ public class CompactOrbsConstants
 		public static final int GRAPHIC_SWAPPER = 44;
 
 		//scripts related to noclickthrough updating
-		public static final int ORBS_UPDATE_HEALTH = 446;
+		//public static final int ORBS_UPDATE_HEALTH = 446;
 		public static final int ORBS_UPDATE_SPECENERGY = 2069;
-		public static final int ORBS_UPDATE_SPECENERGY_METER = 10160;//iono
+		public static final int ORBS_UPDATE_SPECENERGY_METER = 10160;
 
 		//orb specific updating
 		public static final int ORBS_UPDATE_STORE = 2396;
