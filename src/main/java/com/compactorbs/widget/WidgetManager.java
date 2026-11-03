@@ -618,7 +618,7 @@ public class WidgetManager
 
 	public Widget createNoClick(Widget parent, Widget child)
 	{
-		Widget widget = parent.createChild(0, WidgetType.LAYER)
+		Widget widget = parent.createChild(-1, WidgetType.LAYER)
 			.setOriginalX(child.getOriginalX())
 			.setOriginalY(child.getOriginalY())
 			.setOriginalWidth(child.getOriginalWidth())
@@ -754,6 +754,27 @@ public class WidgetManager
 			.setOpacity(100);
 		widget.revalidate();
 		return widget;
+	}
+
+	public void hideSpecEnergyMeter(boolean hidden)
+	{
+		Widget widget = getTargetWidget(Orbs.SPEC_ORB_CONTAINER);
+		if (widget == null)
+		{
+			return;
+		}
+
+		Widget meter = widget.getChild(0);
+		if (meter == null)
+		{
+			return;
+		}
+
+		//hide the layer that the cs2 creates (avoid hiding the noclick child)
+		if (meter.getType() == WidgetType.LAYER && !meter.getNoClickThrough())
+		{
+			meter.setHidden(hidden);
+		}
 	}
 
 	public void clearForcedPosition(TargetWidget... targets)

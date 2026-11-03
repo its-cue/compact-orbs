@@ -29,9 +29,12 @@ import static com.compactorbs.CompactOrbsConstants.ConfigGroup.GROUP_NAME;
 import com.compactorbs.CompactOrbsConstants.ConfigKeys;
 import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.widget.elements.Orbs;
+import com.compactorbs.widget.overlay.spec.SpecTrackerOrb;
+import java.awt.Color;
 import java.awt.event.KeyEvent;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import net.runelite.client.config.Alpha;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
@@ -212,10 +215,231 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigSection(
+		name = "Special Orb QoL",
+		description = "Enable and customize an additional orb that displays special attack energy or special stacks (for the Rondache or Soulreaper Axe)",
+		closedByDefault = true,
+		position = 2
+	)
+	String qol = "qol";
+
+	@ConfigItem(
+		keyName = ConfigKeys.SHOW_SPEC_REGEN_METER,
+		name = "Show spec. attack regen meter",
+		description = "Show a ring around the special attack orb. (Disable `Regen Meters` spec. attack meter)",
+		section = qol,
+		position = 0
+	)
+	default boolean showSpecRegenMeter()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.HIDE_SPEC_ENERGY_METER,
+		name = "Hide native spec energy meter",
+		description = "Hide the native meter on the Special attack orb.",
+		section = qol,
+		position = 1
+	)
+	default boolean hideSpecEnergyMeter()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.SHOW_SPEC_TRACKER_ORB,
+		name = "Show tracker orb",
+		description = "Show an additional orb that tracks spec energy state.",
+		section = qol,
+		position = 2
+	)
+	default boolean showSpecTrackerOrb()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.SHOW_SPEC_TRACKER_REGEN_METER,
+		name = "Show tracker regen meter",
+		description = "Show a ring around the tracker orb.",
+		section = qol,
+		position = 3
+	)
+	default boolean showTrackerOrbRegenMeter()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.SPEC_TRACKER_ORB_TEXT_COLOR,
+		name = "Text color",
+		description = "Recolor the text displayed on the tracker orb.",
+		section = qol,
+		position = 4
+	)
+	default Color specTrackerOrbTextColor()
+	{
+		return null;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.SPEC_TRACKER_ORB_TEXT_SHADOW_COLOR,
+		name = "Text shadow color",
+		description = "Recolor the shadow/outline of the text displayed on the tracker orb.",
+		section = qol,
+		position = 5
+	)
+	default Color specTrackerOrbTextShadowColor()
+	{
+		return null;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.SPEC_TRACKER_ORB_TEXT_SHADOW_STYLE,
+		name = "Shadow style",
+		description = "Show a drop shadow, or outline for the tracker orb text.",
+		section = qol,
+		position = 6
+	)
+	default SpecTrackerOrb.OrbTextShadowStyle specTrackerOrbTextShadowStyle()
+	{
+		return SpecTrackerOrb.OrbTextShadowStyle.VANILLA;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.SPEC_TRACKER_ORB_MODE,
+		name = "Orb size",
+		description = "Show a vanilla sized orb or a compact version.",
+		section = qol,
+		position = 7
+	)
+	default SpecTrackerOrb.OrbDisplayMode displayMode()
+	{
+		return SpecTrackerOrb.OrbDisplayMode.VANILLA;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = ConfigKeys.SPEC_QOL_ORB_COLOR,
+		name = "Orb color",
+		description = "Recolor the orb filler for the native orb.",
+		section = qol,
+		position = 8
+	)
+	default Color specQoLOrbColor()
+	{
+		return null;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = ConfigKeys.SPEC_QOL_ORB_EMPTY_COLOR,
+		name = "Orb empty color",
+		description = "Recolor the empty background behind the orb filler for the native orb.",
+		section = qol,
+		position = 9
+	)
+	default Color specQoLOrbEmptyColor()
+	{
+		return null;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = ConfigKeys.SPEC_QOL_ORB_REGEN_COLOR,
+		name = "Regen color",
+		description = "Recolor the regen meter for the native orb.",
+		section = qol,
+		position = 10
+	)
+	default Color specQoLOrbRegenColor()
+	{
+		return null;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = ConfigKeys.SPEC_QOL_SRA_ORB_COLOR,
+		name = "Soulreaper axe orb",
+		description = "Recolor the orb filler for the Soulreaper axe.",
+		section = qol,
+		position = 11
+	)
+	default Color specQoLSraOrbColor()
+	{
+		return new Color(0x8D4BD3);
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = ConfigKeys.SPEC_QOL_SRA_ORB_EMPTY_COLOR,
+		name = "Soulreaper axe empty",
+		description = "Recolor the empty background behind the filler for the Soulreaper axe.",
+		section = qol,
+		position = 12
+	)
+	default Color specQoLSraOrbEmptyColor()
+	{
+		return null;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = ConfigKeys.SPEC_QOL_SRA_ORB_REGEN_COLOR,
+		name = "Soulreaper axe regen",
+		description = "Recolor the regen meter for the Soulreaper axe.",
+		section = qol,
+		position = 13
+	)
+	default Color specQoLSraOrbRegenColor()
+	{
+		return new Color(0xcb45e6);
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = ConfigKeys.SPEC_QOL_RONDACHE_ORB_COLOR,
+		name = "Rondache orb",
+		description = "Recolor the orb filler for the Rondache.",
+		section = qol,
+		position = 14
+	)
+	default Color specQoLRondacheOrbColor()
+	{
+		return new Color(0x5790b5);
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = ConfigKeys.SPEC_QOL_RONDACHE_ORB_EMPTY_COLOR,
+		name = "Rondache empty",
+		description = "Recolor the empty background behind the filler for the Rondache.",
+		section = qol,
+		position = 15
+	)
+	default Color specQoLRondacheOrbEmptyColor()
+	{
+		return null;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = ConfigKeys.SPEC_QOL_RONDACHE_ORB_REGEN_COLOR,
+		name = "Rondache meter",
+		description = "Recolor the regen meter for the Rondache.",
+		section = qol,
+		position = 16
+	)
+	default Color specQoLRondacheOrbRegenColor()
+	{
+		return new Color(0x94CDF8);
+	}
+
+	@ConfigSection(
 		name = "Toggle Button",
 		description = "",
 		closedByDefault = true,
-		position = 2
+		position = 3
 	)
 	String button = "button";
 
@@ -259,7 +483,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Hotkey",
 		description = "",
 		closedByDefault = true,
-		position = 3
+		position = 4
 	)
 	String hotkey = "hotkey";
 

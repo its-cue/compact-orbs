@@ -25,9 +25,12 @@
 
 package com.compactorbs;
 
+import com.compactorbs.util.OrbUtil;
 import java.awt.Color;
 import net.runelite.api.ScriptID;
+import net.runelite.api.gameval.AnimationID;
 import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.SpriteID;
 import net.runelite.api.gameval.VarClientID;
 import net.runelite.api.gameval.VarPlayerID;
@@ -48,6 +51,11 @@ public class CompactOrbsConstants
 			public static final String WIKI = "wiki";
 			public static final String MINIMAP = "minimap";
 			public static final String RUNELITE = "runelite";
+		}
+
+		public static final class Hub
+		{
+			public static final String RESOURCE_PACKS = "resourcepacks";
 		}
 	}
 
@@ -71,6 +79,28 @@ public class CompactOrbsConstants
 		public static final String ENABLE_NO_CLICKTHROUGH = "enableNoClickthrough";
 		public static final String ENABLE_ORB_SWAPPING = "enableOrbSwapping";
 		public static final String HIDE_MINIMAP_WITH_SIDE_PANEL = "hideMinimapWithSidePanel";
+
+		public static final String HIDE_SPEC_ENERGY_METER = "hideSpecEnergyBars";
+		public static final String SHOW_SPEC_REGEN_METER = "showSpecRegenMeter";
+		public static final String SHOW_SPEC_TRACKER_ORB = "showSpecTrackerOrb";
+		public static final String SPEC_TRACKER_ORB_MODE = "specTrackerOrbMode";
+		public static final String SHOW_SPEC_TRACKER_REGEN_METER = "showSpecTrackerRegenMeter";
+		public static final String SPEC_TRACKER_ORB_TEXT_COLOR = "specTrackerOrbTextColor";
+		public static final String SPEC_TRACKER_ORB_TEXT_SHADOW_COLOR = "specTrackerOrbTextShadowColor";
+		public static final String SPEC_TRACKER_ORB_TEXT_SHADOW_STYLE = "specTrackerOrbTextShadowStyle";
+
+		public static final String SPEC_QOL_ORB_COLOR = "specQoLOrbColor";
+		public static final String SPEC_QOL_ORB_EMPTY_COLOR = "specQoLOrbEmptyColor";
+		public static final String SPEC_QOL_ORB_REGEN_COLOR = "specQoLOrbRegenColor";
+
+		public static final String SPEC_QOL_SRA_ORB_COLOR = "specQoLSraOrbColor";
+		public static final String SPEC_QOL_SRA_ORB_EMPTY_COLOR = "specQoLSraOrbEmptyColor";
+		public static final String SPEC_QOL_SRA_ORB_REGEN_COLOR = "specQoLSraOrbRegenColor";
+
+		public static final String SPEC_QOL_RONDACHE_ORB_COLOR = "specQoLRondacheOrbColor";
+		public static final String SPEC_QOL_RONDACHE_ORB_EMPTY_COLOR = "specQoLRondacheOrbEmptyColor";
+		public static final String SPEC_QOL_RONDACHE_ORB_REGEN_COLOR = "specQoLRondacheOrbRegenColor";
+
 		public static final String HP_ORB_SLOT = "hpOrbSlot";
 		public static final String PRAYER_ORB_SLOT = "prayerOrbSlot";
 		public static final String RUN_ORB_SLOT = "runOrbSlot";
@@ -115,11 +145,26 @@ public class CompactOrbsConstants
 			public static final String SNAPCORNER_CONFIG_LOCATION = "_location";
 			public static final String CORNER_OVERLAY_PREFIX = "CornerOverlay_";
 			public static final String DRAG_HOTKEY = "dragHotkey";
+
+			public static final String RESOURCE_PACKS_PLUGIN = "resourcepacksplugin";
 		}
+
+		public static final class Hub
+		{
+			public static final String SELECTED_HUB_PACK = "selectedHubPack";
+			public static final String RESOURCE_PACK = "resourcePack";
+		}
+	}
+
+	public static final class InventoryId
+	{
+		public static final int WORN = InventoryID.WORN;
 	}
 
 	public static final class Enum
 	{
+		public static final int SPECIAL_ATTACK_COST = 906;
+
 		//contains the toplevel component ids (key: widget, value: widget)
 		public static final int TOPLEVEL_COMPONENTS = 1131;
 	}
@@ -136,6 +181,9 @@ public class CompactOrbsConstants
 		public static final int ACTIVITY_ORB_TOGGLE = VarbitID.OPTION_CONTENT_RECOMMENDER_HIDE;
 		public static final int STORE_ORB_TOGGLE = VarbitID.TLI_STOREBUTTON_TOGGLE_DESKTOP;
 		public static final int WIKI_ICON_TOGGLE = VarbitID.WIKI_ICON_DISABLED;
+
+		public static final int RONDACHE_STACKS = VarbitID.RONDACHE_CHARGES;
+		public static final int BR_INGAME = VarbitID.BR_INGAME;
 	}
 
 	public static final class VarClient
@@ -148,6 +196,11 @@ public class CompactOrbsConstants
 	{
 		//var trigger for the compass menu options
 		public static final int MAP_FLAGS_CACHED = VarPlayerID.MAP_FLAGS_CACHED;
+
+		public static final int USE_SPECIAL_ATTACK = VarPlayerID.SA_ATTACK;
+		public static final int CURRENT_SPEC_ENERGY = VarPlayerID.SA_ENERGY;
+		public static final int SOULREAPER_STACKS = VarPlayerID.SOULREAPER_STACKS;
+		public static final int WEAPON_OF_SOL_STACKS = VarPlayerID.WEAPON_OF_SOL_STACKS;
 	}
 
 	public static final class Script
@@ -161,6 +214,7 @@ public class CompactOrbsConstants
 		//scripts related to noclickthrough updating
 		public static final int ORBS_UPDATE_HEALTH = 446;
 		public static final int ORBS_UPDATE_SPECENERGY = 2069;
+		public static final int ORBS_UPDATE_SPECENERGY_METER = 10160;//iono
 
 		//orb specific updating
 		public static final int ORBS_UPDATE_STORE = 2396;
@@ -462,11 +516,36 @@ public class CompactOrbsConstants
 		public static final int EDIT_MODE_OP_INDEX = 9;
 	}
 
+	public static final class RegenMeter
+	{
+		//used to reset the stack decay timer when at max stacks with the SRA
+		public static final int SRA_ATTACK_ANIM_1 = AnimationID.ANCIENT_AXE_SLASH;
+		public static final int SRA_ATTACK_ANIM_2 = AnimationID.ANCIENT_AXE_CRUSH;
+
+		//cores default spec energy meter color
+		public static final Color SPECIAL_COLOR = OrbUtil.brighter(0x1E95B0);
+
+		//30 seconds translated to ticks
+		public static final int SPEC_REGEN_TICKS = 50;
+
+		//8 seconds translated to ticks
+		public static final int RONDACHE_SPEC_COOLDOWN_TICKS = 13;
+	}
+
 	public static final class Sprite
 	{
 		//orb related sprites
 		public static final int FRAME = SpriteID.OrbFrame.FRAME;
 		public static final int FRAME_HOVERED = SpriteID.OrbFrame.FRAME_HOVERED;
+		public static final int FRAME_SMALL = SpriteID.Ring34._0;
+		public static final int FRAME_SMALL_HOVERED = SpriteID.Ring34._1;
+
+		public static final int SPEC_INDICATOR = SpriteID.OrbFiller.SPECIAL;
+		public static final int SPEC_INDICATOR_ACTIVE = SpriteID.OrbFiller.SPECIAL_ACTIVATED;
+		public static final int EMPTY_INDICATOR = SpriteID.OrbFiller.EMPTY;
+		public static final int SPEC_ICON = SpriteID.OrbIcon.SPECIAL;
+		public static final int SPEC_SRA_ICON = SpriteID.OrbIcon._16;
+		public static final int SPEC_RONDACHE_ICON = SpriteID.OrbIcon._25;
 
 		//for edit-mode
 		public static final int FIXED_MINIMAP_MASK = SpriteID.FIXED_MAP_MASK;
@@ -527,6 +606,9 @@ public class CompactOrbsConstants
 			public static final int SPEC_ORB_INDICATOR = InterfaceID.Orbs.SPECENERGY_INDICATOR;
 			public static final int SPEC_ORB_ICON = InterfaceID.Orbs.SPECENERGY_ICON;
 			public static final int SPEC_ORB_EMPTY = InterfaceID.Orbs.ORB_SPECENERGY_EMPTY_GRAPHIC0;
+
+			public static final int NO_MAP_SPEC_ORB = InterfaceID.OrbsNomap.ORB_SPECENERGY;
+			public static final int NO_MAP_SPEC_ORB_ICON = InterfaceID.OrbsNomap.SPECENERGY_ICON;
 
 			public static final int ACTIVITY_ORB = InterfaceID.Orbs.ORB_CONTENTRECOM;
 			public static final int ACTIVITY_ORB_BACKING = InterfaceID.Orbs.CR_BACKING;

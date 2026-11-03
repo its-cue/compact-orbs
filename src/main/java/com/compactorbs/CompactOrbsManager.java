@@ -33,6 +33,7 @@ import com.compactorbs.CompactOrbsConstants.ConfigGroup;
 import com.compactorbs.CompactOrbsConstants.ConfigKeys;
 import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsConstants.MenuOp;
+import com.compactorbs.CompactOrbsConstants.RegenMeter;
 import com.compactorbs.CompactOrbsConstants.Script;
 import com.compactorbs.CompactOrbsConstants.Sprite;
 import com.compactorbs.CompactOrbsConstants.VarClient;
@@ -58,6 +59,8 @@ import com.compactorbs.widget.layout.slot.SlotManager;
 import com.compactorbs.widget.overlay.DetachedHandler;
 import com.compactorbs.widget.overlay.DetachedOrb;
 import com.compactorbs.widget.overlay.SnapCorner;
+import com.compactorbs.widget.overlay.spec.SpecColorRegistry;
+import com.compactorbs.widget.overlay.spec.SpecOrbType;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -65,6 +68,7 @@ import java.util.Set;
 import java.util.function.Function;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.BufferProvider;
@@ -118,6 +122,9 @@ public class CompactOrbsManager
 	private HideOrbRegistry orbHidden;
 
 	@Inject
+	private SpecColorRegistry specColors;
+
+	@Inject
 	private EditManager editManager;
 
 	@Inject
@@ -129,6 +136,26 @@ public class CompactOrbsManager
 	@Setter
 	public BufferProvider lastProvider;
 
+	@Getter
+	public double specialPercentage;
+	@Getter
+	public double sraStackPercentage;
+	@Getter
+	public double rondacheStackPercentage;
+
+	public boolean firstGameTick;
+
+	public int currentSpecEnergy;
+	public int currentSraStacks;
+	public int currentRondacheStacks;
+
+	public int ticksSinceSpecRegen;
+	public int ticksSinceSraDecay;
+	public int ticksSinceRondacheDecay;
+	public int rondacheCooldownTicks;
+	public int lastRondacheStacks = -1;
+	public boolean isWearingLightbearer;
+
 	//tied to related configs
 	public boolean hideWorldMap;
 	public boolean hideLogoutX;
@@ -137,6 +164,7 @@ public class CompactOrbsManager
 
 	public boolean isNativeDragActive;
 	public boolean isGraphicsReset;
+	@Getter
 	public boolean isMinimapMinimized;
 	public boolean isCutsceneActive;
 	public boolean isEditingLayout;
@@ -166,6 +194,7 @@ public class CompactOrbsManager
 	public final Set<Integer> tabHiddenOrbs = new HashSet<>();
 	public boolean hideOrbOnTabClose;
 
+	public final Map<String, Overlay> displayOrb = new HashMap<>();
 	public final Map<String, Overlay> floatingOverlay = new HashMap<>();
 	public static final TargetWidget[] FLOATING_TARGETS =
 		{
@@ -204,10 +233,18 @@ public class CompactOrbsManager
 		enableOrbSwapping = config.enableOrbSwapping();
 		slotManager.init();
 
+		updateSpecEnergyValues();
+
 		setIsMinimapMinimized();
 		createCustomChildren();
 		setupCurrentLayout();
 		hideAllOrbsByConfig();
+
+		if (config.hideSpecEnergyMeter())
+		{
+			widgetManager.hideSpecEnergyMeter(true);
+		}
+
 		setupMinimapOverlay();
 		hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
 	}
@@ -295,6 +332,7 @@ public class CompactOrbsManager
 	public void onLogout()
 	{
 		isLoggingIn = true;
+		firstGameTick = true;
 		wikiPluginBannerExists = false;
 		clearCustomChildren();
 		isGraphicsReset = false;
@@ -309,6 +347,7 @@ public class CompactOrbsManager
 		createCustomChildren();
 		detachedHandler.setResizedWhileHidden(false);
 		sendUpdateNotice();
+		updateSpecEnergyValues();
 	}
 
 	//for shutdown - reset all hidden widgets to their vanilla state
@@ -325,6 +364,7 @@ public class CompactOrbsManager
 
 		hideMinimapOnTabClose(false);
 		updateWikiBannerVisibility(true);
+		widgetManager.hideSpecEnergyMeter(false);
 		widgetManager.setTargetsHidden(hideStonesAndIcons(), Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
 	}
 
@@ -408,6 +448,7 @@ public class CompactOrbsManager
 		widgetManager.remapTargets(!isMinimapHidden(), Script.FORCE_UPDATE, Compass.values());
 		widgetManager.remapTargets(Orbs.values());
 		widgetManager.revalidate(Orbs.WORLD_MAP_CONTAINER, Orbs.WIKI_ICON_CONTAINER, Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
+
 		updateNoClickThrough();
 
 		//logoutX only exists in the modern-resizable display mode
@@ -470,23 +511,28 @@ public class CompactOrbsManager
 			return;
 		}
 
+		for (TargetWidget orb : Orbs.SWAPPABLE_ORBS)
+		{
+			updateOrbNoClickThrough(orb);
+		}
+	}
+
+	public void updateOrbNoClickThrough(TargetWidget target)
+	{
 		boolean enabled = enableNoClickThrough ||
 			(enableOrbSwapping && (isCompactLayout() && !getCurrentLayout().isCustomLayout()));
 
-		for (TargetWidget orb : Orbs.SWAPPABLE_ORBS)
-		{
-			boolean vanilla = isFloating() ? !isOverlayOrbDetached(orb) : !isMinimapHidden();
+		boolean vanilla = isFloating() ? !isOverlayOrbDetached(target) : !isMinimapHidden();
 
-			if (vanilla)
-			{
-				widgetManager.setNoClickThrough(orb.getComponentId(), false);
-				handleVanillaNoClickThrough(orb, enabled);
-			}
-			else
-			{
-				widgetManager.setNoClickThrough(orb.getComponentId(), enabled);
-				widgetManager.clearChild(noClickThroughChildren.remove(orb));
-			}
+		if (vanilla)
+		{
+			widgetManager.setNoClickThrough(target.getComponentId(), false);
+			handleVanillaNoClickThrough(target, enabled);
+		}
+		else
+		{
+			widgetManager.setNoClickThrough(target.getComponentId(), enabled);
+			widgetManager.clearChild(noClickThroughChildren.remove(target));
 		}
 	}
 
@@ -507,20 +553,21 @@ public class CompactOrbsManager
 		widgetManager.setNoClickThrough(backing.getId(), !noClickThrough);
 		widgetManager.setNoClickThrough(button.getId(), noClickThrough);
 
-		boolean addChild = noClickThrough && button.isHidden();
+		Widget noClick = noClickThroughChildren.get(target);
 
-		Widget noClick = noClickThroughChildren.remove(target);
-		if (!addChild)
+		widgetManager.clearChild(noClick);
+
+		if (!noClickThrough || !button.isHidden())
 		{
-			widgetManager.clearChild(noClick);
+			noClickThroughChildren.remove(target);
+			return;
 		}
-		else
-		{
-			noClick = widgetManager.createNoClick(layer, button);
-			noClick.setNoClickThrough(true);
-			noClick.revalidate();
-			noClickThroughChildren.put(target, noClick);
-		}
+
+		noClick = widgetManager.createNoClick(layer, button);
+		noClick.setNoClickThrough(true);
+		noClick.revalidate();
+		noClickThroughChildren.put(target, noClick);
+
 	}
 
 	//TODO - test if stale state can happen to the XP orb when hovering into the HP orb in safe mode (poisoned)
@@ -1215,16 +1262,12 @@ public class CompactOrbsManager
 		return client.getVarbitValue(Varbit.WIKI_ICON_TOGGLE) != wikiIconVisible;
 	}
 
-	public boolean isMinimapMinimized()
-	{
-		return isMinimapMinimized;
-	}
-
 	public void setIsMinimapMinimized()
 	{
 		if (!isLoggedIn())
 		{
 			isMinimapMinimized = false;
+			return;
 		}
 
 		final int minimapMinimized = 1;
@@ -1300,6 +1343,109 @@ public class CompactOrbsManager
 		return y;
 	}
 
+	public void updateSpecRegenTimer()
+	{
+		final int ticksPerSpecRegen = isWearingLightbearer ? RegenMeter.SPEC_REGEN_TICKS / 2 : RegenMeter.SPEC_REGEN_TICKS;
+
+		//special
+		if (currentSpecEnergy == 1000)
+		{
+			// The recharge doesn't tick when at 100%
+			ticksSinceSpecRegen = 0;
+		}
+		else
+		{
+			ticksSinceSpecRegen = (ticksSinceSpecRegen + 1) % ticksPerSpecRegen;
+		}
+
+		specialPercentage = ticksSinceSpecRegen / (double) ticksPerSpecRegen;
+	}
+
+	public void updateSraStackTimer()
+	{
+		final int ticksPerDecay = RegenMeter.SPEC_REGEN_TICKS;
+
+		if (currentSraStacks == 0)
+		{
+			ticksSinceSraDecay = 0;
+		}
+		else
+		{
+			ticksSinceSraDecay = (ticksSinceSraDecay + 1) % ticksPerDecay;
+		}
+
+		sraStackPercentage = ticksSinceSraDecay / (double) ticksPerDecay;
+	}
+
+	public void updateRondacheStackTimer()
+	{
+		final int ticksPerDecay = RegenMeter.SPEC_REGEN_TICKS;
+
+		if (rondacheCooldownTicks > 0)
+		{
+			rondacheCooldownTicks--;
+		}
+
+		if (currentRondacheStacks == 0)
+		{
+			ticksSinceRondacheDecay = 0;
+		}
+		else
+		{
+			ticksSinceRondacheDecay = (ticksSinceRondacheDecay + 1) % ticksPerDecay;
+		}
+
+		rondacheStackPercentage = ticksSinceRondacheDecay / (double) ticksPerDecay;
+	}
+
+	public double getRondachePercentage()
+	{
+		if (rondacheCooldownTicks > 0)
+		{
+			return 1d - rondacheCooldownTicks / (double) RegenMeter.RONDACHE_SPEC_COOLDOWN_TICKS;
+		}
+
+		return rondacheStackPercentage;
+	}
+
+	public void updateSpecEnergyValues()
+	{
+		if (!isLoggedIn())
+		{
+			return;
+		}
+
+		currentSpecEnergy = client.getVarpValue(CompactOrbsConstants.VarPlayer.CURRENT_SPEC_ENERGY);
+		currentSraStacks = client.getVarpValue(CompactOrbsConstants.VarPlayer.SOULREAPER_STACKS);
+		currentRondacheStacks = client.getVarbitValue(CompactOrbsConstants.Varbit.RONDACHE_STACKS);
+	}
+
+	public int getSpecOrbEnergyValues(SpecOrbType type)
+	{
+		switch (type)
+		{
+			case SRA:
+				return currentSraStacks;
+			case RONDACHE:
+				return currentRondacheStacks;
+			default:
+				return currentSpecEnergy;
+		}
+	}
+
+	public double getSpecOrbPercentage(SpecOrbType type)
+	{
+		switch (type)
+		{
+			case SRA:
+				return getSraStackPercentage();
+			case RONDACHE:
+				return getRondachePercentage();
+			default:
+				return getSpecialPercentage();
+		}
+	}
+
 	public void sidePanelToggled()
 	{
 		if (isEditingLayout && config.hideMinimapWithSidePanel() && isSidePanelHidden())
@@ -1313,6 +1459,12 @@ public class CompactOrbsManager
 		}
 
 		hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
+
+		if (config.hideSpecEnergyMeter())
+		{
+			widgetManager.hideSpecEnergyMeter(true);
+			updateNoClickThrough();
+		}
 	}
 
 	public void hideMinimapOnTabClose(boolean hide)

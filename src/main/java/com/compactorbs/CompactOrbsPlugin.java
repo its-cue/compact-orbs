@@ -31,8 +31,10 @@ import com.compactorbs.CompactOrbsConstants.ConfigGroup;
 import static com.compactorbs.CompactOrbsConstants.ConfigGroup.GROUP_NAME;
 import com.compactorbs.CompactOrbsConstants.ConfigKeys;
 import static com.compactorbs.CompactOrbsConstants.Layout.EDIT_MODE_HIDDEN_OPACITY;
+import com.compactorbs.CompactOrbsConstants.RegenMeter;
 import com.compactorbs.CompactOrbsConstants.Script;
 import com.compactorbs.CompactOrbsConstants.VarClient;
+import com.compactorbs.CompactOrbsConstants.VarPlayer;
 import com.compactorbs.CompactOrbsConstants.Varbit;
 import com.compactorbs.CompactOrbsConstants.Widgets;
 import com.compactorbs.CompactOrbsConstants.Widgets.Orb;
@@ -51,21 +53,34 @@ import com.compactorbs.widget.overlay.DetachedHandler;
 import com.compactorbs.widget.overlay.DetachedMinimap;
 import com.compactorbs.widget.overlay.DetachedOrb;
 import com.compactorbs.widget.overlay.SnapCorner;
+import com.compactorbs.widget.overlay.spec.RegenMeterOverlay;
+import com.compactorbs.widget.overlay.spec.SpecTrackerOrb;
+import com.compactorbs.widget.overlay.spec.SpriteCache;
 import com.google.inject.Provides;
 import java.awt.event.KeyEvent;
 import java.util.Locale;
+import java.util.Objects;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.Hitsplat;
+import net.runelite.api.HitsplatID;
+import net.runelite.api.ItemContainer;
+import net.runelite.api.events.AnimationChanged;
 import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.GameTick;
+import net.runelite.api.events.HitsplatApplied;
+import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.ScriptPreFired;
 import net.runelite.api.events.VarClientIntChanged;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.WidgetLoaded;
+import net.runelite.api.gameval.InventoryID;
+import net.runelite.api.gameval.ItemID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -77,6 +92,7 @@ import net.runelite.client.input.KeyManager;
 import net.runelite.client.input.MouseManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.OverlayPosition;
 
@@ -100,9 +116,6 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 
 	@Inject
 	private CompactOrbsManager manager;
-
-	@Inject
-	private ConfigManager configManager;
 
 	@Inject
 	private KeyManager keyManager;
@@ -146,11 +159,34 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	@Inject
 	private MouseManager mouseManager;
 
+	@Inject
+	private PluginManager pluginManager;
+
+	@Inject
+	private SpecTrackerOrb specTrackerOrb;
+
+	@Inject
+	private SpriteCache spriteCache;
+
+	@Inject
+	private RegenMeterOverlay regenMeterOverlay;
+
 	@Override
 	protected void startUp() throws Exception
 	{
 		manager.migrateConfigs();
+
+		//compact-view detached minimap
 		overlayManager.add(detachedMinimap);
+
+		//regen meter (core replacement)
+		overlayManager.add(regenMeterOverlay);
+
+		//regen meter (sra qol alternative)
+		overlayManager.add(specTrackerOrb);
+		clientThread.invoke(specTrackerOrb::updateWorn);
+
+		//floating layout
 		for (TargetWidget orb : CompactOrbsManager.FLOATING_TARGETS)
 		{
 			var overlay = new DetachedOrb(client, manager, snapcorner, bindingManager,
@@ -170,11 +206,22 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	@Override
 	protected void shutDown() throws Exception
 	{
+		//compact-view detached minimap
 		overlayManager.remove(detachedMinimap);
+
+		//regen meter (core replacement)
+		overlayManager.remove(regenMeterOverlay);
+
+		//regen meter (sra qol alternative)
+		spriteCache.clear();
+		overlayManager.remove(specTrackerOrb);
+
+		//floating layout
 		manager.floatingOverlay.values().forEach(overlay ->
 			overlayManager.remove(overlay)
 		);
 		manager.floatingOverlay.clear();
+
 		snapcorner.clear();
 		keyManager.unregisterKeyListener(this);
 		mouseManager.unregisterMouseListener(dragListener);
@@ -186,6 +233,56 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	CompactOrbsConfig provideConfig(ConfigManager configManager)
 	{
 		return configManager.getConfig(CompactOrbsConfig.class);
+	}
+
+	@Subscribe
+	public void onHitsplatApplied(HitsplatApplied event)
+	{
+		if (event.getActor() != client.getLocalPlayer() ||
+			client.getVarbitValue(Varbit.RONDACHE_STACKS) != 20)
+		{
+			return;
+		}
+
+		Hitsplat hitsplat = event.getHitsplat();
+
+		boolean damageRegistered = hitsplat.isMine() && hitsplat.getHitsplatType() != HitsplatID.BLOCK_ME;
+		if (hitsplat.getAmount() > 0 && damageRegistered)
+		{
+			manager.ticksSinceRondacheDecay = RegenMeter.SPEC_REGEN_TICKS;
+		}
+	}
+
+	@Subscribe
+	public void onAnimationChanged(AnimationChanged event)
+	{
+		if (event.getActor() != client.getLocalPlayer())
+		{
+			return;
+		}
+
+		int animation = event.getActor().getAnimation();
+
+		if (animation == RegenMeter.SRA_ATTACK_ANIM_1 || animation == RegenMeter.SRA_ATTACK_ANIM_2)
+		{
+			manager.ticksSinceSraDecay = RegenMeter.SPEC_REGEN_TICKS;
+		}
+	}
+
+	@Subscribe
+	public void onGameTick(GameTick event)
+	{
+		if (manager.firstGameTick)
+		{
+			manager.ticksSinceSraDecay = RegenMeter.SPEC_REGEN_TICKS;
+			manager.ticksSinceRondacheDecay = RegenMeter.SPEC_REGEN_TICKS;
+			manager.rondacheCooldownTicks = 0;
+			manager.firstGameTick = false;
+		}
+
+		manager.updateSpecRegenTimer();
+		manager.updateSraStackTimer();
+		manager.updateRondacheStackTimer();
 	}
 
 	@Subscribe
@@ -289,6 +386,16 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 					//prevent the script from setting the opacity back to 25
 					widgetManager.setTargetOpacity(Orbs.SPEC_ORB_CONTAINER, EDIT_MODE_HIDDEN_OPACITY);
 				}
+				//looks like the script might be deleting the noclick child (via script 8086?)
+				manager.updateOrbNoClickThrough(Orbs.SPEC_ORB_CONTAINER);
+				break;
+
+			case Script.ORBS_UPDATE_SPECENERGY_METER:
+				if (config.hideSpecEnergyMeter())
+				{
+					widgetManager.hideSpecEnergyMeter(true);
+					manager.updateNoClickThrough();
+				}
 				break;
 
 			case Script.WORLD_MAP_UPDATE:
@@ -330,8 +437,74 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	}
 
 	@Subscribe
+	public void onItemContainerChanged(ItemContainerChanged event)
+	{
+		if (event.getContainerId() == InventoryID.WORN)
+		{
+			specTrackerOrb.updateWorn();
+
+			ItemContainer equipment = event.getItemContainer();
+			final boolean hasLightbearer = equipment.contains(ItemID.LIGHTBEARER);
+			if (hasLightbearer == manager.isWearingLightbearer)
+			{
+				return;
+			}
+
+			// Lightbearer switch preserves time until next spec regen if <25 ticks remain
+			// If unequipping Lightbearer, this will always evaluate to 0
+			manager.ticksSinceSpecRegen = Math.max(0, manager.ticksSinceSpecRegen - 25);
+			manager.isWearingLightbearer = hasLightbearer;
+		}
+	}
+
+	@Subscribe
 	public void onVarbitChanged(VarbitChanged event)
 	{
+		if (event.getVarpId() == VarPlayer.CURRENT_SPEC_ENERGY ||
+			event.getVarpId() == VarPlayer.SOULREAPER_STACKS ||
+			event.getVarbitId() == Varbit.RONDACHE_STACKS)
+		{
+			manager.updateSpecEnergyValues();
+
+			if (config.showSpecTrackerOrb())
+			{
+				specTrackerOrb.updateOrb();
+			}
+
+			if (event.getVarpId() == VarPlayer.SOULREAPER_STACKS)
+			{
+				if (client.getVarpValue(VarPlayer.SOULREAPER_STACKS) == 0)
+				{
+					manager.ticksSinceSraDecay = 0;
+				}
+				else
+				{
+					manager.ticksSinceSraDecay = RegenMeter.SPEC_REGEN_TICKS;
+				}
+			}
+
+			if (event.getVarbitId() == Varbit.RONDACHE_STACKS)
+			{
+				int stacks = client.getVarbitValue(Varbit.RONDACHE_STACKS);
+
+				if (manager.lastRondacheStacks > 1 && stacks == 0)
+				{
+					manager.rondacheCooldownTicks = RegenMeter.RONDACHE_SPEC_COOLDOWN_TICKS;
+				}
+
+				manager.lastRondacheStacks = stacks;
+
+				if (stacks == 0)
+				{
+					manager.ticksSinceRondacheDecay = 0;
+				}
+				else
+				{
+					manager.ticksSinceRondacheDecay = RegenMeter.SPEC_REGEN_TICKS;
+				}
+			}
+		}
+
 		switch (event.getVarbitId())
 		{
 			case Varbit.CUTSCENE_STATUS:
@@ -385,6 +558,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				manager.setupCurrentLayout();
 				manager.hideAllOrbsByConfig();
 				manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
+				specTrackerOrb.updateWorn();
 				break;
 
 			case Widgets.MinimapOverlay.UNIVERSE >> 16:
@@ -412,17 +586,49 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				snapcorner.nativeDragWasDetected = false;
 				snapcorner.hasUpdated();
 			}
-		}
+			else if (key.equals(ConfigKeys.Core.RESOURCE_PACKS_PLUGIN))
+			{
+				boolean newValue = Boolean.parseBoolean(event.getNewValue());
 
-		if (group.equals(ConfigGroup.Core.MINIMAP))
+				Plugin resourcePacksPlugin = pluginManager.getPlugins().stream()
+					.filter(plugin -> Objects.equals(plugin.getName(), "Resource packs"))
+					.findFirst()
+					.orElse(null);
+
+				if (resourcePacksPlugin == null)
+				{
+					return;
+				}
+
+				clientThread.invokeLater(() -> {
+					if (pluginManager.isPluginActive(resourcePacksPlugin) == newValue)
+					{
+						spriteCache.clear();
+						return true;
+					}
+					else
+					{
+						// Wait for plugin to startup since at this configChanged call it is not actually initialized
+						return pluginManager.isPluginActive(resourcePacksPlugin) == newValue;
+					}
+				});
+			}
+		}
+		else if (group.equals(ConfigGroup.Hub.RESOURCE_PACKS))
+		{
+			if (key.equals(ConfigKeys.Hub.SELECTED_HUB_PACK) || key.equals(ConfigKeys.Hub.RESOURCE_PACK))
+			{
+				clientThread.invokeLater(() -> spriteCache.clear());
+			}
+		}
+		else if (group.equals(ConfigGroup.Core.MINIMAP))
 		{
 			if (key.equals(ConfigKeys.Core.HIDE_MINIMAP))
 			{
 				clientThread.invokeLater(() -> manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel()));
 			}
 		}
-
-		if (group.equals(ConfigGroup.Core.WIKI))
+		else if (group.equals(ConfigGroup.Core.WIKI))
 		{
 			if (key.equals(ConfigKeys.Core.SHOW_WIKI_MINIMAP_BUTTON))
 			{
@@ -439,163 +645,169 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				});
 			}
 		}
-
-		if (!group.equals(GROUP_NAME))
+		else if (group.equals(GROUP_NAME))
 		{
-			return;
-		}
 
-		if (slotRegistry.isSwapConfig(key) || orbRegistry.isHideConfig(key))
-		{
-			if (!manager.isEditingLayout)
+			if (slotRegistry.isSwapConfig(key) || orbRegistry.isHideConfig(key))
+			{
+				if (!manager.isEditingLayout)
+				{
+					clientThread.invokeLater(() ->
+					{
+						manager.hideOrbByConfig(key);
+
+						if (!manager.isFixedMode())
+						{
+							manager.rebuildLayout();
+						}
+					});
+				}
+				return;
+			}
+
+			if (manager.isEditingLayout && !manager.isUpdatingProfile)
 			{
 				clientThread.invokeLater(() ->
 				{
-					manager.hideOrbByConfig(key);
-
-					if (!manager.isFixedMode())
+					if (!key.contains(manager.getCurrentPrefix()))
 					{
-						manager.rebuildLayout();
+						editManager.toggleEditMode(false);
 					}
 				});
 			}
-			return;
-		}
 
-		if (manager.isEditingLayout && !manager.isUpdatingProfile)
-		{
-			clientThread.invokeLater(() ->
+			switch (key)
 			{
-				if (!key.contains(manager.getCurrentPrefix()))
-				{
-					editManager.toggleEditMode(false);
-				}
-			});
-		}
-
-		switch (key)
-		{
-			case ConfigKeys.DETACH_UTILITY_ORBS:
-				clientThread.invokeLater(() ->
-				{
-					manager.isGraphicsReset = false;
-					manager.setLastProvider(null);
-					detachedHandler.restore(false);
-				});
-				break;
-
-			case ConfigKeys.COMPASS:
-				clientThread.invokeLater(() ->
-				{
-					if (!manager.isFloating())
+				case ConfigKeys.DETACH_UTILITY_ORBS:
+					clientThread.invokeLater(() ->
 					{
-						widgetManager.setTargetsHidden(manager.isCompassHidden(), Compass.values());
-						widgetManager.remapTargets(Compass.values());
-						widgetManager.remapTargets(Orbs.values());
-					}
-					else
-					{
-						widgetManager.setTargetsHidden(manager.isMinimapHidden() &&
-							manager.isCompassHidden(), Compass.values());
-					}
-				});
-				break;
-
-			case ConfigKeys.MINIMAP_BUTTON_PLACEMENT:
-			case ConfigKeys.ENABLE_OVERLAY_TOGGLE_OPTION:
-				clientThread.invokeLater(manager::updateMinimapToggleButton);
-				break;
-
-			case ConfigKeys.RIGHT_CLICK_TOGGLE_BUTTONS:
-				clientThread.invokeLater(manager::updateCustomChildren);
-				break;
-
-			case ConfigKeys.ENABLE_ORB_SWAPPING:
-			case ConfigKeys.ENABLE_NO_CLICKTHROUGH:
-				clientThread.invokeLater(() ->
-				{
-					if (key.equals(ConfigKeys.ENABLE_NO_CLICKTHROUGH))
-					{
-						manager.enableNoClickThrough = config.enableNoClickthrough();
-					}
-					else
-					{
-						manager.enableOrbSwapping = config.enableOrbSwapping();
-						slotManager.update();
-						manager.rebuildLayout();
-					}
-
-					manager.updateNoClickThrough();
-
-					//apply offset to the xp drop when noclickthrough is active
-					if (!manager.isCompactLayout())
-					{
-						widgetManager.remapTargets(Orbs.XP_DROPS_CONTAINER);
-					}
-				});
-				break;
-
-			case ConfigKeys.ENABLE_MINIMAP_OVERLAY:
-				clientThread.invokeLater(() ->
-				{
-					if (config.detachUtilityOrbs() &&
-						(manager.isEditingLayout || manager.hideMinimapOverlay() || detachedHandler.isCached()))
-					{
+						manager.isGraphicsReset = false;
+						manager.setLastProvider(null);
 						detachedHandler.restore(false);
-					}
+					});
+					break;
 
-					widgetManager.setHidden(Widgets.MinimapOverlay.UNIVERSE, manager.hideMinimapOverlay());
-					manager.hideLogout();
-					manager.updateLogoutXPosition();
-					manager.updateLogoutXOverlay();
-				});
-				break;
-
-			case ConfigKeys.ENABLE_LOGOUT_X_OVERLAY:
-				clientThread.invokeLater(() ->
-				{
-					manager.hideLogout();
-					manager.updateLogoutXPosition();
-					manager.updateLogoutXOverlay();
-				});
-				break;
-
-			case ConfigKeys.HIDE_MINIMAP_WITH_SIDE_PANEL:
-				clientThread.invokeLater(() ->
-				{
-					detachedHandler.setResizedWhileHidden(false);
-					manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
-				});
-				break;
-
-			case ConfigKeys.VERTICAL_Y_ADJUSTMENT:
-				clientThread.invokeLater(() ->
-				{
-					if (manager.isCompactLayout())
+				case ConfigKeys.COMPASS:
+					clientThread.invokeLater(() ->
 					{
-						manager.rebuildLayout();
-					}
-				});
-				break;
+						if (!manager.isFloating())
+						{
+							widgetManager.setTargetsHidden(manager.isCompassHidden(), Compass.values());
+							widgetManager.remapTargets(Compass.values());
+							widgetManager.remapTargets(Orbs.values());
+						}
+						else
+						{
+							widgetManager.setTargetsHidden(manager.isMinimapHidden() &&
+								manager.isCompassHidden(), Compass.values());
+						}
+					});
+					break;
 
-			case ConfigKeys.ORB_LAYOUT:
-			case ConfigKeys.HORIZONTAL_ANCHOR:
-			case ConfigKeys.VERTICAL_ANCHOR:
-			case ConfigKeys.DISABLE_REORDERING:
-			case ConfigKeys.LEAVE_EMPTY_SPACE:
-				clientThread.invokeLater(() ->
-				{
-					if (!manager.isFixedMode())
+				case ConfigKeys.MINIMAP_BUTTON_PLACEMENT:
+				case ConfigKeys.ENABLE_OVERLAY_TOGGLE_OPTION:
+					clientThread.invokeLater(manager::updateMinimapToggleButton);
+					break;
+
+				case ConfigKeys.RIGHT_CLICK_TOGGLE_BUTTONS:
+					clientThread.invokeLater(manager::updateCustomChildren);
+					break;
+
+				case ConfigKeys.ENABLE_ORB_SWAPPING:
+				case ConfigKeys.ENABLE_NO_CLICKTHROUGH:
+					clientThread.invokeLater(() ->
 					{
-						widgetManager.clearForcedPosition(CompactOrbsManager.FLOATING_TARGETS);
-						widgetManager.clearForcedPosition(Orbs.LOGOUT_X_STONE);
+						if (key.equals(ConfigKeys.ENABLE_NO_CLICKTHROUGH))
+						{
+							manager.enableNoClickThrough = config.enableNoClickthrough();
+						}
+						else
+						{
+							manager.enableOrbSwapping = config.enableOrbSwapping();
+							slotManager.update();
+							manager.rebuildLayout();
+						}
 
-						manager.setupCurrentLayout();
+						manager.updateNoClickThrough();
 
+						//apply offset to the xp drop when noclickthrough is active
+						if (!manager.isCompactLayout())
+						{
+							widgetManager.remapTargets(Orbs.XP_DROPS_CONTAINER);
+						}
+					});
+					break;
+
+				case ConfigKeys.ENABLE_MINIMAP_OVERLAY:
+					clientThread.invokeLater(() ->
+					{
+						if (config.detachUtilityOrbs() &&
+							(manager.isEditingLayout || manager.hideMinimapOverlay() || detachedHandler.isCached()))
+						{
+							detachedHandler.restore(false);
+						}
+
+						widgetManager.setHidden(Widgets.MinimapOverlay.UNIVERSE, manager.hideMinimapOverlay());
+						manager.hideLogout();
+						manager.updateLogoutXPosition();
+						manager.updateLogoutXOverlay();
+					});
+					break;
+
+				case ConfigKeys.ENABLE_LOGOUT_X_OVERLAY:
+					clientThread.invokeLater(() ->
+					{
+						manager.hideLogout();
+						manager.updateLogoutXPosition();
+						manager.updateLogoutXOverlay();
+					});
+					break;
+
+				case ConfigKeys.HIDE_MINIMAP_WITH_SIDE_PANEL:
+					clientThread.invokeLater(() ->
+					{
+						detachedHandler.setResizedWhileHidden(false);
 						manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
-					}
-				});
-				break;
+					});
+					break;
+
+				case ConfigKeys.HIDE_SPEC_ENERGY_METER:
+					clientThread.invokeLater(() -> widgetManager.hideSpecEnergyMeter(config.hideSpecEnergyMeter()));
+					break;
+
+				case ConfigKeys.SHOW_SPEC_TRACKER_ORB:
+					clientThread.invokeLater(() -> specTrackerOrb.updateWorn());
+					break;
+
+				case ConfigKeys.VERTICAL_Y_ADJUSTMENT:
+					clientThread.invokeLater(() ->
+					{
+						if (manager.isCompactLayout())
+						{
+							manager.rebuildLayout();
+						}
+					});
+					break;
+
+				case ConfigKeys.ORB_LAYOUT:
+				case ConfigKeys.HORIZONTAL_ANCHOR:
+				case ConfigKeys.VERTICAL_ANCHOR:
+				case ConfigKeys.DISABLE_REORDERING:
+				case ConfigKeys.LEAVE_EMPTY_SPACE:
+					clientThread.invokeLater(() ->
+					{
+						if (!manager.isFixedMode())
+						{
+							widgetManager.clearForcedPosition(CompactOrbsManager.FLOATING_TARGETS);
+							widgetManager.clearForcedPosition(Orbs.LOGOUT_X_STONE);
+
+							manager.setupCurrentLayout();
+
+							manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
+						}
+					});
+					break;
+			}
 		}
 	}
 
@@ -612,7 +824,10 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		manager.migrateConfigs();
 
 		manager.isUpdatingProfile = true;
-		clientThread.invoke(() -> manager.reload(false));
+		clientThread.invoke(() -> {
+			spriteCache.clear();
+			manager.reload(false);
+		});
 	}
 
 	@Subscribe
