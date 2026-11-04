@@ -54,6 +54,7 @@ import com.compactorbs.widget.overlay.DetachedMinimap;
 import com.compactorbs.widget.overlay.DetachedOrb;
 import com.compactorbs.widget.overlay.SnapCorner;
 import com.compactorbs.widget.overlay.spec.RegenMeterOverlay;
+import com.compactorbs.widget.overlay.spec.SpecTrackerListener;
 import com.compactorbs.widget.overlay.spec.SpecTrackerOrb;
 import com.compactorbs.widget.overlay.spec.SpriteCache;
 import com.google.inject.Provides;
@@ -166,6 +167,9 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	private SpecTrackerOrb specTrackerOrb;
 
 	@Inject
+	private SpecTrackerListener specTrackerListener;
+
+	@Inject
 	private SpriteCache spriteCache;
 
 	@Inject
@@ -197,6 +201,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		}
 		keyManager.registerKeyListener(this);
 		mouseManager.registerMouseListener(dragListener);
+		mouseManager.registerMouseListener(specTrackerListener);
 		orbRegistry.registerAll();
 		snapcorner.hasUpdated();
 
@@ -214,6 +219,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 
 		//regen meter (sra qol alternative)
 		spriteCache.clear();
+		specTrackerOrb.redraw();
 		overlayManager.remove(specTrackerOrb);
 
 		//floating layout
@@ -225,6 +231,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		snapcorner.clear();
 		keyManager.unregisterKeyListener(this);
 		mouseManager.unregisterMouseListener(dragListener);
+		mouseManager.unregisterMouseListener(specTrackerListener);
 
 		clientThread.invoke(manager::shutdown);
 	}
@@ -233,40 +240,6 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	CompactOrbsConfig provideConfig(ConfigManager configManager)
 	{
 		return configManager.getConfig(CompactOrbsConfig.class);
-	}
-
-	@Subscribe
-	public void onHitsplatApplied(HitsplatApplied event)
-	{
-		if (event.getActor() != client.getLocalPlayer() ||
-			client.getVarbitValue(Varbit.RONDACHE_STACKS) != 20)
-		{
-			return;
-		}
-
-		Hitsplat hitsplat = event.getHitsplat();
-
-		boolean damageRegistered = hitsplat.isMine() && hitsplat.getHitsplatType() != HitsplatID.BLOCK_ME;
-		if (hitsplat.getAmount() > 0 && damageRegistered)
-		{
-			manager.ticksSinceRondacheDecay = RegenMeter.SPEC_REGEN_TICKS;
-		}
-	}
-
-	@Subscribe
-	public void onAnimationChanged(AnimationChanged event)
-	{
-		if (event.getActor() != client.getLocalPlayer())
-		{
-			return;
-		}
-
-		int animation = event.getActor().getAnimation();
-
-		if (animation == RegenMeter.SRA_ATTACK_ANIM_1 || animation == RegenMeter.SRA_ATTACK_ANIM_2)
-		{
-			manager.ticksSinceSraDecay = RegenMeter.SPEC_REGEN_TICKS;
-		}
 	}
 
 	@Subscribe
@@ -458,6 +431,40 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	}
 
 	@Subscribe
+	public void onHitsplatApplied(HitsplatApplied event)
+	{
+		if (event.getActor() != client.getLocalPlayer() ||
+			client.getVarbitValue(Varbit.RONDACHE_STACKS) != 20)
+		{
+			return;
+		}
+
+		Hitsplat hitsplat = event.getHitsplat();
+
+		boolean damageRegistered = hitsplat.isMine() && hitsplat.getHitsplatType() != HitsplatID.BLOCK_ME;
+		if (hitsplat.getAmount() > 0 && damageRegistered)
+		{
+			manager.ticksSinceRondacheDecay = RegenMeter.SPEC_REGEN_TICKS;
+		}
+	}
+
+	@Subscribe
+	public void onAnimationChanged(AnimationChanged event)
+	{
+		if (event.getActor() != client.getLocalPlayer())
+		{
+			return;
+		}
+
+		int animation = event.getActor().getAnimation();
+
+		if (animation == RegenMeter.SRA_ATTACK_ANIM_1 || animation == RegenMeter.SRA_ATTACK_ANIM_2)
+		{
+			manager.ticksSinceSraDecay = RegenMeter.SPEC_REGEN_TICKS;
+		}
+	}
+
+	@Subscribe
 	public void onVarbitChanged(VarbitChanged event)
 	{
 		if (event.getVarpId() == VarPlayer.CURRENT_SPEC_ENERGY ||
@@ -473,7 +480,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 
 			if (event.getVarpId() == VarPlayer.SOULREAPER_STACKS)
 			{
-				if (client.getVarpValue(VarPlayer.SOULREAPER_STACKS) == 0)
+				if (manager.currentSraStacks == 0)
 				{
 					manager.ticksSinceSraDecay = 0;
 				}
@@ -485,16 +492,14 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 
 			if (event.getVarbitId() == Varbit.RONDACHE_STACKS)
 			{
-				int stacks = client.getVarbitValue(Varbit.RONDACHE_STACKS);
-
-				if (manager.lastRondacheStacks > 1 && stacks == 0)
+				if (manager.lastRondacheStacks > 1 && manager.currentRondacheStacks == 0)
 				{
 					manager.rondacheCooldownTicks = RegenMeter.RONDACHE_SPEC_COOLDOWN_TICKS;
 				}
 
-				manager.lastRondacheStacks = stacks;
+				manager.lastRondacheStacks = manager.currentRondacheStacks;
 
-				if (stacks == 0)
+				if (manager.currentRondacheStacks == 0)
 				{
 					manager.ticksSinceRondacheDecay = 0;
 				}
@@ -573,7 +578,6 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		String group = event.getGroup();
 		String key = event.getKey();
 
-		//TOP_RIGHT snapcorner config position changed
 		if (group.equals(ConfigGroup.Core.RUNELITE))
 		{
 			if (key.equals(ConfigKeys.Core.SNAPCORNER_PREFIX + OverlayPosition.CANVAS_TOP_RIGHT + ConfigKeys.Core.SNAPCORNER_CONFIG_LOCATION))
@@ -604,6 +608,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 					if (pluginManager.isPluginActive(resourcePacksPlugin) == newValue)
 					{
 						spriteCache.clear();
+						specTrackerOrb.redraw();
 						return true;
 					}
 					else
@@ -618,7 +623,10 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		{
 			if (key.equals(ConfigKeys.Hub.SELECTED_HUB_PACK) || key.equals(ConfigKeys.Hub.RESOURCE_PACK))
 			{
-				clientThread.invokeLater(() -> spriteCache.clear());
+				clientThread.invokeLater(() -> {
+					spriteCache.clear();
+					specTrackerOrb.redraw();
+				});
 			}
 		}
 		else if (group.equals(ConfigGroup.Core.MINIMAP))
@@ -776,6 +784,18 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 					break;
 
 				case ConfigKeys.SHOW_SPEC_TRACKER_ORB:
+				case ConfigKeys.SPEC_TRACKER_ORB_TEXT_COLOR:
+				case ConfigKeys.SPEC_TRACKER_ORB_TEXT_SHADOW_COLOR:
+				case ConfigKeys.SPEC_TRACKER_ORB_TEXT_SHADOW_STYLE:
+				case ConfigKeys.SPEC_QOL_ORB_COLOR:
+				case ConfigKeys.SPEC_QOL_ORB_EMPTY_COLOR:
+				case ConfigKeys.SPEC_QOL_ORB_REGEN_COLOR:
+				case ConfigKeys.SPEC_QOL_SRA_ORB_COLOR:
+				case ConfigKeys.SPEC_QOL_SRA_ORB_EMPTY_COLOR:
+				case ConfigKeys.SPEC_QOL_SRA_ORB_REGEN_COLOR:
+				case ConfigKeys.SPEC_QOL_RONDACHE_ORB_COLOR:
+				case ConfigKeys.SPEC_QOL_RONDACHE_ORB_EMPTY_COLOR:
+				case ConfigKeys.SPEC_QOL_RONDACHE_ORB_REGEN_COLOR:
 					clientThread.invokeLater(() -> specTrackerOrb.updateWorn());
 					break;
 
@@ -826,6 +846,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		manager.isUpdatingProfile = true;
 		clientThread.invoke(() -> {
 			spriteCache.clear();
+			specTrackerOrb.redraw();
 			manager.reload(false);
 		});
 	}

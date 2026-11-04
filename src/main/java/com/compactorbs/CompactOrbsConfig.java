@@ -223,11 +223,23 @@ public interface CompactOrbsConfig extends Config
 	String qol = "qol";
 
 	@ConfigItem(
-		keyName = ConfigKeys.SHOW_SPEC_REGEN_METER,
-		name = "Show spec. attack regen meter",
-		description = "Show a ring around the special attack orb. (Disable `Regen Meters` spec. attack meter)",
+		keyName = ConfigKeys.HIDE_SPEC_ENERGY_METER,
+		name = "Hide native spec energy meter",
+		description = "Hide the native meter on the Special attack orb.",
 		section = qol,
 		position = 0
+	)
+	default boolean hideSpecEnergyMeter()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.SHOW_SPEC_REGEN_METER,
+		name = "Show spec regen meter",
+		description = "Show a ring around the special attack orb. (Disable `Regen Meters` spec. attack meter)",
+		section = qol,
+		position = 1
 	)
 	default boolean showSpecRegenMeter()
 	{
@@ -235,13 +247,14 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = ConfigKeys.HIDE_SPEC_ENERGY_METER,
-		name = "Hide native spec energy meter",
-		description = "Hide the native meter on the Special attack orb.",
+		keyName = ConfigKeys.APPLY_COLORS_TO_NATIVE_SPEC,
+		name = "Apply colors to native spec orb",
+		description = "Apply the colors below to the native spec orb. <br>" +
+			"When the tracker orb is enabled, colors will be applied regardless for non-energy based specs.",
 		section = qol,
-		position = 1
+		position = 2
 	)
-	default boolean hideSpecEnergyMeter()
+	default boolean applyColorsToNativeSpec()
 	{
 		return false;
 	}
@@ -251,7 +264,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Show tracker orb",
 		description = "Show an additional orb that tracks spec energy state.",
 		section = qol,
-		position = 2
+		position = 3
 	)
 	default boolean showSpecTrackerOrb()
 	{
@@ -263,9 +276,21 @@ public interface CompactOrbsConfig extends Config
 		name = "Show tracker regen meter",
 		description = "Show a ring around the tracker orb.",
 		section = qol,
-		position = 3
+		position = 4
 	)
 	default boolean showTrackerOrbRegenMeter()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.PREVENT_TRACKER_ORB_CLICKTHROUGH,
+		name = "Prevent tracker orb clickthrough",
+		description = "Prevents clicks from passing through the tracker orb.",
+		section = qol,
+		position = 5
+	)
+	default boolean trackerOrbPreventClickThrough()
 	{
 		return false;
 	}
@@ -275,7 +300,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Text color",
 		description = "Recolor the text displayed on the tracker orb.",
 		section = qol,
-		position = 4
+		position = 6
 	)
 	default Color specTrackerOrbTextColor()
 	{
@@ -287,7 +312,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Text shadow color",
 		description = "Recolor the shadow/outline of the text displayed on the tracker orb.",
 		section = qol,
-		position = 5
+		position = 7
 	)
 	default Color specTrackerOrbTextShadowColor()
 	{
@@ -299,7 +324,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Shadow style",
 		description = "Show a drop shadow, or outline for the tracker orb text.",
 		section = qol,
-		position = 6
+		position = 8
 	)
 	default SpecTrackerOrb.OrbTextShadowStyle specTrackerOrbTextShadowStyle()
 	{
@@ -311,7 +336,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Orb size",
 		description = "Show a vanilla sized orb or a compact version.",
 		section = qol,
-		position = 7
+		position = 9
 	)
 	default SpecTrackerOrb.OrbDisplayMode displayMode()
 	{
@@ -324,7 +349,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Orb color",
 		description = "Recolor the orb filler for the native orb.",
 		section = qol,
-		position = 8
+		position = 10
 	)
 	default Color specQoLOrbColor()
 	{
@@ -337,7 +362,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Orb empty color",
 		description = "Recolor the empty background behind the orb filler for the native orb.",
 		section = qol,
-		position = 9
+		position = 11
 	)
 	default Color specQoLOrbEmptyColor()
 	{
@@ -350,7 +375,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Regen color",
 		description = "Recolor the regen meter for the native orb.",
 		section = qol,
-		position = 10
+		position = 12
 	)
 	default Color specQoLOrbRegenColor()
 	{
@@ -363,7 +388,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Soulreaper axe orb",
 		description = "Recolor the orb filler for the Soulreaper axe.",
 		section = qol,
-		position = 11
+		position = 13
 	)
 	default Color specQoLSraOrbColor()
 	{
@@ -376,7 +401,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Soulreaper axe empty",
 		description = "Recolor the empty background behind the filler for the Soulreaper axe.",
 		section = qol,
-		position = 12
+		position = 14
 	)
 	default Color specQoLSraOrbEmptyColor()
 	{
@@ -389,7 +414,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Soulreaper axe regen",
 		description = "Recolor the regen meter for the Soulreaper axe.",
 		section = qol,
-		position = 13
+		position = 15
 	)
 	default Color specQoLSraOrbRegenColor()
 	{
@@ -402,7 +427,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Rondache orb",
 		description = "Recolor the orb filler for the Rondache.",
 		section = qol,
-		position = 14
+		position = 16
 	)
 	default Color specQoLRondacheOrbColor()
 	{
@@ -415,7 +440,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Rondache empty",
 		description = "Recolor the empty background behind the filler for the Rondache.",
 		section = qol,
-		position = 15
+		position = 17
 	)
 	default Color specQoLRondacheOrbEmptyColor()
 	{
@@ -428,7 +453,7 @@ public interface CompactOrbsConfig extends Config
 		name = "Rondache meter",
 		description = "Recolor the regen meter for the Rondache.",
 		section = qol,
-		position = 16
+		position = 18
 	)
 	default Color specQoLRondacheOrbRegenColor()
 	{

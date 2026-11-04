@@ -28,16 +28,20 @@
 package com.compactorbs.widget.overlay.spec;
 
 import com.compactorbs.CompactOrbsConfig;
+import static com.compactorbs.CompactOrbsConstants.ConfigKeys.OVERLAY_PREFIX;
 import com.compactorbs.CompactOrbsConstants.Enum;
 import com.compactorbs.CompactOrbsConstants.InventoryId;
 import com.compactorbs.CompactOrbsConstants.Sprite;
 import com.compactorbs.CompactOrbsConstants.Varbit;
+import com.compactorbs.CompactOrbsConstants.Widgets;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.util.OrbUtil;
-import com.compactorbs.widget.elements.Orbs;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -73,13 +77,19 @@ public class SpecTrackerOrb extends Overlay
 	@Inject
 	private SpriteCache spriteCache;
 
-	//frame/orb size
+	private final Dimension size = new Dimension();
+
+	private SpecOrbType type;
+
+	private volatile boolean isRendered;
+	private volatile BufferedImage orbSnapshot;
+	private OrbDisplayMode snapshotMode;
+	private double snapshotPercent = -1;
+	private boolean redraw = true;
+
 	private static final int WIDTH = 57;
 	private static final int HEIGHT = 34;
 	public static final int ORB_SIZE = 26;
-
-	//per orb config
-	private SpecOrbType type;
 
 	private int energy;
 	private int displayed;
@@ -89,7 +99,7 @@ public class SpecTrackerOrb extends Overlay
 	private boolean isRondacheEquipped;
 	private boolean weaponHasSpec;
 	private boolean shieldHasSpec;
-	private boolean isVisible;
+	private boolean shouldShow;
 
 	@Getter
 	@RequiredArgsConstructor
@@ -155,39 +165,76 @@ public class SpecTrackerOrb extends Overlay
 	{
 		setPriority(Overlay.PRIORITY_LOW);
 		setLayer(OverlayLayer.ABOVE_WIDGETS);
-		setPosition(OverlayPosition.DYNAMIC);
+		setPosition(OverlayPosition.TOP_LEFT);
 		setMovable(true);
-		setSnappable(true);
+		setSnappable(false);
 	}
 
 	@Override
 	public String getName()
 	{
-		return "COMPACT_ORBS_SPEC_TRACKER_ORB";
+		return OVERLAY_PREFIX + "SPEC_TRACKER_ORB";
 	}
 
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!config.showSpecTrackerOrb() || !isVisible || !isSpecOrbVisible())
+		if (!config.showSpecTrackerOrb() || !shouldShow)
 		{
+			isRendered = false;
+			return null;
+		}
+
+		final Widget spec = getSpecOrb();
+		if (spec == null || spec.isHidden())
+		{
+			isRendered = false;
 			return null;
 		}
 
 		final OrbDisplayMode mode = config.displayMode();
-		final int x = mode.getX() + mode.getOffset();
-		final int y = mode.getY() + mode.getOffset();
-		final Color color = specColors.color(type);
-		final Color emptyColor = specColors.emptyColor(type);
+		final double percent = config.showTrackerOrbRegenMeter() ? manager.getSpecOrbPercentage(type) : 0;
 
-		renderFrame(graphics, mode);
-		renderIndicator(graphics, x, y, color);
-		renderEmpty(graphics, x, y, emptyColor);
-		renderRegenMeter(graphics, x, y);
-		renderIcon(graphics, mode, x, y);
-		renderText(graphics, mode);
+		//to reduce unnecessary draws per frame, create a snapshot when the regen percentage changes (game tick),
+		//varbit/varp updates, or on config change
+		if (redraw || orbSnapshot == null || mode != snapshotMode || percent != snapshotPercent)
+		{
+			orbSnapshot = composeOrb(mode, percent);
+			snapshotMode = mode;
+			snapshotPercent = percent;
+			redraw = false;
 
-		return new Dimension(mode.getWidth(), mode.getHeight());
+			size.setSize(mode.getWidth(), mode.getHeight());
+		}
+
+		graphics.drawImage(orbSnapshot, 0, 0, null);
+		isRendered = true;
+		return size;
+	}
+
+	private BufferedImage composeOrb(OrbDisplayMode mode, double percent)
+	{
+		final BufferedImage image = new BufferedImage(mode.getWidth(), mode.getHeight(), BufferedImage.TYPE_INT_ARGB);
+		final Graphics2D g = image.createGraphics();
+		try
+		{
+			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+			final int x = mode.getX() + mode.getOffset();
+			final int y = mode.getY() + mode.getOffset();
+
+			renderFrame(g, mode);
+			renderIndicator(g, x, y, specColors.color(type));
+			renderEmpty(g, x, y, specColors.emptyColor(type));
+			renderRegenMeter(g, x, y, percent, specColors.regenColor(type));
+			renderIcon(g, mode, x, y);
+			renderText(g, mode);
+		}
+		finally
+		{
+			g.dispose();
+		}
+		return image;
 	}
 
 	private void renderFrame(Graphics2D graphics, OrbDisplayMode mode)
@@ -217,11 +264,11 @@ public class SpecTrackerOrb extends Overlay
 		}
 	}
 
-	private void renderRegenMeter(Graphics2D graphics, int x, int y)
+	private void renderRegenMeter(Graphics2D graphics, int x, int y, double percent, Color regenColor)
 	{
 		if (config.showTrackerOrbRegenMeter())
 		{
-			OrbUtil.drawRegenArc(graphics, x, y, ORB_SIZE, manager.getSpecOrbPercentage(type), specColors.regenColor(type));
+			OrbUtil.drawRegenArc(graphics, x, y, ORB_SIZE, percent, regenColor);
 		}
 	}
 
@@ -260,7 +307,7 @@ public class SpecTrackerOrb extends Overlay
 		}
 		else
 		{
-			x = (mode.getWidth() / 2) - (textWidth / 2);
+			x = (mode.getWidth() - textWidth) / 2;
 			y = (mode.isSmallBoth() ? 14 : 6) + (mode.getHeight() / 2);
 		}
 
@@ -345,7 +392,7 @@ public class SpecTrackerOrb extends Overlay
 		//TODO if DFS gets a special...
 		else
 		{
-			isVisible = false;
+			shouldShow = false;
 			return;
 		}
 
@@ -353,19 +400,26 @@ public class SpecTrackerOrb extends Overlay
 		displayed = energy / type.getDivisor();
 		max = type.getMax();
 
-		isVisible = true;
+		shouldShow = true;
+		redraw();
 	}
 
-	//should hide the tracker orb when the spec orb is hidden (hide on side panel, etc)
-	private boolean isSpecOrbVisible()
+	//redraw the orb snapshot
+	public void redraw()
 	{
-		Widget widget = client.getWidget(Orbs.SPEC_ORB_CONTAINER.getComponentId());
-		if (widget == null)
+		redraw = true;
+	}
+
+	private Widget getSpecOrb()
+	{
+		Widget widget = client.getWidget(Widgets.Orb.SPEC_ORB);
+
+		if (widget == null || widget.isHidden())
 		{
-			return true;
+			widget = client.getWidget(Widgets.Orb.NO_MAP_SPEC_ORB);
 		}
 
-		return !widget.isHidden();
+		return widget;
 	}
 
 	//from the cs2 - the orb counts as active when on a members world, or in LMS (for f2p)
@@ -401,5 +455,27 @@ public class SpecTrackerOrb extends Overlay
 		}
 
 		return equipment.getId();
+	}
+
+	//true if the point is over a drawn pixel of the orb snapshot
+	public boolean isOverOrb(Point p)
+	{
+		final BufferedImage image = orbSnapshot;
+		if (image == null || !isRendered)
+		{
+			return false;
+		}
+
+		final Rectangle bounds = getBounds();
+		final int x = p.x - bounds.x;
+		final int y = p.y - bounds.y;
+
+		if (x < 0 || y < 0 || x >= image.getWidth() || y >= image.getHeight())
+		{
+			return false;
+		}
+
+		//non-transparent pixel counts as part of the orb
+		return (image.getRGB(x, y) >>> 24) != 0;
 	}
 }

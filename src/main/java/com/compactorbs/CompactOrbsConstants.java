@@ -81,6 +81,7 @@ public class CompactOrbsConstants
 		public static final String HIDE_MINIMAP_WITH_SIDE_PANEL = "hideMinimapWithSidePanel";
 		public static final String HIDE_SPEC_ENERGY_METER = "hideSpecEnergyBars";
 		public static final String SHOW_SPEC_REGEN_METER = "showSpecRegenMeter";
+		public static final String APPLY_COLORS_TO_NATIVE_SPEC = "applyColorsToNativeSpec";
 		public static final String SHOW_SPEC_TRACKER_ORB = "showSpecTrackerOrb";
 		public static final String SPEC_TRACKER_ORB_MODE = "specTrackerOrbMode";
 		public static final String SHOW_SPEC_TRACKER_REGEN_METER = "showSpecTrackerRegenMeter";
@@ -96,6 +97,7 @@ public class CompactOrbsConstants
 		public static final String SPEC_QOL_RONDACHE_ORB_COLOR = "specQoLRondacheOrbColor";
 		public static final String SPEC_QOL_RONDACHE_ORB_EMPTY_COLOR = "specQoLRondacheOrbEmptyColor";
 		public static final String SPEC_QOL_RONDACHE_ORB_REGEN_COLOR = "specQoLRondacheOrbRegenColor";
+		public static final String PREVENT_TRACKER_ORB_CLICKTHROUGH = "preventTrackerOrbClickthrough";
 		public static final String HP_ORB_SLOT = "hpOrbSlot";
 		public static final String PRAYER_ORB_SLOT = "prayerOrbSlot";
 		public static final String RUN_ORB_SLOT = "runOrbSlot";
@@ -532,7 +534,10 @@ public class CompactOrbsConstants
 		public static final int FRAME = SpriteID.OrbFrame.FRAME;
 		public static final int FRAME_HOVERED = SpriteID.OrbFrame.FRAME_HOVERED;
 		public static final int FRAME_SMALL = SpriteID.Ring34._0;
-		public static final int FRAME_SMALL_HOVERED = SpriteID.Ring34._1;
+		//public static final int FRAME_SMALL_HOVERED = SpriteID.Ring34._1;
+
+		//the spec orb filler used for non-specs
+		public static final int RUN_INDICATOR = SpriteID.OrbFiller.RUN;
 
 		public static final int SPEC_INDICATOR = SpriteID.OrbFiller.SPECIAL;
 		public static final int SPEC_INDICATOR_ACTIVE = SpriteID.OrbFiller.SPECIAL_ACTIVATED;
@@ -603,6 +608,7 @@ public class CompactOrbsConstants
 
 			public static final int NO_MAP_SPEC_ORB = InterfaceID.OrbsNomap.ORB_SPECENERGY;
 			public static final int NO_MAP_SPEC_ORB_ICON = InterfaceID.OrbsNomap.SPECENERGY_ICON;
+			public static final int NO_MAP_SPEC_ORB_INDICATOR = InterfaceID.OrbsNomap.SPECENERGY_INDICATOR;
 
 			public static final int ACTIVITY_ORB = InterfaceID.Orbs.ORB_CONTENTRECOM;
 			public static final int ACTIVITY_ORB_BACKING = InterfaceID.Orbs.CR_BACKING;
@@ -670,11 +676,6 @@ public class CompactOrbsConstants
 			public static final int LOGOUT_X_ICON = InterfaceID.ToplevelPreEoc.ICON10;
 			public static final int LOGOUT_X_STONE = InterfaceID.ToplevelPreEoc.STONE10;
 			public static final int SIDE_MOVABLE = InterfaceID.ToplevelPreEoc.SIDE_MOVABLE;
-		}
-
-		public static final class SidePanel
-		{
-			public static final int SIDE_PANEL_CONTAINER = InterfaceID.ToplevelPreEoc.SIDE_CONTAINER;
 		}
 	}
 }

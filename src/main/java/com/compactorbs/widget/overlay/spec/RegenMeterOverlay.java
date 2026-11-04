@@ -27,6 +27,7 @@
 package com.compactorbs.widget.overlay.spec;
 
 import com.compactorbs.CompactOrbsConfig;
+import com.compactorbs.CompactOrbsConstants.RegenMeter;
 import com.compactorbs.CompactOrbsConstants.Sprite;
 import com.compactorbs.CompactOrbsConstants.Widgets;
 import com.compactorbs.CompactOrbsManager;
@@ -91,25 +92,33 @@ public class RegenMeterOverlay extends Overlay
 
 		final Color color = specColors.color(type);
 		final Color emptyColor = specColors.emptyColor(type);
-		final Color regenColor = specColors.regenColor(type);
+		Color regenColor = specColors.regenColor(type);
 
-		if (config.showSpecTrackerOrb())
+		if (config.applyColorsToNativeSpec() ||
+			config.showSpecTrackerOrb() && type != SpecOrbType.SPEC)
 		{
-			final boolean isVanillaSpec = type == SpecOrbType.SPEC;
-
-			if (!isVanillaSpec || color != null)
+			if (color != null || emptyColor != null)
 			{
-				renderIndicator(g, x, y, color);
+				Widget indicator = client.getWidget(Widgets.Orb.SPEC_ORB_INDICATOR);
+				if (indicator == null || indicator.isHidden())
+				{
+					indicator = client.getWidget(Widgets.Orb.NO_MAP_SPEC_ORB_INDICATOR);
+				}
+
+				if (hasSpecAttack(indicator))
+				{
+					renderIndicator(g, x, y, color, isSpecActive(indicator));
+					renderEmpty(g, x, y, type, emptyColor);
+					renderIcon(g, x, y, type);
+				}
 			}
+		}
 
-			if (!isVanillaSpec || emptyColor != null)
+		if (!config.applyColorsToNativeSpec())
+		{
+			if (type == SpecOrbType.SPEC && regenColor != null)
 			{
-				renderEmpty(g, x, y, type, emptyColor);
-			}
-
-			if (!isVanillaSpec || color != null || emptyColor != null)
-			{
-				renderIcon(g, x, y, type);
+				regenColor = RegenMeter.SPECIAL_COLOR;
 			}
 		}
 
@@ -117,9 +126,9 @@ public class RegenMeterOverlay extends Overlay
 		return null;
 	}
 
-	private void renderIndicator(Graphics2D g, int x, int y, Color color)
+	private void renderIndicator(Graphics2D g, int x, int y, Color color, boolean specActive)
 	{
-		int id = isSpecActive() ? Sprite.SPEC_INDICATOR_ACTIVE : Sprite.SPEC_INDICATOR;
+		int id = specActive ? Sprite.SPEC_INDICATOR_ACTIVE : Sprite.SPEC_INDICATOR;
 
 		final BufferedImage indicator = spriteCache.getRecoloredImage(id, color);
 		if (indicator != null)
@@ -164,26 +173,24 @@ public class RegenMeterOverlay extends Overlay
 		return widget == null || widget.isHidden() ? null : widget.getBounds();
 	}
 
-	private boolean isSpecActive()
+	private boolean isSpecActive(Widget widget)
 	{
-		Widget indicator = client.getWidget(Widgets.Orb.SPEC_ORB_INDICATOR);
-		if (indicator == null || indicator.isHidden())
-		{
-			return false;
-		}
+		return widget != null && widget.getSpriteId() == Sprite.SPEC_INDICATOR_ACTIVE;
+	}
 
-		return indicator.getSpriteId() == Sprite.SPEC_INDICATOR_ACTIVE;
+	private boolean hasSpecAttack(Widget widget)
+	{
+		return widget != null && widget.getSpriteId() != Sprite.RUN_INDICATOR;
 	}
 
 	private int getSpecIconId()
 	{
-		Widget icon = client.getWidget(Widgets.Orb.SPEC_ORB_ICON);
-		if (icon == null || icon.isHidden())
+		Widget indicator = client.getWidget(Widgets.Orb.SPEC_ORB_ICON);
+		if (indicator == null || indicator.isHidden())
 		{
-			icon = client.getWidget(Widgets.Orb.NO_MAP_SPEC_ORB_ICON);
+			indicator = client.getWidget(Widgets.Orb.NO_MAP_SPEC_ORB_ICON);
 		}
-
-		return icon != null && !icon.isHidden() ? icon.getSpriteId() : -1;
+		return indicator != null && !indicator.isHidden() ? indicator.getSpriteId() : -1;
 	}
 
 }
