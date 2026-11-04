@@ -6,27 +6,31 @@
 ---
 
 # **What's new:**
-### Layout: **Floating**
-- Utilizes RuneLite's native dragging (`Alt`) to reposition the minimap widgets without restriction.
-    - default arrangement will be kept for any widget that is inside the set `snapcorner` while the minimap is visible
-        - the set `snapcorner` (`top-right`) is defined as the one it would reset back to when you `alt`-`right-click` it
-    - only orbs that are not in the snapcorner will be hidden while `Hide orbs with inventory tab` is enabled
-    - similar to `compact-layouts`, when the `world-map` or `logout-x` are hidden their hotkey functions are retained
-    - `layout` features that are supported:
-      - `edit-mode`
-      - `prevent-clickthrough`
-      - `hide-with-inventory`
 
-> `compact-layouts` are still available and supported - see below!
+### v2.0.6: Spec QoL
+- Display an orb that can help keep track of stacks/spec energy.
+    - supported spec types: `Soulreaper Axe`, `Rondache`, and `spec-energy`
+    - color the tracker orb based on the supported spec types (can also be applied to the native spec orb)
+    - selectable orb size: `Original` or `Small`
+        - small options include; `text-only`, `icon-only`, or `both`
+    - change the displayed texts; color, shadow color, or shadow-type (original or outlined)
+    - compatible with resource packs
+    - drag to reposition
+    - **other**:
+        - option to hide the native spec bar meter
+        - **recommended**: turn off the `Regeneration Meter` plugins spec meter, if enabling: `Show spec regen meter`
+
+  ![](https://imgur.com/S1gJAyt.gif)
+
+> inspired by the plugin: [Soulreaper Axe QoL](https://runelite.net/plugin-hub/show/soulreaper-axe-qol) by `seacelery`
 
 ---
 
 <br/>
 
-| Table:                                    | Description:                                                                          |
+| Section:                                    | Description:                                                                        |
 |-------------------------------------------|---------------------------------------------------------------------------------------|
 | **[Layout](#layout)**                     | Choose from a few presets or create a custom compact-layout.                          |
-| **[Spec QoL Options](#spec-qol-options)** | Spec orb related QoL options.                                                         |
 | **[Toggle Button](#toggle-button)**       | Switches between `vanilla` or `compact` view.<br/>Also used to enter/exit `edit-mode` |
 | **Hotkey**                                | A configurable keybind, by default: `shift + insert`.                                 |
 | **[Detached Minimap](#detached-minimap)** | Enable a detached minimap while in `compact-view`.                                    |
@@ -36,6 +40,20 @@
 ---
 
 # Layout
+
+### Layout: **Floating**
+- Utilizes RuneLite's native dragging (`Alt`) to reposition the minimap widgets without restriction.
+    - default arrangement will be kept for any widget that is inside the set `snapcorner` while the minimap is visible
+        - the set `snapcorner` (`top-right`) is defined as the one it would reset back to when you `alt`-`right-click` it
+    - only orbs that are not in the snapcorner will be hidden while `Hide orbs with inventory tab` is enabled
+    - similar to `compact-layouts`, when the `world-map` or `logout-x` are hidden their hotkey functions are retained
+    - `layout` features that are supported:
+        - `edit-mode`
+        - `prevent-clickthrough`
+        - `hide-with-inventory`
+
+<br/>
+
 ### Types
 - Choose a compact-layout that will be visible when the minimap is hidden:
     - `vertical`, `horizontal`, `horizontal-wide`, `custom`
@@ -92,13 +110,6 @@
 - `anchor` determines where preset-layouts are positioned within the container and the direction used by `reordering`.
 
 - `vertical-offset` adjusts the layout by the specified value if its `anchor` is set to `bottom`.
-
-<br/>
-
----
-
-# Spec QoL Options
-- inspired by the `Soulreaper Axe QoL` plugin by `seacelery`
 
 <br/>
 
