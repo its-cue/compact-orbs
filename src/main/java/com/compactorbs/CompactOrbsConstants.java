@@ -42,7 +42,7 @@ public class CompactOrbsConstants
 	public static final class ConfigGroup
 	{
 		public static final String GROUP_NAME = "compactorbs";
-		public static final String CURRENT_VERSION = "2.0.5";
+		public static final String CURRENT_VERSION = "2.0.6";
 		public static final int CONFIG_VERSION = 2;
 		public static final int NOTICE_VERSION = 3;
 

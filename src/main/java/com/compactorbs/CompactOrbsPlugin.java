@@ -101,7 +101,7 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 @PluginDescriptor(
 	name = "Compact Orbs",
 	description = "More customization options for the Minimap & Orbs.",
-	tags = {"compact", "orb", "layout", "hide", "minimap", "resizable", "classic", "modern", "world", "map", "wiki", "swap", "overlay", "fixed", "interface", "floating", "drag", "position"},
+	tags = {"compact", "orb", "layout", "hide", "minimap", "resizable", "classic", "modern", "world", "map", "wiki", "swap", "overlay", "fixed", "interface", "floating", "drag", "position", "qol"},
 	conflicts = {"Fixed Resizable Hybrid", "Orb Hider", "Minimap Hider", "Movable Orbs", "Interface Layout", "Vicious Bars"}
 )
 public class CompactOrbsPlugin extends Plugin implements KeyListener
