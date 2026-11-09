@@ -397,12 +397,13 @@ public class WidgetManager
 		}
 		if (target.getIndicatorId() != -1)
 		{
-			if (target.isSpec())
+			int o = opacity;
+			if (!manager.isEditingLayout && target.isSpec())
 			{
-				opacity = SPEC_ORB_INDICATOR_OPACITY;
+				o = SPEC_ORB_INDICATOR_OPACITY;
 			}
 
-			setOpacity(target.getIndicatorId(), opacity);
+			setOpacity(target.getIndicatorId(), o);
 		}
 		if (target.getIconId() != -1)
 		{

@@ -26,7 +26,6 @@
 package com.compactorbs.widget.layout.offset.impl;
 
 import com.compactorbs.CompactOrbsConfig.TogglePlacement;
-import com.compactorbs.CompactOrbsConstants;
 import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.elements.Orbs;
@@ -49,11 +48,6 @@ public class MinimapButtonOffset implements OffsetTarget
 			}
 
 			x = manager.getTogglePlacement().getX();
-
-			if (manager.isFloating())
-			{
-				return x;
-			}
 
 			if (manager.allowReordering() && !manager.isEditingLayout)
 			{

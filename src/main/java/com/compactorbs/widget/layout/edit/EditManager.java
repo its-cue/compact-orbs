@@ -139,8 +139,9 @@ public class EditManager
 		disableMinimap();
 		manager.hideWorldMap = false;
 		manager.hideLogoutX = false;
-
 		manager.setupCurrentLayout();
+		//show orbs that could be tab hidden
+		manager.refreshTabHiding();
 
 		updateBackground();
 		parent.setNoClickThrough(true);
@@ -341,7 +342,6 @@ public class EditManager
 		widgetManager.restoreMinimapRendering();
 
 		manager.setupCurrentLayout();
-
 		clearEditChildren();
 
 		Widget parent = widgetManager.getMapParent();

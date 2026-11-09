@@ -350,7 +350,10 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			case Script.TOPLEVEL_SIDE_CUSTOMIZE:
 				manager.hideLogout();
 				manager.updateLogoutXOverlay();
-				manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
+				if (!manager.isFloating())
+				{
+					manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
+				}
 				break;
 
 			case Script.ORBS_UPDATE_SPECENERGY:
@@ -372,9 +375,10 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				break;
 
 			case Script.WORLD_MAP_UPDATE:
-				if (!manager.isFloating() && manager.hideWorldMap)
+				if (manager.hideWorldMap)
 				{
 					widgetManager.remapTargets(Orbs.WORLD_MAP_CONTAINER);
+
 					return;
 				}
 			case Script.ORBS_UPDATE_STORE:
@@ -582,7 +586,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		{
 			if (key.equals(ConfigKeys.Core.SNAPCORNER_PREFIX + OverlayPosition.CANVAS_TOP_RIGHT + ConfigKeys.Core.SNAPCORNER_CONFIG_LOCATION))
 			{
-				if (!snapcorner.nativeDragWasDetected)
+				if (!snapcorner.nativeDragWasDetected && !manager.isMinimapHidden())
 				{
 					manager.sendDragHotkeyWarning();
 				}
@@ -818,11 +822,14 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 					{
 						if (!manager.isFixedMode())
 						{
-							widgetManager.clearForcedPosition(CompactOrbsManager.FLOATING_TARGETS);
-							widgetManager.clearForcedPosition(Orbs.LOGOUT_X_STONE);
+							//clear positions so they can't be stale on layout swap only
+							if (key.equals(ConfigKeys.ORB_LAYOUT))
+							{
+								widgetManager.clearForcedPosition(CompactOrbsManager.FLOATING_TARGETS);
+								widgetManager.clearForcedPosition(Orbs.LOGOUT_X_STONE);
+							}
 
 							manager.setupCurrentLayout();
-
 							manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
 						}
 					});

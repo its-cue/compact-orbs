@@ -27,7 +27,8 @@
 
 package com.compactorbs.widget.overlay;
 
-import com.compactorbs.CompactOrbsConstants;
+import com.compactorbs.CompactOrbsConstants.Layout;
+import com.compactorbs.CompactOrbsConstants.Widgets;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.TargetWidget;
 import com.compactorbs.widget.elements.Minimap;
@@ -127,23 +128,8 @@ public class DetachedOrb extends Overlay
 			snapcorner.update(manager.followWhileDragging());
 		}
 
-		//keep the compass hidden when the side panel is closed
-		if (widget.getId() == Minimap.MODERN_MAP_MINIMAP.getComponentId() &&
-			manager.isMinimapHidden() &&
-			manager.hideOrbOnTabClose &&
-			!manager.isEditingLayout &&
-			!widget.isSelfHidden())
-		{
-			widget.setHidden(true);
-		}
-
-		//when the world map is hidden, don't put it in the snapcorner when its moved
-		if (widget.getId() == Orbs.WORLD_MAP_CONTAINER.getComponentId() &&
-			manager.hideWorldMap && !manager.isEditingLayout)
-		{
-			widget.setForcedPosition(getSnapcornerX(widget, parent), getSnapCornerY(widget) + getParentY(widget));
-			return null;
-		}
+		//todo - orbs still flicker (ex: store, logout-x, etc) while in a respositioned snapcorner & toggling the side panel (with the minimap hidden)
+		//should debug later, as its not really performative - just jarring... may need to refactor a lot of this as its kind of a headache
 
 		final Rectangle bounds = getBounds();
 		if (getPreferredLocation() != null || getPreferredPosition() != null ||
@@ -199,8 +185,8 @@ public class DetachedOrb extends Overlay
 				if ((widget.getId() == Minimap.MODERN_MAP_MINIMAP.getComponentId() ||
 					widget.getId() == Minimap.CLASSIC_MAP_MINIMAP.getComponentId()))
 				{
-					return new Dimension(CompactOrbsConstants.Layout.Original.MAP_CONTAINER_WIDTH,
-						CompactOrbsConstants.Layout.Original.MAP_CONTAINER_HEIGHT);
+					return new Dimension(Layout.Original.MAP_CONTAINER_WIDTH,
+						Layout.Original.MAP_CONTAINER_HEIGHT);
 				}
 				else
 				{
@@ -220,13 +206,21 @@ public class DetachedOrb extends Overlay
 		//adjust LEFT aligned widgets when they reset to their snapcorner
 		if (widget.getXPositionMode() == WidgetPositionMode.ABSOLUTE_LEFT)
 		{
-			final int offset = client.getCanvasWidth() - CompactOrbsConstants.Layout.Original.MAP_CONTAINER_WIDTH;
+			final int offset = client.getCanvasWidth() - Layout.Original.MAP_CONTAINER_WIDTH;
 
 			return widget.getOriginalX() + offset;
 		}
 
+		if (widget.getId() == Orbs.WORLD_MAP_CONTAINER.getComponentId())
+		{
+			if (manager.hideWorldMap)
+			{
+				return -29;
+			}
+		}
+
 		int offset = widget.getOriginalX();
-		if (widget.getParent().getId() == CompactOrbsConstants.Widgets.Orb.UNIVERSE)
+		if (widget.getParent().getId() == Widgets.Orb.UNIVERSE)
 		{
 			//adjust wiki/world map by the difference between the universe and map container width
 			offset = 4;
@@ -239,14 +233,13 @@ public class DetachedOrb extends Overlay
 	{
 		if (widget.getId() == Orbs.WORLD_MAP_CONTAINER.getComponentId())
 		{
-			if (manager.isEditingLayout)
-			{
-				return CompactOrbsConstants.Layout.Original.WORLD_MAP_Y;
-			}
-
 			if (manager.hideWorldMap)
 			{
-				return -39;//account for +10 from getParentY
+				return -29;//account for +10 from getParentY
+			}
+			else
+			{
+				return Layout.Original.WORLD_MAP_Y;
 			}
 		}
 
@@ -255,9 +248,9 @@ public class DetachedOrb extends Overlay
 
 	private int getParentY(Widget widget)
 	{
-		if (widget.getParent().getId() == CompactOrbsConstants.Widgets.Orb.UNIVERSE)
+		if (widget.getParent().getId() == Widgets.Orb.UNIVERSE)
 		{
-			return CompactOrbsConstants.Layout.ORBS_CONTAINER_OFFSET_Y;
+			return Layout.ORBS_CONTAINER_OFFSET_Y;
 		}
 
 		return 0;
@@ -280,10 +273,48 @@ public class DetachedOrb extends Overlay
 		return widget;
 	}
 
+	//exclude the minimap, since its container is used for the compass
+	private boolean isWidgetHidden(Widget widget)
+	{
+		return widget.isHidden() && widget.getId() != Minimap.MODERN_MAP_MINIMAP.getComponentId();
+	}
+
+	//world map hiding uses an offset rather than setHidden()
+	private boolean hideWorldMap(Widget widget)
+	{
+		return widget.getId() == Orbs.WORLD_MAP_CONTAINER.getComponentId() && manager.hideWorldMap;
+	}
+
+	//wiki container doesn't get directly hidden, only its children
+	private boolean hideWiki(Widget widget)
+	{
+		boolean childHidden = true;
+		if (widget.getId() == Orbs.WIKI_ICON_CONTAINER.getComponentId())
+		{
+			//wiki plugin child is index 0
+			Widget child = widget.getChild(0);
+			if (child == null)
+			{
+				//vanilla child icon id
+				child = client.getWidget(Widgets.Orb.WIKI_ICON_VANILLA);
+			}
+
+			if (child != null)
+			{
+				childHidden = child.isHidden();
+			}
+		}
+
+		return widget.getId() == Orbs.WIKI_ICON_CONTAINER.getComponentId() &&
+			childHidden && !manager.isEditingLayout;
+	}
+
 	private Rectangle getParentBounds(final Widget widget)
 	{
 		if (widget == null ||
-			widget.isHidden() && widget.getId() != Minimap.MODERN_MAP_MINIMAP.getComponentId())
+			isWidgetHidden(widget) ||
+			hideWorldMap(widget) ||
+			hideWiki(widget))
 		{
 			parentBounds.setBounds(0, 0, 0, 0);
 			return parentBounds;

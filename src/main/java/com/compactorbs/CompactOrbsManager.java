@@ -37,6 +37,7 @@ import com.compactorbs.CompactOrbsConstants.RegenMeter;
 import com.compactorbs.CompactOrbsConstants.Script;
 import com.compactorbs.CompactOrbsConstants.Sprite;
 import com.compactorbs.CompactOrbsConstants.VarClient;
+import com.compactorbs.CompactOrbsConstants.VarPlayer;
 import com.compactorbs.CompactOrbsConstants.Varbit;
 import com.compactorbs.CompactOrbsConstants.Widgets.Classic;
 import com.compactorbs.CompactOrbsConstants.Widgets.MinimapOverlay;
@@ -61,6 +62,7 @@ import com.compactorbs.widget.overlay.DetachedOrb;
 import com.compactorbs.widget.overlay.SnapCorner;
 import com.compactorbs.widget.overlay.spec.SpecColorRegistry;
 import com.compactorbs.widget.overlay.spec.SpecOrbType;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -445,8 +447,18 @@ public class CompactOrbsManager
 		widgetManager.setTargetsHidden(hideCompass, Compass.values());
 
 		widgetManager.remapTargets(!isMinimapHidden(), Script.FORCE_UPDATE, Compass.values());
-		widgetManager.remapTargets(Orbs.values());
-		widgetManager.revalidate(Orbs.WORLD_MAP_CONTAINER, Orbs.WIKI_ICON_CONTAINER, Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
+
+		//don't remap detached orbs (prevent possible flicker)
+		widgetManager.remapTargets(
+			!isFloating() ? Orbs.values() :
+				Arrays.stream(Orbs.values())
+					.filter(o -> !isOverlayOrbDetached(o))
+					.toArray(TargetWidget[]::new));
+
+		if (!isFloating())
+		{
+			widgetManager.revalidate(Orbs.WORLD_MAP_CONTAINER, Orbs.WIKI_ICON_CONTAINER, Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
+		}
 
 		updateNoClickThrough();
 
@@ -1414,9 +1426,9 @@ public class CompactOrbsManager
 			return;
 		}
 
-		currentSpecEnergy = client.getVarpValue(CompactOrbsConstants.VarPlayer.CURRENT_SPEC_ENERGY);
-		currentSraStacks = client.getVarpValue(CompactOrbsConstants.VarPlayer.SOULREAPER_STACKS);
-		currentRondacheStacks = client.getVarbitValue(CompactOrbsConstants.Varbit.RONDACHE_STACKS);
+		currentSpecEnergy = client.getVarpValue(VarPlayer.CURRENT_SPEC_ENERGY);
+		currentSraStacks = client.getVarpValue(VarPlayer.SOULREAPER_STACKS);
+		currentRondacheStacks = client.getVarbitValue(Varbit.RONDACHE_STACKS);
 	}
 
 	public int getSpecOrbEnergyValues(SpecOrbType type)
@@ -1532,7 +1544,7 @@ public class CompactOrbsManager
 
 		for (TargetWidget target : orb.getTargets())
 		{
-			if (isOverlayOrbDetached(target) || isMinimapHidden() || !snapcorner.minimapInCorner)
+			if (isMinimapHidden() || !snapcorner.minimapInCorner || isFloating() && isOverlayOrbDetached(target))
 			{
 				return true;
 			}
@@ -1551,26 +1563,43 @@ public class CompactOrbsManager
 		refreshTabHiding();
 	}
 
-	private void refreshTabHiding()
+	public void refreshTabHiding()
 	{
 		for (HideOrbConfig orb : orbHidden.values())
 		{
-			if (!orb.getConfigKey().equals(ConfigKeys.COMPASS))
-			{
-				refreshOrb(orb);
-			}
+			refreshOrb(orb);
 		}
 	}
 
 	private void refreshOrb(HideOrbConfig orb)
 	{
-		final boolean hidden = orb.getGetter().get() || isTabHidden(orb);
+		boolean hidden = !isEditingLayout && (orb.getGetter().get() || isTabHidden(orb));
 
 		switch (orb.getConfigKey())
 		{
+			case ConfigKeys.COMPASS:
+				if (isFloating() && isMinimapHidden())
+				{
+					widgetManager.setTargetsHidden(hidden,
+						Minimap.MODERN_MAP_MINIMAP,
+						Compass.MODERN_COMPASS,
+						Compass.MODERN_COMPASS_OPTIONS
+					);
+				}
+				break;
+
 			case ConfigKeys.HIDE_WORLD:
 				hideWorldMap = hidden;
-				widgetManager.remapTargets(Orbs.WORLD_MAP_CONTAINER);
+
+				if (!isFloating())
+				{
+					widgetManager.remapTargets(Orbs.WORLD_MAP_CONTAINER);
+				}
+				else if (hidden)
+				{
+					widgetManager.clearForcedPosition(Orbs.WORLD_MAP_CONTAINER);
+					widgetManager.remapTargets(Orbs.WORLD_MAP_CONTAINER);
+				}
 				break;
 
 			case ConfigKeys.HIDE_LOGOUT_X:
@@ -1595,7 +1624,7 @@ public class CompactOrbsManager
 
 	public void hideOrbByConfig(String key)
 	{
-		if (isUpdatingProfile || isEditingLayout || key.equals(ConfigKeys.COMPASS))
+		if (isUpdatingProfile || isEditingLayout)
 		{
 			return;
 		}
@@ -1697,7 +1726,12 @@ public class CompactOrbsManager
 
 	public void sendDragHotkeyWarning()
 	{
-		//5 warnings should be fine, might gate to a config as well to reduce potential spam
+		if (isOverlayOrbDetached(Minimap.MODERN_MAP_MINIMAP) ||
+			isOverlayOrbDetached(Minimap.CLASSIC_MAP_MINIMAP))
+		{
+			return;
+		}
+
 		if (warnDragHotkeyAttempts < 5)
 		{
 			final String DRAG_HOTKEY_WARNING =
