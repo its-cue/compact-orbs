@@ -25,20 +25,6 @@
 > inspired by the plugin: [Soulreaper Axe QoL](https://runelite.net/plugin-hub/show/soulreaper-axe-qol) by `seacelery`
 
 ---
-
-<br/>
-
-| Section:                                    | Description:                                                                        |
-|-------------------------------------------|---------------------------------------------------------------------------------------|
-| **[Layout](#layout)**                     | Choose from a few presets or create a custom compact-layout.                          |
-| **[Toggle Button](#toggle-button)**       | Switches between `vanilla` or `compact` view.<br/>Also used to enter/exit `edit-mode` |
-| **Hotkey**                                | A configurable keybind, by default: `shift + insert`.                                 |
-| **[Detached Minimap](#detached-minimap)** | Enable a detached minimap while in `compact-view`.                                    |
-
-<br/>
-
----
-
 # Layout
 
 ### Layout: **Floating**
