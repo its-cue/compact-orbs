@@ -378,7 +378,6 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				if (manager.hideWorldMap)
 				{
 					widgetManager.remapTargets(Orbs.WORLD_MAP_CONTAINER);
-
 					return;
 				}
 			case Script.ORBS_UPDATE_STORE:

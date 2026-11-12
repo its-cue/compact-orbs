@@ -637,6 +637,8 @@ public class CompactOrbsManager
 		Widget parent = widgetManager.getOrbsParent();
 		if (parent == null)
 		{
+			minimapButton = null;
+			compassFrame = null;
 			return;
 		}
 
