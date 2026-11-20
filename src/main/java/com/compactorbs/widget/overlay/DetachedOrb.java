@@ -208,6 +208,14 @@ public class DetachedOrb extends Overlay
 		{
 			final int offset = client.getCanvasWidth() - Layout.Original.MAP_CONTAINER_WIDTH;
 
+			if (widget.getId() == Orbs.ACTIVITY_ORB_CONTAINER.getComponentId())
+			{
+				if (!manager.isEditingLayout && (manager.isStoreOrbDisabled() || manager.isStoreHidden()))
+				{
+					return Layout.Original.STORE_ORB_X + offset;
+				}
+			}
+
 			return widget.getOriginalX() + offset;
 		}
 
@@ -240,6 +248,14 @@ public class DetachedOrb extends Overlay
 			else
 			{
 				return Layout.Original.WORLD_MAP_Y;
+			}
+		}
+
+		if (widget.getId() == Orbs.ACTIVITY_ORB_CONTAINER.getComponentId())
+		{
+			if (!manager.isEditingLayout && (manager.isStoreOrbDisabled() || manager.isStoreHidden()))
+			{
+				return Layout.Original.STORE_ORB_Y;
 			}
 		}
 

@@ -45,7 +45,7 @@ public class ActivityOrbOffset implements OffsetTarget
 				return 0;
 			}
 
-			if (manager.isStoreOrbDisabled())
+			if (!manager.isEditingLayout && (manager.isStoreOrbDisabled() || manager.isStoreHidden()))
 			{
 				x = Layout.Original.STORE_ORB_X;
 			}
@@ -77,7 +77,7 @@ public class ActivityOrbOffset implements OffsetTarget
 				return 50;
 			}
 
-			if (manager.isStoreOrbDisabled())
+			if (!manager.isEditingLayout && (manager.isStoreOrbDisabled() || manager.isStoreHidden()))
 			{
 				y = Layout.Original.STORE_ORB_Y;
 			}
