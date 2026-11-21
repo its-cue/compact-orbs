@@ -5,20 +5,20 @@
 
 ---
 
-# **What's new:**
+# What's New
 
 ### v2.0.6: Spec QoL
-- Display an orb that can help keep track of stacks/spec energy.
-    - supported spec types: `Soulreaper Axe`, `Rondache`, and `spec-energy`
-    - color the tracker orb based on the supported spec types (can also be applied to the native spec orb)
+- Display an orb to track stacks and special attack energy.
+    - supported spec types: `Soulreaper Axe`, `Rondache`, and `Spec Energy`
+    - customize the tracker orbs color based on supported spec types (can also be applied to the native spec orb)
     - selectable orb size: `Original` or `Small`
         - small options include; `text-only`, `icon-only`, or `both`
-    - change the displayed texts; color, shadow color, or shadow-type (original or outlined)
+    - customize the displayed texts; color, shadow color, and shadow-type (original or outlined)
     - compatible with resource packs
     - drag to reposition
     - **other**:
         - option to hide the native spec bar meter
-        - **recommended**: turn off the `Regeneration Meter` plugins spec meter, if enabling: `Show spec regen meter`
+        - **recommended**: disable the `Regeneration Meter` plugins spec meter when using: `Show spec regen meter`
 
   ![](https://imgur.com/S1gJAyt.gif)
 
@@ -27,11 +27,22 @@
 ---
 # Layout
 
-### Layout: **Floating**
-- Utilizes RuneLite's native dragging (`Alt`) to reposition the minimap widgets without restriction.
-    - default arrangement will be kept for any widget that is inside the set `snapcorner` while the minimap is visible
-        - the set `snapcorner` (`top-right`) is defined as the one it would reset back to when you `alt`-`right-click` it
-    - only orbs that are not in the snapcorner will be hidden while `Hide orbs with inventory tab` is enabled
+- ### Compact
+  - Choose a compact-layout that will be visible when the minimap is hidden:
+    - `vertical`: a preset that arranges the orbs vertically
+    - `horizontal`: a preset that arranges the orbs horizontally (stacked)
+    - `horizontal-wide`: similar to horizontal, but without stacking the data orbs
+    - `custom`: user-defined positioning via edit-mode (defaults to `vertical` if none are set)
+
+    ![](https://imgur.com/8iSY5y2.gif)
+  
+<br/>
+
+- ### Floating
+  - An alternative to compact-layouts that utilizes RuneLite's native dragging (`Alt`) to reposition the minimap widgets without restriction.
+    - hold `alt` and hover over any minimap widget, then left-click and hold to drag and reposition
+    - default arrangement will be kept for any widget that is inside its default `snapcorner` while the minimap is visible
+    - only orbs that are not in the `snapcorner` will be hidden while `Hide orbs with inventory tab` is enabled
     - similar to `compact-layouts`, when the `world-map` or `logout-x` are hidden their hotkey functions are retained
     - `layout` features that are supported:
         - `edit-mode`
@@ -40,13 +51,7 @@
 
 <br/>
 
-### Types
-- Choose a compact-layout that will be visible when the minimap is hidden:
-    - `vertical`, `horizontal`, `horizontal-wide`, `custom`
-
-  ![](https://imgur.com/8iSY5y2.gif)
-
-<br/>
+## Options
 
 ### Edit Mode
 - Similar to the Prayer/Spellbook plugins `reordering` feature, provides a quick way to `hide / show`, `swap` or `drag & drop`.
@@ -55,7 +60,7 @@
 
 <br/>
 
-#### Orb Swapping
+### Orb Swapping
 - An alternative to moving orbs around without the `drag & drop` feature.
     - Swap an `orb` with another, only supports: `HP`, `PRAYER`, `RUN`, and `SPEC`
     - Supports a different order between compact-view and when the minimap is visible (`vanilla`)
@@ -75,7 +80,7 @@
 <br/>
 
 ### Prevent Clickthrough
-- Prevent clicks from passing through the certain orbs.
+- Prevent clicks from passing through certain orbs.
     - supported in any `layout`
     - automatically enabled in `compact-layout` when `orb-swapping` is enabled
 
@@ -111,7 +116,7 @@
   ![](https://imgur.com/rZyamSg.png)
 
 ### Toggle Locations
-- Choose where the `toggle-button` will be if `orb-swapping` is enabled.
+- Choose where the `toggle-button` will be.
 
   ![](https://imgur.com/Cytzlbt.png)
 
@@ -126,13 +131,14 @@
   ![](https://imgur.com/MpxTcDI.gif)
 
 > There is no compatibility with plugins that modify, overlay, or add indicators to the original `vanilla` minimap
->>- Examples include `Quest Helper`, `Shortest Path`, `Ground Markers`, and `Player Indicators`.
+> 
+> Examples include `Quest Helper`, `Shortest Path`, `Ground Markers`, and `Player Indicators`.
 
 <br/>
 
 ### Detach 'Utility' Orbs
 - Reposition the utility orbs around the detached minimap, separating them from the current layout
-- utility orbs: [`world-map`, `wiki`, `toggle-button`, `store`, `activity`, `xp`]
+  - utility orbs: [`world-map`, `wiki`, `toggle-button`, `store`, `activity`, `xp`]
 
   ![](https://imgur.com/yV0XRkB.png)
 
@@ -140,13 +146,30 @@
 
 # ❓FAQ / Conflicts
 
-#### Q: Are there any ways to prevent the orbs from moving when changing the window size?
-- A: you can use either an anchor point (now movable) or you can set an `origin` for the minimap - dragging the minimap with `alt`, then `shift-click` when positioned where you want it will let you select where you want the minimap to be anchored to, relative to the `origin`.
+#### Q: Is there a way to prevent the orbs from moving when adjusting window sizes?
+- A: You can either use a `snapcorner` and reposition it as needed, or use an `overlay origin`.
+  - `overlay origin`: hold `shift` and right-click any overlay to select its relative-to-position
 
-## Conflicts:
-The following plugins have been flagged to not work, or conflict with this plugin design;
+    ![](https://imgur.com/zr5YrZA.gif)
 
-- `Fixed Resizable Hybrid`
-- `Orb Hider`
-- `Minimap Hider`
-- `Movable Orbs`
+#### Q: I don't see the toggle button, how do I hide the minimap?
+- A: Hiding the minimap requires the toggle button or the hotkey to be configured, some window sizes may cause the inventory to hide the toggle button when set to its `default` position.
+  - set the toggle button location to anything but `default` on smaller window sizes [see here](https://github.com/its-cue/compact-orbs#toggle-locations)
+  - check that the toggle button config to hide it is not checked
+
+<br/>
+
+## Conflicts
+- The following plugins are known to be incompatible.
+  - `Fixed Resizable Hybrid`
+  - `Orb Hider`
+  - `Minimap Hider`
+  - `Movable Orbs`
+  - `Interface Layout`
+  - `Vicious Bars`
+
+> **Note**: The list is not exhaustive as there may be other plugins (including newly released ones) which may cause unintended behavior or conflicts even if they are not listed above.
+>
+> If you are experiencing issues, noticing conflicts with other plugins, or need general help, you can submit an issue [here](https://github.com/its-cue/compact-orbs/issues/new).
+
+
