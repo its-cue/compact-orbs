@@ -101,7 +101,13 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.ORB_LAYOUT,
 		name = "Layout type",
-		description = "Select a preferred layout type",
+		description = "Select a preferred layout type: <br>" +
+			"-Vertical: arranges the orbs vertically <br>" +
+			"-Horizontal: arranges the orbs horizontally, stacked <br>" +
+			"-Horizontal-wide: arranges the orbs horizontally, un-stacked <br>" +
+			"-Custom: enables user-defined positions (use Edit-mode) <br>" +
+			"-Floating: enables individual repositioning using RuneLites native drag (alt)"
+		,
 		position = 0
 	)
 	default CompactOrbsLayout layout()
@@ -145,7 +151,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.VERTICAL_ANCHOR,
 		name = "Vertical anchor",
-		description = "Where the layout will snap to, and the direction orbs move while reordering",
+		description = "Dictates where the layout will snap to, and the direction orbs move while reordering",
 		section = layout,
 		position = 2
 	)
@@ -157,7 +163,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.HORIZONTAL_ANCHOR,
 		name = "Horizontal anchor",
-		description = "Where the layout will snap to, and the direction orbs move while reordering",
+		description = "Dictates where the layout will snap to, and the direction orbs move while reordering",
 		section = layout,
 		position = 3
 	)
@@ -181,7 +187,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.LEAVE_EMPTY_SPACE,
 		name = "Leave empty space",
-		description = "Prevent other elements from shifting towards orbs that have been reordered (retains the gap between)",
+		description = "Prevent other widgets from shifting towards orbs that have been reordered (preserves a gap between)",
 		section = layout,
 		position = 5
 	)
@@ -193,7 +199,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.ENABLE_ORB_SWAPPING,
 		name = "Enable orb swapping",
-		description = "Will allow swapping of the main data orbs via edit-mode while enabled. Disables custom-positioning",
+		description = "Will allow position swapping of the data orbs during edit-mode. (While enabled, custom positioning will be disabled)",
 		section = layout,
 		position = 6
 	)
@@ -205,7 +211,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.HIDE_MINIMAP_WITH_SIDE_PANEL,
 		name = "Hide orbs with inventory tab",
-		description = "Hide the layout when the side panel tab is hidden (only works in resizable-modern).",
+		description = "Hide the layout when the side panel tab is hidden (only works in resizable-modern)",
 		section = layout,
 		position = 7
 	)
@@ -216,7 +222,7 @@ public interface CompactOrbsConfig extends Config
 
 	@ConfigSection(
 		name = "Special Orb QoL",
-		description = "Enable and customize an additional orb that displays special attack energy or special stacks (for the Rondache or Soulreaper Axe)",
+		description = "Enable and customize an additional orb, used to track special attack energy or stacks",
 		closedByDefault = true,
 		position = 2
 	)
@@ -225,7 +231,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.HIDE_SPEC_ENERGY_METER,
 		name = "Hide native spec energy meter",
-		description = "Hide the native meter on the Special attack orb.",
+		description = "Hide the native meter on the Special attack orb",
 		section = qol,
 		position = 0
 	)
@@ -250,7 +256,7 @@ public interface CompactOrbsConfig extends Config
 		keyName = ConfigKeys.APPLY_COLORS_TO_NATIVE_SPEC,
 		name = "Apply colors to native spec orb",
 		description = "Apply the colors below to the native spec orb. <br>" +
-			"When the tracker orb is enabled, colors will be applied regardless for non-energy based specs.",
+			"When the tracker orb is enabled, colors will be applied regardless for non-energy based specs",
 		section = qol,
 		position = 2
 	)
@@ -262,7 +268,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.SHOW_SPEC_TRACKER_ORB,
 		name = "Show tracker orb",
-		description = "Show an additional orb that tracks spec energy state.",
+		description = "Show an additional orb that tracks spec energy state",
 		section = qol,
 		position = 3
 	)
@@ -274,7 +280,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.SHOW_SPEC_TRACKER_REGEN_METER,
 		name = "Show tracker regen meter",
-		description = "Show a ring around the tracker orb.",
+		description = "Show a ring around the tracker orb",
 		section = qol,
 		position = 4
 	)
@@ -286,7 +292,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.PREVENT_TRACKER_ORB_CLICKTHROUGH,
 		name = "Prevent tracker orb clickthrough",
-		description = "Prevents clicks from passing through the tracker orb.",
+		description = "Prevents clicks from passing through the tracker orb",
 		section = qol,
 		position = 5
 	)
@@ -298,7 +304,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.SPEC_TRACKER_ORB_TEXT_COLOR,
 		name = "Text color",
-		description = "Recolor the text displayed on the tracker orb.",
+		description = "Recolor the text displayed on the tracker orb",
 		section = qol,
 		position = 6
 	)
@@ -310,7 +316,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.SPEC_TRACKER_ORB_TEXT_SHADOW_COLOR,
 		name = "Text shadow color",
-		description = "Recolor the shadow/outline of the text displayed on the tracker orb.",
+		description = "Recolor the shadow/outline of the text displayed on the tracker orb",
 		section = qol,
 		position = 7
 	)
@@ -322,7 +328,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.SPEC_TRACKER_ORB_TEXT_SHADOW_STYLE,
 		name = "Shadow style",
-		description = "Show a drop shadow, or outline for the tracker orb text.",
+		description = "Show a drop shadow, or outline for the tracker orb text",
 		section = qol,
 		position = 8
 	)
@@ -334,7 +340,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.SPEC_TRACKER_ORB_MODE,
 		name = "Orb size",
-		description = "Show a vanilla sized orb or a compact version.",
+		description = "Show a vanilla sized orb or a compact version",
 		section = qol,
 		position = 9
 	)
@@ -347,7 +353,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.SPEC_QOL_ORB_COLOR,
 		name = "Orb color",
-		description = "Recolor the orb filler for the native orb.",
+		description = "Recolor the orb filler for the native orb",
 		section = qol,
 		position = 10
 	)
@@ -360,7 +366,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.SPEC_QOL_ORB_EMPTY_COLOR,
 		name = "Orb empty color",
-		description = "Recolor the empty background behind the orb filler for the native orb.",
+		description = "Recolor the empty background behind the orb filler for the native orb",
 		section = qol,
 		position = 11
 	)
@@ -373,7 +379,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.SPEC_QOL_ORB_REGEN_COLOR,
 		name = "Regen color",
-		description = "Recolor the regen meter for the native orb.",
+		description = "Recolor the regen meter for the native orb",
 		section = qol,
 		position = 12
 	)
@@ -386,7 +392,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.SPEC_QOL_SRA_ORB_COLOR,
 		name = "Soulreaper axe orb",
-		description = "Recolor the orb filler for the Soulreaper axe.",
+		description = "Recolor the orb filler for the Soulreaper axe",
 		section = qol,
 		position = 13
 	)
@@ -399,7 +405,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.SPEC_QOL_SRA_ORB_EMPTY_COLOR,
 		name = "Soulreaper axe empty",
-		description = "Recolor the empty background behind the filler for the Soulreaper axe.",
+		description = "Recolor the empty background behind the filler for the Soulreaper axe",
 		section = qol,
 		position = 14
 	)
@@ -412,7 +418,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.SPEC_QOL_SRA_ORB_REGEN_COLOR,
 		name = "Soulreaper axe regen",
-		description = "Recolor the regen meter for the Soulreaper axe.",
+		description = "Recolor the regen meter for the Soulreaper axe",
 		section = qol,
 		position = 15
 	)
@@ -425,7 +431,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.SPEC_QOL_RONDACHE_ORB_COLOR,
 		name = "Rondache orb",
-		description = "Recolor the orb filler for the Rondache.",
+		description = "Recolor the orb filler for the Rondache",
 		section = qol,
 		position = 16
 	)
@@ -438,7 +444,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.SPEC_QOL_RONDACHE_ORB_EMPTY_COLOR,
 		name = "Rondache empty",
-		description = "Recolor the empty background behind the filler for the Rondache.",
+		description = "Recolor the empty background behind the filler for the Rondache",
 		section = qol,
 		position = 17
 	)
@@ -451,7 +457,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.SPEC_QOL_RONDACHE_ORB_REGEN_COLOR,
 		name = "Rondache meter",
-		description = "Recolor the regen meter for the Rondache.",
+		description = "Recolor the regen meter for the Rondache",
 		section = qol,
 		position = 18
 	)
@@ -600,14 +606,30 @@ public interface CompactOrbsConfig extends Config
 		closedByDefault = true,
 		position = 100
 	)
-	String readme = "hideAndSwapUpdate";
+	String readme = "troubleshoot";
 
 	@ConfigItem(
-		keyName = "hideAndSwapUpdate",
-		name = "<html>If you're having issues, please read the plugin page for more information. <br/> <br/> " +
-			"If you experience bugs or have feedback, feel free to open an issue on GitHub. <br/> <br/>" +
-			" - You can access the plugin page by right-clicking the plugin name above and selecting `Support`</html>",
+		keyName = "troubleshootReadMe",
+		name = "<html><body style='color: #ffffff;'>" +
+			"Please read the plugin page for<br/>" +
+			"additional information.<br/>" +
+			"<br/>" +
+			"&nbsp;&nbsp;-You can access the plugin page by<br/>" +
+			"&nbsp;&nbsp;&nbsp;right-clicking the plugin name above<br/>" +
+			"&nbsp;&nbsp;&nbsp;and selecting `Support`" +
+			"<br/><br/><hr><br/>" +
+			"If you're experiencing issues,<br/>" +
+			"noticing conflicts with other plugins,<br/>" +
+			"or need general help, feel free<br/>" +
+			"to open an issue on Github.<br/>" +
+			"<br/>" +
+			"&nbsp;&nbsp;-To open an issue from the plugin<br/>" +
+			"&nbsp;&nbsp;&nbsp;page: click the `Feedback & Issues`<br/>" +
+			"&nbsp;&nbsp;&nbsp;banner link, or the `Report an issue`<br/>" +
+			"&nbsp;&nbsp;&nbsp;link in the top right" +
+			"</body></html>",
 		description = "",
+		position = 0,
 		section = readme
 	)
 	void readme();
