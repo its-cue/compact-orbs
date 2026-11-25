@@ -199,7 +199,7 @@ public interface CompactOrbsConfig extends Config
 	@ConfigItem(
 		keyName = ConfigKeys.ENABLE_ORB_SWAPPING,
 		name = "Enable orb swapping",
-		description = "Will allow position swapping of the data orbs during edit-mode. (While enabled, custom positioning will be disabled)",
+		description = "Will allow position swapping for the data orbs (can be modified via edit-mode, and will disable custom saved positions)",
 		section = layout,
 		position = 6
 	)
@@ -221,10 +221,144 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigSection(
-		name = "Special Orb QoL",
-		description = "Enable and customize an additional orb, used to track special attack energy or stacks",
+		name = "Toggle Button",
+		description = "",
 		closedByDefault = true,
 		position = 2
+	)
+	String button = "button";
+
+	@ConfigItem(
+		keyName = ConfigKeys.MINIMAP_TOGGLE_BUTTON,
+		name = "Hide the toggle button",
+		description = "Hide/show the minimap toggle button",
+		section = button,
+		position = 0
+	)
+	default boolean hideMinimapToggle()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.RIGHT_CLICK_TOGGLE_BUTTONS,
+		name = "Right click the toggle button",
+		description = "Deprioritizes the toggle menu so it requires a right-click to interact with",
+		section = button,
+		position = 1
+	)
+	default boolean rightClickToggleButtons()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.MINIMAP_BUTTON_PLACEMENT,
+		name = "Toggle location",
+		description = "Select the desired location of the toggle button while the minimap is visible",
+		section = button,
+		position = 2
+	)
+	default TogglePlacement minimapTogglePlacement()
+	{
+		return TogglePlacement.DEFAULT;
+	}
+
+	@ConfigSection(
+		name = "Hotkey",
+		description = "",
+		closedByDefault = true,
+		position = 3
+	)
+	String hotkey = "hotkey";
+
+	@ConfigItem(
+		keyName = ConfigKeys.HOTKEY_KEYBIND,
+		name = "Keybind",
+		description = "Keybind used to toggle the option selected option <br>" +
+			"-Warning: a modified is recommended (e.g. Shift, Ctrl, Alt)",
+		section = hotkey,
+		position = 0
+	)
+	default Keybind hotkeyKeybind()
+	{
+		return new Keybind(KeyEvent.VK_INSERT, KeyEvent.SHIFT_DOWN_MASK);
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.HOTKEY_TOGGLE_OPTION,
+		name = "Select toggle",
+		description = "Select what the hotkey will control",
+		section = hotkey,
+		position = 1
+	)
+	default HotkeyOptions toggleOption()
+	{
+		return HotkeyOptions.MINIMAP_BUTTON;
+	}
+
+	@ConfigSection(
+		name = "Detached Minimap",
+		description = "",
+		closedByDefault = true,
+		position = 99
+	)
+	String minimapOverlay = "minimapOverlay";
+
+	@ConfigItem(
+		keyName = ConfigKeys.ENABLE_MINIMAP_OVERLAY,
+		name = "Show while in compact view",
+		description = "Show a functional minimap that is detached from the orbs while in compact view <br>" +
+			"Warning: this minimap is not supported by plugins that display overlays on the minimap (names, marker tiles, lines, etc.)",
+		section = minimapOverlay,
+		position = 0
+	)
+	default boolean showMinimapInCompactView()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.ENABLE_OVERLAY_TOGGLE_OPTION,
+		name = "Show toggle on the minimap button",
+		description = "Display an option on the minimap button to hide/show the detached minimap",
+		section = minimapOverlay,
+		position = 1
+	)
+	default boolean showToggleOnMinimapButton()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.ENABLE_LOGOUT_X_OVERLAY,
+		name = "Show Logout-X",
+		description = "Show a functional Logout-X on the detached minimap (only works in resizable-modern) <br>",
+		section = minimapOverlay,
+		position = 2
+	)
+	default boolean showOverlayLogoutX()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = ConfigKeys.DETACH_UTILITY_ORBS,
+		name = "Detach utility orbs",
+		description = "Position the `utility` orbs around the detached minimap",
+		section = minimapOverlay,
+		position = 3
+	)
+	default boolean detachUtilityOrbs()
+	{
+		return false;
+	}
+
+	@ConfigSection(
+		name = "Spec Tracker",
+		description = "Enable and customize an additional orb, used to track special attack energy or stacks",
+		closedByDefault = true,
+		position = 100
 	)
 	String qol = "qol";
 
@@ -467,144 +601,10 @@ public interface CompactOrbsConfig extends Config
 	}
 
 	@ConfigSection(
-		name = "Toggle Button",
-		description = "",
-		closedByDefault = true,
-		position = 3
-	)
-	String button = "button";
-
-	@ConfigItem(
-		keyName = ConfigKeys.MINIMAP_TOGGLE_BUTTON,
-		name = "Hide the toggle button",
-		description = "Hide/show the minimap toggle button",
-		section = button,
-		position = 0
-	)
-	default boolean hideMinimapToggle()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.RIGHT_CLICK_TOGGLE_BUTTONS,
-		name = "Right click the toggle button",
-		description = "Deprioritizes the toggle menu so it requires a right-click to interact with",
-		section = button,
-		position = 1
-	)
-	default boolean rightClickToggleButtons()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.MINIMAP_BUTTON_PLACEMENT,
-		name = "Toggle location",
-		description = "Select the desired location of the toggle button while the minimap is visible",
-		section = button,
-		position = 2
-	)
-	default TogglePlacement minimapTogglePlacement()
-	{
-		return TogglePlacement.DEFAULT;
-	}
-
-	@ConfigSection(
-		name = "Hotkey",
-		description = "",
-		closedByDefault = true,
-		position = 4
-	)
-	String hotkey = "hotkey";
-
-	@ConfigItem(
-		keyName = ConfigKeys.HOTKEY_KEYBIND,
-		name = "Keybind",
-		description = "Keybind used to toggle the option selected option <br>" +
-			"-Warning: a modified is recommended (e.g. Shift, Ctrl, Alt)",
-		section = hotkey,
-		position = 0
-	)
-	default Keybind hotkeyKeybind()
-	{
-		return new Keybind(KeyEvent.VK_INSERT, KeyEvent.SHIFT_DOWN_MASK);
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.HOTKEY_TOGGLE_OPTION,
-		name = "Select toggle",
-		description = "Select what the hotkey will control",
-		section = hotkey,
-		position = 1
-	)
-	default HotkeyOptions toggleOption()
-	{
-		return HotkeyOptions.MINIMAP_BUTTON;
-	}
-
-	@ConfigSection(
-		name = "Detached Minimap",
-		description = "",
-		closedByDefault = true,
-		position = 99
-	)
-	String minimapOverlay = "minimapOverlay";
-
-	@ConfigItem(
-		keyName = ConfigKeys.ENABLE_MINIMAP_OVERLAY,
-		name = "Show while in compact view",
-		description = "Show a functional minimap that is detached from the orbs while in compact view <br>" +
-			"Warning: this minimap is not supported by plugins that display overlays on the minimap (names, marker tiles, lines, etc.)",
-		section = minimapOverlay,
-		position = 0
-	)
-	default boolean showMinimapInCompactView()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.ENABLE_OVERLAY_TOGGLE_OPTION,
-		name = "Show toggle on the minimap button",
-		description = "Display an option on the minimap button to hide/show the detached minimap",
-		section = minimapOverlay,
-		position = 1
-	)
-	default boolean showToggleOnMinimapButton()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.ENABLE_LOGOUT_X_OVERLAY,
-		name = "Show Logout-X",
-		description = "Show a functional Logout-X on the detached minimap (only works in resizable-modern) <br>",
-		section = minimapOverlay,
-		position = 2
-	)
-	default boolean showOverlayLogoutX()
-	{
-		return false;
-	}
-
-	@ConfigItem(
-		keyName = ConfigKeys.DETACH_UTILITY_ORBS,
-		name = "Detach utility orbs",
-		description = "Position the `utility` orbs around the detached minimap",
-		section = minimapOverlay,
-		position = 3
-	)
-	default boolean detachUtilityOrbs()
-	{
-		return false;
-	}
-
-	@ConfigSection(
 		name = "Troubleshoot",
 		description = "Useful if you're having issues or questions",
 		closedByDefault = true,
-		position = 100
+		position = 200
 	)
 	String readme = "troubleshoot";
 
@@ -614,19 +614,19 @@ public interface CompactOrbsConfig extends Config
 			"Please read the plugin page for<br/>" +
 			"additional information.<br/>" +
 			"<br/>" +
-			"&nbsp;&nbsp;-You can access the plugin page by<br/>" +
-			"&nbsp;&nbsp;&nbsp;right-clicking the plugin name above<br/>" +
-			"&nbsp;&nbsp;&nbsp;and selecting `Support`" +
+			"-You can access the plugin page by<br/>" +
+			"&nbsp;right-clicking the plugin name above<br/>" +
+			"&nbsp;and selecting `Support`" +
 			"<br/><br/><hr><br/>" +
 			"If you're experiencing issues,<br/>" +
 			"noticing conflicts with other plugins,<br/>" +
 			"or need general help, feel free<br/>" +
 			"to open an issue on Github.<br/>" +
 			"<br/>" +
-			"&nbsp;&nbsp;-To open an issue from the plugin<br/>" +
-			"&nbsp;&nbsp;&nbsp;page: click the `Feedback & Issues`<br/>" +
-			"&nbsp;&nbsp;&nbsp;banner link, or the `Report an issue`<br/>" +
-			"&nbsp;&nbsp;&nbsp;link in the top right" +
+			"-To open an issue from the plugin<br/>" +
+			"&nbsp;page: click the `Feedback & Issues`<br/>" +
+			"&nbsp;banner link, or the `Report an issue`<br/>" +
+			"&nbsp;link in the top right" +
 			"</body></html>",
 		description = "",
 		position = 0,
