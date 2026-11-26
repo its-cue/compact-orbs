@@ -220,6 +220,19 @@ public interface CompactOrbsConfig extends Config
 		return false;
 	}
 
+	@ConfigItem(
+		keyName = ConfigKeys.SHOW_LAYOUT_WHEN_MINIMAP_IS_HIDDEN,
+		name = "Show layout when maps hidden",
+		description = "Prevent `Floating`s native drag positioning while the minimap is visible, similar to the compact layouts. </br>" +
+			"Note: Orb swaps and custom positioning are left alone while the minimap is visible.",
+		section = layout,
+		position = 8
+	)
+	default boolean showLayoutWhenMinimapIsHidden()
+	{
+		return false;
+	}
+
 	@ConfigSection(
 		name = "Toggle Button",
 		description = "",

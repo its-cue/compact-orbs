@@ -171,21 +171,17 @@ public class WidgetManager
 
 	private int getValue(Widget widget, int index, ValueKey key, SetValue value, boolean toDefault)
 	{
-		boolean useSavedPosition =
-			!toDefault
-				&& (manager.isCompactLayout() || manager.isFloating())
-				|| (manager.isVanillaCustom() && manager.useSavedPosition(widget, index));
+		boolean useLayout = manager.isCompactLayout() || manager.isFloatingActive();
+		boolean useVanillaCustom = manager.isVanillaCustom() && manager.useSavedPosition(widget, index);
 
-		CompactOrbsLayout layout =
-			manager.isCompactLayout() || manager.isFloating()
-				? manager.getCurrentLayout()
-				: null;
+		boolean useSavedPosition = !toDefault && (useLayout || useVanillaCustom);
 
-		int v = useSavedPosition
-			? value.getModified(layout)
-			: value.getOriginal();
+		CompactOrbsLayout layout = useLayout ? manager.getCurrentLayout() : null;
 
-		int saved = manager.getCurrentLayout().isFloating() ? -1 : getSavedValue(widget, index, key, useSavedPosition);
+		int v = useSavedPosition ? value.getModified(layout) : value.getOriginal();
+
+		int saved = !useVanillaCustom ? -1 : getSavedValue(widget, index, key, useSavedPosition);
+
 		if (saved != -1)
 		{
 			if (Orbs.isSwappableOrb(widget.getId()) ||
@@ -215,31 +211,16 @@ public class WidgetManager
 		return v;
 	}
 
-	//the wiki banners container is too big (that's what she said) when the minimap is visible
-	private int adjustValue(Widget widget, int index, ValueKey key, int value, boolean toDefault)
+	//adjust the wiki banners container since its too big when the minimap is visible
+	private int adjustWikiValue(Widget widget, ValueKey key, int value, boolean toDefault)
 	{
-		if (!manager.isVanillaCustom() || toDefault || manager.isFloating())
+		if (toDefault)
 		{
 			return value;
 		}
 
 		switch (key)
 		{
-			case Y:
-				if (isWikiContainer(widget)
-					&& manager.getSavedPosition(widget, index, key) == -1)
-				{
-					return value + 10;
-				}
-				break;
-
-			case HEIGHT:
-				if (isWikiContainer(widget))
-				{
-					return value - 20;
-				}
-				break;
-
 			case X_POSITION_MODE:
 				if (isWikiElement(widget))
 				{
@@ -261,7 +242,7 @@ public class WidgetManager
 	private boolean setValue(Widget widget, int index, ValueKey key, SetValue value, boolean toDefault)
 	{
 		int v = getValue(widget, index, key, value, toDefault);
-		v = adjustValue(widget, index, key, v, toDefault);
+		v = adjustWikiValue(widget, key, v, toDefault);
 
 		switch (key)
 		{

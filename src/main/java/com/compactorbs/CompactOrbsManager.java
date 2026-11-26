@@ -62,7 +62,6 @@ import com.compactorbs.widget.overlay.DetachedOrb;
 import com.compactorbs.widget.overlay.SnapCorner;
 import com.compactorbs.widget.overlay.spec.SpecColorRegistry;
 import com.compactorbs.widget.overlay.spec.SpecOrbType;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -199,20 +198,19 @@ public class CompactOrbsManager
 	public final Map<String, Overlay> floatingOverlay = new HashMap<>();
 	public static final TargetWidget[] FLOATING_TARGETS =
 		{
-			Orbs.WIKI_ICON_CONTAINER,
-			Orbs.WORLD_MAP_CONTAINER,
+			//order matters for snapcorner positioning
+			Orbs.LOGOUT_X_ICON,
 			Orbs.HP_ORB_CONTAINER,
 			Orbs.PRAYER_ORB_CONTAINER,
 			Orbs.RUN_ORB_CONTAINER,
 			Orbs.SPEC_ORB_CONTAINER,
-			Orbs.STORE_ORB_CONTAINER,
-			Orbs.ACTIVITY_ORB_CONTAINER,
-			Orbs.LOGOUT_X_ICON,
-			Orbs.XP_DROPS_CONTAINER,
-
 			Button.MINIMAP_BUTTON_CLASSIC,
 			Button.MINIMAP_BUTTON_MODERN,
-
+			Orbs.STORE_ORB_CONTAINER,
+			Orbs.ACTIVITY_ORB_CONTAINER,
+			Orbs.WORLD_MAP_CONTAINER,
+			Orbs.XP_DROPS_CONTAINER,
+			Orbs.WIKI_ICON_CONTAINER,
 			Minimap.CLASSIC_MAP_MINIMAP,
 			Minimap.MODERN_MAP_MINIMAP
 		};
@@ -232,6 +230,9 @@ public class CompactOrbsManager
 		hideLogoutX = config.hideLogout();
 		enableNoClickThrough = config.enableNoClickthrough();
 		enableOrbSwapping = config.enableOrbSwapping();
+
+		getSnapCornerConfigs();
+
 		slotManager.init();
 
 		updateSpecEnergyValues();
@@ -290,6 +291,8 @@ public class CompactOrbsManager
 	//on config change (profile swap / config reset)
 	public void reload(boolean reset)
 	{
+		getSnapCornerConfigs();
+
 		if (isEditingLayout)
 		{
 			//do not save configs
@@ -408,14 +411,16 @@ public class CompactOrbsManager
 	{
 		createCustomChildren();
 
-		if (!isFloating())
-		{
-			detachedHandler.restore(true);
-		}
-		else
+		if (isFloatingActive())
 		{
 			detachedHandler.removeCoreOverlay();
 			widgetManager.clearForcedPosition(Minimap.MODERN_MAP_CONTAINER, Minimap.CLASSIC_MAP_CONTAINER);
+		}
+		else
+		{
+			detachedHandler.restore(true);
+			widgetManager.clearForcedPosition(FLOATING_TARGETS);
+			widgetManager.clearForcedPosition(Orbs.LOGOUT_X_STONE);
 		}
 
 		rebuildLayout();
@@ -438,24 +443,19 @@ public class CompactOrbsManager
 		widgetManager.revalidate(Minimap.CONTAINERS);
 		widgetManager.revalidate(Minimap.COMPONENTS);
 
-		if (isFloating())
+		if (isFloatingActive())
 		{
 			widgetManager.revalidate(Minimap.ORBS_UNIVERSE);
 		}
 
-		final boolean hideCompass = (isCompactLayout() || (isFloating() && isMinimapHidden())) && isCompassHidden();
+		final boolean hideCompass = isCompassHidden() && (isCompactLayout() || isFloating() && isMinimapHidden());
 		widgetManager.setTargetsHidden(hideCompass, Compass.values());
 
 		widgetManager.remapTargets(!isMinimapHidden(), Script.FORCE_UPDATE, Compass.values());
 
-		//don't remap detached orbs (prevent possible flicker)
-		widgetManager.remapTargets(
-			!isFloating() ? Orbs.values() :
-				Arrays.stream(Orbs.values())
-					.filter(o -> !isOverlayOrbDetached(o))
-					.toArray(TargetWidget[]::new));
+		widgetManager.remapTargets(Orbs.values());
 
-		if (!isFloating())
+		if (!isFloating() || !isFloatingActive())
 		{
 			widgetManager.revalidate(Orbs.WORLD_MAP_CONTAINER, Orbs.WIKI_ICON_CONTAINER, Orbs.LOGOUT_X_ICON, Orbs.LOGOUT_X_STONE);
 		}
@@ -473,7 +473,7 @@ public class CompactOrbsManager
 	public void onMinimapToggle()
 	{
 		saveConfig(ConfigKeys.MINIMAP, !isMinimapHidden());
-		rebuildLayout();
+		setupCurrentLayout();
 		hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
 	}
 
@@ -738,10 +738,7 @@ public class CompactOrbsManager
 			return;
 		}
 
-		if (!isFloating())
-		{
-			minimapButton.setHidden(config.hideMinimapToggle() || isMinimapMinimized());
-		}
+		minimapButton.setHidden(config.hideMinimapToggle() || isMinimapMinimized());
 
 		if (!config.rightClickToggleButtons() || isFixedMode())
 		{
@@ -1020,6 +1017,16 @@ public class CompactOrbsManager
 		return getCurrentLayout().isFloating() && !isFixedMode() && !isMinimapMinimized();
 	}
 
+	public boolean isFloatingActive()
+	{
+		return isFloating() && (!showLayoutWhenMinimapIsHidden() || isMinimapHidden());
+	}
+
+	public boolean showLayoutWhenMinimapIsHidden()
+	{
+		return config.showLayoutWhenMinimapIsHidden();
+	}
+
 	public boolean isCustomLayout()
 	{
 		return getCurrentLayout().isCustomLayout() && isCompactLayout();
@@ -1027,7 +1034,7 @@ public class CompactOrbsManager
 
 	public boolean isVanillaCustom()
 	{
-		return !enableOrbSwapping && !isCompactLayout() && !isMinimapMinimized();
+		return (!isCompactLayout() || !isFloatingActive()) && !isMinimapMinimized();
 	}
 
 	public boolean isAnchorLeft()
@@ -1515,7 +1522,7 @@ public class CompactOrbsManager
 			return;
 		}
 
-		if (isFloating())
+		if (isFloatingActive())
 		{
 			widgetManager.setHidden(Minimap.MODERN_MAP_MINIMAP.getComponentId(), false);
 			widgetManager.setHidden(Minimap.MODERN_ORBS_CONTAINER.getComponentId(), false);
@@ -1546,7 +1553,7 @@ public class CompactOrbsManager
 
 		for (TargetWidget target : orb.getTargets())
 		{
-			if (isMinimapHidden() || !snapcorner.minimapInCorner || isFloating() && isOverlayOrbDetached(target))
+			if (isMinimapHidden() || !snapcorner.minimapInCorner || isFloatingActive() && isOverlayOrbDetached(target))
 			{
 				return true;
 			}
@@ -1593,7 +1600,7 @@ public class CompactOrbsManager
 			case ConfigKeys.HIDE_WORLD:
 				hideWorldMap = hidden;
 
-				if (!isFloating())
+				if (!isFloating() || !isFloatingActive())
 				{
 					widgetManager.remapTargets(Orbs.WORLD_MAP_CONTAINER);
 				}
@@ -1654,12 +1661,6 @@ public class CompactOrbsManager
 		{
 			updateMinimapToggleButton();
 		}
-	}
-
-	//only apply snapcorner following when the minimap is visible
-	public boolean followWhileDragging()
-	{
-		return isMinimapHidden() && isFloating();
 	}
 
 	public Keybind getNativeDragHotkey()
@@ -1908,7 +1909,7 @@ public class CompactOrbsManager
 
 	public int getSavedPosition(Widget widget, int index, ValueKey key)
 	{
-		if ((isCompactLayout() && !getCurrentLayout().isCustomLayout()))
+		if (isCompactLayout() && !getCurrentLayout().isCustomLayout())
 		{
 			return -1;
 		}
@@ -1928,36 +1929,47 @@ public class CompactOrbsManager
 			}
 		}
 
+		return readSavedPosition(widget, index, key, getCurrentPrefix());
+	}
+
+	private int readSavedPosition(Widget widget, int index, ValueKey key, String prefix)
+	{
 		int id = widget.getId();
 		int idx = index;
-		//TODO - saved position only passes true for the icon (EDIT_TARGETS)
-		if (widget.getId() == Orbs.LOGOUT_X_STONE.getComponentId())
+		if (id == Orbs.LOGOUT_X_STONE.getComponentId())
 		{
 			id = Orbs.LOGOUT_X_ICON.getComponentId();
 			idx = Orbs.LOGOUT_X_ICON.getArrayId();
 		}
 
-		String configKey = buildSavedKey(getCurrentPrefix(), id, idx, key);
-		Integer value = configManager.getConfiguration(ConfigGroup.GROUP_NAME, configKey, Integer.class);
-
-		if (value != null)
+		Integer value = configManager.getConfiguration(ConfigGroup.GROUP_NAME, buildSavedKey(prefix, id, idx, key), Integer.class);
+		if (value == null)
 		{
-			if (applyDetachedOffset() && value != -1)
-			{
-				if (key == ValueKey.X)
-				{
-					value += detachedSnapshotX();
-				}
+			return -1;
+		}
 
+		if (id == Button.MINIMAP_BUTTON_CLASSIC.getComponentId() ||
+			id == Button.MINIMAP_BUTTON_MODERN.getComponentId())
+		{
+			if (isFloating() && !showLayoutWhenMinimapIsHidden())
+			{
 				if (key == ValueKey.Y)
 				{
-					value += detachedSnapshotY();
+					value += Layout.ORBS_CONTAINER_OFFSET_Y;
 				}
 			}
 		}
-		else
+
+		if (applyDetachedOffset() && value != -1)
 		{
-			value = -1;
+			if (key == ValueKey.X)
+			{
+				value += detachedSnapshotX();
+			}
+			if (key == ValueKey.Y)
+			{
+				value += detachedSnapshotY();
+			}
 		}
 
 		return value;
@@ -2115,6 +2127,32 @@ public class CompactOrbsManager
 		for (String key : REMOVED_KEYS)
 		{
 			configManager.unsetConfiguration(ConfigGroup.GROUP_NAME, key);
+		}
+	}
+
+	public void getSnapCornerConfigs()
+	{
+		snapcorner.clear();
+
+		snapcorner.minimapInCorner = configManager.getConfiguration(
+			ConfigGroup.Core.RUNELITE, ConfigKeys.Core.FLOATING_MINIMAP_IN_CORNER, java.awt.Point.class) == null;
+
+		snapcorner.setSnapCornerLocation(
+			configManager.getConfiguration(
+				ConfigGroup.Core.RUNELITE,
+				ConfigKeys.Core.SNAPCORNER_PREFIX + OverlayPosition.CANVAS_TOP_RIGHT + ConfigKeys.Core.SNAPCORNER_CONFIG_LOCATION,
+				java.awt.Point.class));
+
+		snapcorner.setSnapCornerPreferredLocation(
+			configManager.getConfiguration(
+				ConfigGroup.Core.RUNELITE,
+				ConfigKeys.Core.CORNER_OVERLAY_PREFIX + OverlayPosition.CANVAS_TOP_RIGHT + ConfigKeys.Core.SNAPCORNER_CONFIG_PREFERRED_LOCATION,
+				java.awt.Point.class)
+		);
+
+		if (isLoggedIn())
+		{
+			snapcorner.getPosition(false);
 		}
 	}
 }

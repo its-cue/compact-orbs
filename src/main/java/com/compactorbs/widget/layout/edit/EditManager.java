@@ -113,7 +113,7 @@ public class EditManager
 	public boolean blockEditing(TargetWidget target)
 	{
 		return (target.isLogoutX() && (manager.isClassicResizable() || manager.isFixedMode())) ||
-			(target.isCompass() && !manager.isFloating() &&
+			(target.isCompass() && !manager.isFloatingActive() &&
 				(!manager.isCompactLayout() || !manager.isMinimapHidden())) ||
 			(target == Orbs.STORE_ORB_CONTAINER && manager.isStoreOrbDisabled()) ||
 			(target == Orbs.ACTIVITY_ORB_CONTAINER && manager.isActivityOrbDisabled()) ||
@@ -247,9 +247,7 @@ public class EditManager
 			MenuOp.HANDLER_TOGGLE_OP_INDEX,
 			manager.buildToggleOp(isHidden, toggle.getMenuName()));
 
-		final boolean floating = manager.isFloating();
-
-		if (!floating &&
+		if (!manager.isFloatingActive() &&
 			((!manager.enableOrbSwapping && !manager.isCompactLayout()) || manager.isCustomLayout()))
 		{
 			handler.setAction(
@@ -263,7 +261,7 @@ public class EditManager
 				MenuOp.EDIT_MODE_OP_INDEX,
 				manager.buildEditOp(manager.isEditingLayout));
 
-			if (!floating &&
+			if (!manager.isFloatingActive() &&
 				(!manager.enableOrbSwapping || manager.isCustomLayout()))
 			{
 				handler.setAction(
@@ -321,7 +319,7 @@ public class EditManager
 			{
 				if (binding.isHidden() != toggle.getGetter().get())
 				{
-					if (!manager.isUpdatingProfile || !manager.getCurrentLayout().isFloating())
+					if (!manager.isUpdatingProfile || !manager.isFloatingActive())
 					{
 						manager.saveConfig(toggle.getConfigKey(), binding.isHidden());
 					}
@@ -416,7 +414,7 @@ public class EditManager
 
 	private int getBackgroundParentId()
 	{
-		return manager.isFloating() || manager.isCompactLayout() || manager.isFixedMode()
+		return manager.isFloatingActive() || manager.isCompactLayout() || manager.isFixedMode()
 			? Minimap.ORBS_UNIVERSE.getComponentId()
 			: widgetManager.getMapParent().getId();
 	}
@@ -455,7 +453,7 @@ public class EditManager
 
 	public int setHandlerX(Widget bound, Widget parent)
 	{
-		int x = (manager.isFloating() ? bound.getRelativeX() : bound.getOriginalX());
+		int x = (manager.isFloatingActive() ? bound.getRelativeX() : bound.getOriginalX());
 		if (bound.getParent() != parent)
 		{
 			if (bound.getXPositionMode() == WidgetPositionMode.ABSOLUTE_RIGHT)
@@ -471,7 +469,7 @@ public class EditManager
 
 	public int setHandlerY(Widget bound, Widget parent)
 	{
-		int y = (manager.isFloating() ? bound.getRelativeY() : bound.getOriginalY());
+		int y = (manager.isFloatingActive() ? bound.getRelativeY() : bound.getOriginalY());
 		if (bound.getParent() != parent)
 		{
 			if (!manager.isCompactLayout() && !manager.isFixedMode())

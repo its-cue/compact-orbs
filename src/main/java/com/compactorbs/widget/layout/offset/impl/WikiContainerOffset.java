@@ -80,7 +80,12 @@ public class WikiContainerOffset implements OffsetTarget
 	{
 		if (!compactLayout)
 		{
-			return manager.isFixedMode() ? 135 : y;
+			if (manager.isFixedMode())
+			{
+				y = 135;
+			}
+
+			return y + 10;
 		}
 
 		if (manager.applyDetachedOffset())
@@ -104,5 +109,16 @@ public class WikiContainerOffset implements OffsetTarget
 		}
 
 		return y;
+	}
+
+	@Override
+	public int heightOffset(int h, boolean compactLayout, CompactOrbsManager manager, SlotManager slotManager)
+	{
+		if (!compactLayout)
+		{
+			return h - 20;
+		}
+
+		return h;
 	}
 }

@@ -102,7 +102,8 @@ public class DetachedMinimap extends Overlay
 		}
 
 		final Rectangle bounds = getBounds();
-		if (getPreferredLocation() != null || getPreferredPosition() != null || (getPosition() != OverlayPosition.DYNAMIC && snapcorner.isSnapCornerRepositioned()))
+		if (getPreferredLocation() != null || getPreferredPosition() != null ||
+			(getPosition() != OverlayPosition.DYNAMIC && snapcorner.getSnapCornerPreferredLocation() != null))
 		{
 			// If the widget is manually moved or the snapcorner it is in is moved, force the widget to be in the snapcorner bounds
 			widget.setForcedPosition(bounds.x - parent.x, bounds.y - parent.y); // the widget relative pos is relative to its parent

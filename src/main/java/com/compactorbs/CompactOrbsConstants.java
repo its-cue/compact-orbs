@@ -79,6 +79,7 @@ public class CompactOrbsConstants
 		public static final String ENABLE_NO_CLICKTHROUGH = "enableNoClickthrough";
 		public static final String ENABLE_ORB_SWAPPING = "enableOrbSwapping";
 		public static final String HIDE_MINIMAP_WITH_SIDE_PANEL = "hideMinimapWithSidePanel";
+		public static final String SHOW_LAYOUT_WHEN_MINIMAP_IS_HIDDEN = "showLayoutWhenMinimapIsHidden";
 		public static final String HIDE_SPEC_ENERGY_METER = "hideSpecEnergyBars";
 		public static final String SHOW_SPEC_REGEN_METER = "showSpecRegenMeter";
 		public static final String APPLY_COLORS_TO_NATIVE_SPEC = "applyColorsToNativeSpec";
@@ -140,10 +141,14 @@ public class CompactOrbsConstants
 
 			public static final String SNAPCORNER_PREFIX = "snapcorner_";
 			public static final String SNAPCORNER_CONFIG_LOCATION = "_location";
+			public static final String SNAPCORNER_CONFIG_PREFERRED_LOCATION = "_preferredLocation";
 			public static final String CORNER_OVERLAY_PREFIX = "CornerOverlay_";
 			public static final String DRAG_HOTKEY = "dragHotkey";
 
 			public static final String RESOURCE_PACKS_PLUGIN = "resourcepacksplugin";
+
+			//oof
+			public static final String FLOATING_MINIMAP_IN_CORNER = "COMPACT_ORBS_MODERN_MAP_MINIMAP_preferredLocation";
 		}
 
 		public static final class Hub

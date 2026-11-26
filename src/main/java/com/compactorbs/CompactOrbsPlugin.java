@@ -58,6 +58,7 @@ import com.compactorbs.widget.overlay.spec.SpecTrackerListener;
 import com.compactorbs.widget.overlay.spec.SpecTrackerOrb;
 import com.compactorbs.widget.overlay.spec.SpriteCache;
 import com.google.inject.Provides;
+import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.util.Locale;
 import java.util.Objects;
@@ -193,7 +194,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		//floating layout
 		for (TargetWidget orb : CompactOrbsManager.FLOATING_TARGETS)
 		{
-			var overlay = new DetachedOrb(client, manager, snapcorner, bindingManager,
+			var overlay = new DetachedOrb(client, manager, widgetManager, snapcorner, bindingManager, orb,
 				ConfigKeys.OVERLAY_PREFIX + orb.toString(), orb.getComponentId(), orb.getArrayId());
 
 			manager.floatingOverlay.putIfAbsent(overlay.getName(), overlay);
@@ -203,7 +204,6 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		mouseManager.registerMouseListener(dragListener);
 		mouseManager.registerMouseListener(specTrackerListener);
 		orbRegistry.registerAll();
-		snapcorner.hasUpdated();
 
 		clientThread.invoke(manager::startup);
 	}
@@ -261,8 +261,14 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 	@Subscribe
 	public void onClientTick(ClientTick event)
 	{
+		//sigh
+		if (manager.isFloatingActive() && manager.isLoggedIn())
+		{
+			snapcorner.getPosition(manager.isNativeDragActive);
+		}
+
 		//don't check for drag events unless layout editing is enabled
-		if (!manager.isEditingLayout || manager.isFloating())
+		if (!manager.isEditingLayout || manager.isFloatingActive())
 		{
 			return;
 		}
@@ -350,6 +356,7 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 			case Script.TOPLEVEL_SIDE_CUSTOMIZE:
 				manager.hideLogout();
 				manager.updateLogoutXOverlay();
+				manager.updateNoClickThrough();
 				if (!manager.isFloating())
 				{
 					manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
@@ -387,9 +394,10 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				//case Script.GRID_MASTER_ORB_UPDATE:
 				if (!manager.isMinimapMinimized())
 				{
+					widgetManager.remapTargetsByScriptId(scriptId, Orbs.values());
+
 					if (!manager.isFloating())
 					{
-						widgetManager.remapTargetsByScriptId(scriptId, Orbs.values());
 						manager.rebuildDetachedContainer();
 						manager.updateNoClickThrough();
 					}
@@ -562,7 +570,6 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		switch (id)
 		{
 			case Orb.UNIVERSE >> 16:
-				snapcorner.hasUpdated();
 				manager.setupCurrentLayout();
 				manager.hideAllOrbsByConfig();
 				manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
@@ -585,13 +592,28 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		{
 			if (key.equals(ConfigKeys.Core.SNAPCORNER_PREFIX + OverlayPosition.CANVAS_TOP_RIGHT + ConfigKeys.Core.SNAPCORNER_CONFIG_LOCATION))
 			{
-				if (!snapcorner.nativeDragWasDetected && !manager.isMinimapHidden())
+				//profile swaps will cause the warning to fire, since the config can change without alt being held...
+				/*if (!snapcorner.nativeDragWasDetected && manager.isFloating())
 				{
 					manager.sendDragHotkeyWarning();
-				}
+				}*/
 
+				String[] location = null;
+				if (event.getNewValue() != null)
+				{
+					location = event.getNewValue().split(":");
+				}
+				snapcorner.setSnapCornerLocation(location != null ? new Point(Integer.parseInt(location[0]), Integer.parseInt(location[1])) : null);
 				snapcorner.nativeDragWasDetected = false;
-				snapcorner.hasUpdated();
+			}
+			else if (key.equals(ConfigKeys.Core.CORNER_OVERLAY_PREFIX + OverlayPosition.CANVAS_TOP_RIGHT + ConfigKeys.Core.SNAPCORNER_CONFIG_PREFERRED_LOCATION))
+			{
+				String[] location = null;
+				if (event.getNewValue() != null)
+				{
+					location = event.getNewValue().split(":");
+				}
+				snapcorner.setSnapCornerPreferredLocation(location != null ? new Point(Integer.parseInt(location[0]), Integer.parseInt(location[1])) : null);
 			}
 			else if (key.equals(ConfigKeys.Core.RESOURCE_PACKS_PLUGIN))
 			{
@@ -658,7 +680,6 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		}
 		else if (group.equals(GROUP_NAME))
 		{
-
 			if (slotRegistry.isSwapConfig(key) || orbRegistry.isHideConfig(key))
 			{
 				if (!manager.isEditingLayout)
@@ -817,10 +838,16 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 				case ConfigKeys.VERTICAL_ANCHOR:
 				case ConfigKeys.DISABLE_REORDERING:
 				case ConfigKeys.LEAVE_EMPTY_SPACE:
+				case ConfigKeys.SHOW_LAYOUT_WHEN_MINIMAP_IS_HIDDEN:
 					clientThread.invokeLater(() ->
 					{
 						if (!manager.isFixedMode())
 						{
+							if (key.equals(ConfigKeys.SHOW_LAYOUT_WHEN_MINIMAP_IS_HIDDEN) && !manager.getCurrentLayout().isFloating())
+							{
+								return;
+							}
+
 							//clear positions so they can't be stale on layout swap only
 							if (key.equals(ConfigKeys.ORB_LAYOUT))
 							{
@@ -830,6 +857,13 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 
 							manager.setupCurrentLayout();
 							manager.hideMinimapOnTabClose(config.hideMinimapWithSidePanel());
+
+							//recompute the snapcorner from the configs
+							if (key.equals(ConfigKeys.SHOW_LAYOUT_WHEN_MINIMAP_IS_HIDDEN) ||
+								key.equals(ConfigKeys.ORB_LAYOUT))
+							{
+								manager.getSnapCornerConfigs();
+							}
 						}
 					});
 					break;
@@ -940,7 +974,14 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 		switch (config.toggleOption())
 		{
 			case MINIMAP:
-				clientThread.invokeLater(manager::onMinimapToggle);
+				clientThread.invokeLater(() ->
+				{
+					manager.onMinimapToggle();
+					if (manager.minimapButton != null)
+					{
+						manager.minimapButton.setSpriteId(widgetManager.getSpriteId(!manager.isMinimapHidden()));
+					}
+				});
 				break;
 
 			case DETACHED_MINIMAP:

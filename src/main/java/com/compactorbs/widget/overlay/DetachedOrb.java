@@ -31,6 +31,7 @@ import com.compactorbs.CompactOrbsConstants.Layout;
 import com.compactorbs.CompactOrbsConstants.Widgets;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.TargetWidget;
+import com.compactorbs.widget.WidgetManager;
 import com.compactorbs.widget.elements.Minimap;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.layout.edit.Binding;
@@ -40,7 +41,6 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
-import net.runelite.api.Point;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetPositionMode;
 import net.runelite.client.ui.overlay.Overlay;
@@ -52,25 +52,38 @@ public class DetachedOrb extends Overlay
 {
 	private final Client client;
 	private final CompactOrbsManager manager;
+	private final WidgetManager widgetManager;
 	private final SnapCorner snapcorner;
 	private final BindingManager bindingManager;
+	private final TargetWidget target;
 	private final String name;
 	private final int componentId;
 	private final int index;
 
 	private final Rectangle parentBounds = new Rectangle();
+	private boolean minimapWasHidden;
 	private boolean revalidate;
 
-	public DetachedOrb(Client client, CompactOrbsManager manager, SnapCorner snapcorner, BindingManager bindingManager, String name, int componentId, int index)
+	public DetachedOrb(
+		Client client,
+		CompactOrbsManager manager,
+		WidgetManager widgetManager,
+		SnapCorner snapcorner,
+		BindingManager bindingManager,
+		TargetWidget target,
+		String name, int componentId, int index)
 	{
 		this.client = client;
 		this.manager = manager;
+		this.widgetManager = widgetManager;
 		this.snapcorner = snapcorner;
 		this.bindingManager = bindingManager;
 		this.name = name;
 		this.componentId = componentId;
 		this.index = index;
-		setPriority(Overlay.PRIORITY_HIGHEST);
+		this.target = target;
+
+		setPriority(2.0f);
 		setLayer(OverlayLayer.UNDER_WIDGETS);
 		setPosition(OverlayPosition.CANVAS_TOP_RIGHT);
 		setMovable(true);
@@ -99,70 +112,78 @@ public class DetachedOrb extends Overlay
 			return null;
 		}
 
-		if (!manager.getCurrentLayout().isFloating() ||
+		if (!manager.isFloatingActive() ||
 			manager.isMinimapMinimized() ||
 			manager.isFixedMode())
 		{
-			snapcorner.hasUpdated();
 			return null;
 		}
 
-		//check whether the minimap is in the top_right snapcorner
-		if (widget.getId() == Minimap.MODERN_MAP_MINIMAP.getComponentId() ||
-			widget.getId() == Minimap.CLASSIC_MAP_MINIMAP.getComponentId())
+		final boolean minimapHidden = manager.isMinimapHidden();
+		if (minimapHidden != minimapWasHidden)
 		{
-			snapcorner.minimapInCorner = getPreferredLocation() == null &&
-				(getPreferredPosition() == null || getPreferredPosition() == getPosition());
+			minimapWasHidden = minimapHidden;
 		}
 
-		//reposition the orbs while the minimap is inside the top_right snapcorner
-		if (snapcorner.minimapInCorner)
+		if (isMinimap(widget))
 		{
-			snapcorner.getPosition(manager.isNativeDragActive, manager.followWhileDragging());
+			snapcorner.minimapInCorner = !isDetached() && !minimapHidden;
+		}
 
-			if (manager.hasGraphicsReset())
+		final boolean applySnapCornerPosition =
+			!isDetached() && (minimapHidden || !snapcorner.minimapInCorner);
+
+		final boolean applyLayoutPosition =
+			!isDetached() && !minimapHidden && snapcorner.minimapInCorner;
+
+		if (!isMinimap(widget))
+		{
+			final OverlayPosition position = applyLayoutPosition ? OverlayPosition.DYNAMIC : OverlayPosition.CANVAS_TOP_RIGHT;
+			if (getPosition() != position)
 			{
-				snapcorner.hasUpdated();
+				setPosition(position);
+				setMovable(true);
 			}
-
-			snapcorner.update(manager.followWhileDragging());
 		}
-
-		//todo - orbs still flicker (ex: store, logout-x, etc) while in a respositioned snapcorner & toggling the side panel (with the minimap hidden)
-		//should debug later, as its not really performative - just jarring... may need to refactor a lot of this as its kind of a headache
 
 		final Rectangle bounds = getBounds();
-		if (getPreferredLocation() != null || getPreferredPosition() != null ||
-			(manager.isMinimapHidden() || !snapcorner.minimapInCorner))
+		if (isDetached() || applySnapCornerPosition)
 		{
-			// If the widget is manually moved or the snapcorner it is in is moved, force the widget to be in the snapcorner bounds
-			widget.setForcedPosition(bounds.x - parent.x, bounds.y - parent.y); // the widget relative pos is relative to its parent
-		}
-		else if (widget.getXPositionMode() == WidgetPositionMode.ABSOLUTE_LEFT ||
-			widget.getXPositionMode() == WidgetPositionMode.ABSOLUTE_RIGHT)
-		{
-			final int x = getSnapcornerX(widget, parent) + snapcorner.deltaX;
-			final int y = getSnapCornerY(widget) + getParentY(widget) + snapcorner.deltaY;
+			if (getPreferredLocation() != null ||
+				getPreferredPosition() != null ||
+				(getPosition() != OverlayPosition.DYNAMIC && (minimapHidden || !snapcorner.minimapInCorner)))
+			{
+				widget.setForcedPosition(bounds.x, bounds.y);
 
-			widget.setForcedPosition(x, y);
-			bounds.setBounds(parent.x + x, parent.y + y, widget.getWidth(), widget.getHeight());
+				//can stay true on minimap toggle... not sure if anything but oh well
+				if (revalidate)
+				{
+					revalidate = false;
+				}
+			}
 		}
 		else
 		{
-			if (revalidate)
+			final int x = getSnapCornerX(widget, parent) + snapcorner.deltaX;
+			final int y = getSnapCornerY(widget) + snapcorner.deltaY;
+
+			if (revalidate || minimapWasHidden)
 			{
 				revalidate = false;
+				minimapWasHidden = false;
 				widget.setForcedPosition(-1, -1);
-				// Revalidate the widget to reposition it back to its normal location after an overlay reset
-				widget.revalidate();
+				widgetManager.remapTargets(target);
 			}
 
-			// Otherwise allow the widget to draw where it wants to, and update the overlay bounds to reflect that.
+			widget.setForcedPosition(x, y);
+
 			Rectangle widgetBounds = widget.getBounds();
-			bounds.setBounds(widgetBounds.x, widgetBounds.y, widgetBounds.width, widgetBounds.height);
+			bounds.setBounds(
+				manager.isNativeDragActive ? x : widgetBounds.x,
+				manager.isNativeDragActive ? y : widgetBounds.y,
+				widget.getWidth(), widget.getHeight());
 		}
 
-		//make sure the logout x stone follows the icon
 		if (widget.getId() == Orbs.LOGOUT_X_ICON.getComponentId())
 		{
 			final Widget stone = client.getWidget(Orbs.LOGOUT_X_STONE.getComponentId());
@@ -174,108 +195,53 @@ public class DetachedOrb extends Overlay
 
 		updateEditModeHandlerPos(widget);
 
-		if (!manager.isMinimapHidden() && snapcorner.minimapInCorner)
+		if (isMinimap(widget) && !manager.isMinimapHidden())
 		{
-			//prevent the default snapcorner from being larger than it should be
-			//when all the widgets are positioned inside it
-			final Point mouse = client.getMouseCanvasPosition();
-			final boolean hovered = bounds.contains(mouse.getX(), mouse.getY());
-			if (getPreferredLocation() == null && getPreferredPosition() == null)
-			{
-				if ((widget.getId() == Minimap.MODERN_MAP_MINIMAP.getComponentId() ||
-					widget.getId() == Minimap.CLASSIC_MAP_MINIMAP.getComponentId()))
-				{
-					return new Dimension(Layout.Original.MAP_CONTAINER_WIDTH,
-						Layout.Original.MAP_CONTAINER_HEIGHT);
-				}
-				else
-				{
-					if (!hovered)
-					{
-						return new Dimension(0, 0);
-					}
-				}
-			}
+			return new Dimension(Layout.Original.MAP_CONTAINER_WIDTH, Layout.Original.MAP_CONTAINER_HEIGHT);
 		}
 
 		return new Dimension(widget.getWidth(), widget.getHeight());
 	}
 
-	private int getSnapcornerX(Widget widget, Rectangle parent)
+	private int getSnapCornerX(Widget widget, Rectangle parent)
 	{
-		//adjust LEFT aligned widgets when they reset to their snapcorner
+		int x = widget.getOriginalX();
 		if (widget.getXPositionMode() == WidgetPositionMode.ABSOLUTE_LEFT)
 		{
-			final int offset = client.getCanvasWidth() - Layout.Original.MAP_CONTAINER_WIDTH;
-
-			if (widget.getId() == Orbs.ACTIVITY_ORB_CONTAINER.getComponentId())
-			{
-				if (!manager.isEditingLayout && (manager.isStoreOrbDisabled() || manager.isStoreHidden()))
-				{
-					return Layout.Original.STORE_ORB_X + offset;
-				}
-			}
-
-			return widget.getOriginalX() + offset;
+			final int offset = parent.width - Layout.Original.MAP_CONTAINER_WIDTH;
+			return x + offset;
 		}
 
-		if (widget.getId() == Orbs.WORLD_MAP_CONTAINER.getComponentId())
-		{
-			if (manager.hideWorldMap)
-			{
-				return -29;
-			}
-		}
-
-		int offset = widget.getOriginalX();
+		int offset = 0;
 		if (widget.getParent().getId() == Widgets.Orb.UNIVERSE)
 		{
-			//adjust wiki/world map by the difference between the universe and map container width
 			offset = 4;
 		}
 
-		return parent.width - (widget.getWidth() + offset);
+		return parent.width - (x + widget.getWidth() + offset);
 	}
 
 	private int getSnapCornerY(Widget widget)
 	{
-		if (widget.getId() == Orbs.WORLD_MAP_CONTAINER.getComponentId())
-		{
-			if (manager.hideWorldMap)
-			{
-				return -29;//account for +10 from getParentY
-			}
-			else
-			{
-				return Layout.Original.WORLD_MAP_Y;
-			}
-		}
-
-		if (widget.getId() == Orbs.ACTIVITY_ORB_CONTAINER.getComponentId())
-		{
-			if (!manager.isEditingLayout && (manager.isStoreOrbDisabled() || manager.isStoreHidden()))
-			{
-				return Layout.Original.STORE_ORB_Y;
-			}
-		}
-
-		return widget.getOriginalY();
-	}
-
-	private int getParentY(Widget widget)
-	{
+		int y = widget.getOriginalY();
 		if (widget.getParent().getId() == Widgets.Orb.UNIVERSE)
 		{
-			return Layout.ORBS_CONTAINER_OFFSET_Y;
+			y = y + Layout.ORBS_CONTAINER_OFFSET_Y;
 		}
 
-		return 0;
+		return y;
 	}
 
 	public boolean isDetached()
 	{
 		return getPreferredLocation() != null ||
-			(getPreferredPosition() != null && getPreferredPosition() != getPosition());
+			(getPreferredPosition() != null && getPreferredPosition() != OverlayPosition.CANVAS_TOP_RIGHT);
+	}
+
+	private boolean isMinimap(Widget widget)
+	{
+		return widget.getId() == Minimap.MODERN_MAP_MINIMAP.getComponentId() ||
+			widget.getId() == Minimap.CLASSIC_MAP_MINIMAP.getComponentId();
 	}
 
 	private Widget getWidget()
@@ -292,7 +258,14 @@ public class DetachedOrb extends Overlay
 	//exclude the minimap, since its container is used for the compass
 	private boolean isWidgetHidden(Widget widget)
 	{
-		return widget.isHidden() && widget.getId() != Minimap.MODERN_MAP_MINIMAP.getComponentId();
+		return widget.isHidden() && !isMinimap(widget);
+	}
+
+	private boolean hideCompass(Widget widget)
+	{
+		boolean isCompass = isMinimap(widget);
+
+		return !manager.isEditingLayout && isCompass && manager.isCompassHidden() && manager.isMinimapHidden();
 	}
 
 	//world map hiding uses an offset rather than setHidden()
@@ -329,6 +302,7 @@ public class DetachedOrb extends Overlay
 	{
 		if (widget == null ||
 			isWidgetHidden(widget) ||
+			hideCompass(widget) ||
 			hideWorldMap(widget) ||
 			hideWiki(widget))
 		{
@@ -370,9 +344,7 @@ public class DetachedOrb extends Overlay
 					int y = widget.getRelativeY();
 
 					//offset the handler so it sits ontop of the compass
-					if (manager.isFloating() && !manager.isMinimapHidden() &&
-						(widget.getId() == Minimap.MODERN_MAP_MINIMAP.getComponentId() ||
-							widget.getId() == Minimap.CLASSIC_MAP_MINIMAP.getComponentId()))
+					if (manager.isFloating() && !manager.isMinimapHidden() && isMinimap(widget))
 					{
 						x += 30;
 						y += 1;

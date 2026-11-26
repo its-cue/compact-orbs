@@ -118,7 +118,7 @@ public class MinimapButtonOffset implements OffsetTarget
 				}
 			}
 
-			if (manager.getCurrentLayout().isFloating())
+			if (manager.isFloatingActive())
 			{
 				y += Layout.ORBS_CONTAINER_OFFSET_Y;
 			}

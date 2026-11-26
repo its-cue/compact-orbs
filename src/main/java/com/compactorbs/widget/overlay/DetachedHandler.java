@@ -26,10 +26,8 @@
 package com.compactorbs.widget.overlay;
 
 import com.compactorbs.CompactOrbsConfig;
-import com.compactorbs.CompactOrbsConstants;
 import com.compactorbs.CompactOrbsManager;
 import com.compactorbs.widget.WidgetManager;
-import com.compactorbs.widget.elements.Compass;
 import com.compactorbs.widget.elements.Minimap;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.layout.slot.SlotManager;
@@ -338,7 +336,7 @@ public class DetachedHandler
 	public void restore(boolean clear)
 	{
 		//prevent core overlays from being re-added unless they have been cached and on shutdown
-		if (manager.isFloating() && !cached && !clear)
+		if (manager.isFloatingActive() && !cached && !clear)
 		{
 			removeCoreOverlay();
 			return;
@@ -457,6 +455,6 @@ public class DetachedHandler
 		return overlay != null &&
 			(overlay.getPreferredLocation() != null ||
 				overlay.getPreferredPosition() != null ||
-				(overlay.getPosition() != OverlayPosition.DYNAMIC && snapcorner.isSnapCornerRepositioned()));
+				(overlay.getPosition() != OverlayPosition.DYNAMIC && snapcorner.getSnapCornerLocation() != null));
 	}
 }
