@@ -1767,7 +1767,7 @@ public class CompactOrbsManager
 
 	public boolean useSavedPosition(Widget widget, int index)
 	{
-		if (isCompactLayout() || enableOrbSwapping)
+		if (isCompactLayout() && !isCustomLayout() || enableOrbSwapping)
 		{
 			return false;
 		}
