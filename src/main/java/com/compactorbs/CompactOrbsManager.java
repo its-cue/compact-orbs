@@ -1719,9 +1719,14 @@ public class CompactOrbsManager
 			//should use sparingly after this (no1 likes spam...)
 			final String VERSION_NOTICE =
 				" updated to version: " +
-					ChatMessage.highlight(ConfigGroup.CURRENT_VERSION) + ": adds a new feature for tracking Spec stacks/energy (customizable).";
+					ChatMessage.highlight(ConfigGroup.CURRENT_VERSION) + ": bugfixes(4)";
+
+			final String VERSION_UPDATE = " - add an option to apply the `Floating` layouts positions only when the minimap is hidden";
+			final String VERSION_UPDATE_2 = " - the `Floating` layout will now use saved positions when arranged inside the snapcorner";
 
 			chatMessage.sendMessage(VERSION_NOTICE, true);
+			chatMessage.sendMessage(VERSION_UPDATE, false);
+			chatMessage.sendMessage(VERSION_UPDATE_2, false);
 
 			saveConfig(ConfigKeys.NOTICE_VERSION, ConfigGroup.NOTICE_VERSION);
 		}
