@@ -42,6 +42,7 @@
   - An alternative to compact-layouts that utilizes RuneLite's native dragging (`Alt`) to reposition the minimap widgets without restriction.
     - hold `alt` and hover over any minimap widget, then left-click and hold to drag and reposition
     - default arrangement will be kept for any widget that is inside its default `snapcorner` while the minimap is visible
+      - any saved positions or orb swaps (via `edit-mode`) will be applied in place of default positioning if available
     - only orbs that are not in the `snapcorner` will be hidden while `Hide orbs with inventory tab` is enabled
     - similar to `compact-layouts`, when the `world-map` or `logout-x` are hidden their hotkey functions are retained
     - `layout` features that are supported:
@@ -88,12 +89,20 @@
 
 <br/>
 
-### Hide with Inventory tab
+### Hide with Inventory Tab
 - Hide the `compact-layout` when a side panel tab is hidden.
     - does not affect the `detached-minimap`
     - only works in `modern-resizable` display mode
 
   ![](https://imgur.com/Ezhkz0O.gif)
+
+<br/>
+
+### Show layout when Minimap is Hidden
+- While the minimap is visible, arrange the orbs with vanilla positions rather than collapsing them into the snapcorner.
+  - any swaps or custom positioning (via `edit-mode`) will be applied if available
+
+  ![](https://imgur.com/oWCSDJn.gif)
 
 <br/>
 
@@ -153,9 +162,17 @@
     ![](https://imgur.com/zr5YrZA.gif)
 
 #### Q: I don't see the toggle button, how do I hide the minimap?
-- A: Hiding the minimap requires the toggle button or the hotkey to be configured, some window sizes may cause the inventory to hide the toggle button when set to its `default` position.
+- A: Hiding the minimap requires the toggle button or the hotkey to be configured, some window sizes may cause the inventory to obscure the toggle button when set to its `default` position.
   - set the toggle button location to anything but `default` on smaller window sizes [see here](https://github.com/its-cue/compact-orbs#toggle-locations)
   - check that the toggle button config to hide it is not checked
+
+#### Q: Why are some of the orb positions changing when pressing `Alt`?
+- A(1): If you're using a compact layout alongside the detached minimap, check if `detach utility orbs` is enabled.
+
+- A(2): Another potential issue, is not releasing the mouse button before `Alt`, as this can cause the position to not save under certain circumstances (rare).
+  - the above is actually a core feature, and when releasing `Alt` before the mouse button it allows positioning inside a `snapcorner` without placing it inside of it
+  - to alleviate this while repositioning inside the `snapcorner` while avoiding placement, remove the minimap and position it where it would be if it was inside the `snapcorner` - then position the orbs as desired, and re-add the minimap back into the `snapcorner`
+  - alternatively, use `edit-mode` while `Show layout when map is hidden` is enabled (and the minimap is visible), to reposition the orbs to the saved positions (removing the need for the above workaround)
 
 <br/>
 
