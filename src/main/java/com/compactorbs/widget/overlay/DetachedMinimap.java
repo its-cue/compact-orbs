@@ -57,7 +57,7 @@ public class DetachedMinimap extends Overlay
 		this.manager = manager;
 		this.handler = handler;
 		this.snapcorner = snapcorner;
-		setPriority(Overlay.PRIORITY_HIGHEST);
+		setPriority(1.1f);//set higher than the multiway combat icon...
 		setLayer(OverlayLayer.UNDER_WIDGETS);
 		setPosition(OverlayPosition.CANVAS_TOP_RIGHT);
 		setMovable(true);
