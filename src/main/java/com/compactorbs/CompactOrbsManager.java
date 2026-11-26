@@ -1183,7 +1183,7 @@ public class CompactOrbsManager
 	{
 		if (offset)
 		{
-			if (isAnchorBottom() && (getCurrentLayout().isHorizontal() || getCurrentLayout().isHorizontalWide()))
+			if (isAnchorBottom() && (isCompactLayout() && !isCustomLayout()))
 			{
 				return detachedHandler.getSnapshotRelY() + getCurrentLayout().getBottomOffset() - clampVerticalY();
 			}
@@ -1767,7 +1767,7 @@ public class CompactOrbsManager
 
 	public boolean useSavedPosition(Widget widget, int index)
 	{
-		if (isCompactLayout() && !isCustomLayout() || enableOrbSwapping)
+		if ((isCompactLayout() || enableOrbSwapping) && !isCustomLayout())
 		{
 			return false;
 		}

@@ -41,6 +41,7 @@ import com.compactorbs.CompactOrbsConstants.Widgets.Orb;
 import com.compactorbs.widget.TargetWidget;
 import com.compactorbs.widget.WidgetManager;
 import com.compactorbs.widget.elements.Compass;
+import com.compactorbs.widget.elements.Minimap;
 import com.compactorbs.widget.elements.Orbs;
 import com.compactorbs.widget.layout.HideOrbRegistry;
 import com.compactorbs.widget.layout.edit.BindingManager;
@@ -757,7 +758,14 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 						{
 							manager.enableOrbSwapping = config.enableOrbSwapping();
 							slotManager.update();
-							manager.rebuildLayout();
+
+							//orb swapping is disabled, rebuilding the layout is unnecessary
+							if (manager.isCompactLayout() && manager.isCustomLayout())
+							{
+								return;
+							}
+
+							manager.setupCurrentLayout();
 						}
 
 						manager.updateNoClickThrough();
@@ -828,7 +836,18 @@ public class CompactOrbsPlugin extends Plugin implements KeyListener
 					{
 						if (manager.isCompactLayout())
 						{
-							manager.rebuildLayout();
+							if (manager.applyDetachedOffset())
+							{
+								widgetManager.remapTargets(Orbs.values());
+							}
+							else
+							{
+								widgetManager.remapTargets(Minimap.MODERN_ORBS_CONTAINER, Minimap.CLASSIC_ORBS_CONTAINER,
+									Orbs.LOGOUT_X_STONE, Orbs.LOGOUT_X_ICON);
+							}
+
+							//compass
+							widgetManager.remapTargets(Minimap.MODERN_MAP_MINIMAP, Minimap.CLASSIC_MAP_MINIMAP);
 						}
 					});
 					break;
