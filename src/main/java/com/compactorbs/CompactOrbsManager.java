@@ -1777,6 +1777,14 @@ public class CompactOrbsManager
 			return false;
 		}
 
+		int id = widget.getId();
+		int idx = index;
+		if (id == Orbs.LOGOUT_X_STONE.getComponentId())
+		{
+			id = Orbs.LOGOUT_X_ICON.getComponentId();
+			idx = Orbs.LOGOUT_X_ICON.getArrayId();
+		}
+
 		for (TargetWidget[] targets : EditManager.EDIT_TARGETS)
 		{
 			boolean classic = targets.length > 1 && isClassicResizable() && targets[1] != null;
@@ -1790,8 +1798,7 @@ public class CompactOrbsManager
 				continue;
 			}
 
-			if (widget.getId() == target.getComponentId()
-				&& index == target.getArrayId())
+			if (id == target.getComponentId() && idx == target.getArrayId())
 			{
 				return true;
 			}
@@ -1934,10 +1941,10 @@ public class CompactOrbsManager
 			}
 		}
 
-		return readSavedPosition(widget, index, key, getCurrentPrefix());
+		return readSavedPosition(widget, index, key);
 	}
 
-	private int readSavedPosition(Widget widget, int index, ValueKey key, String prefix)
+	private int readSavedPosition(Widget widget, int index, ValueKey key)
 	{
 		int id = widget.getId();
 		int idx = index;
@@ -1947,7 +1954,7 @@ public class CompactOrbsManager
 			idx = Orbs.LOGOUT_X_ICON.getArrayId();
 		}
 
-		Integer value = configManager.getConfiguration(ConfigGroup.GROUP_NAME, buildSavedKey(prefix, id, idx, key), Integer.class);
+		Integer value = configManager.getConfiguration(ConfigGroup.GROUP_NAME, buildSavedKey(getCurrentPrefix(), id, idx, key), Integer.class);
 		if (value == null)
 		{
 			return -1;
